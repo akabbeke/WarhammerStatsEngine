@@ -10,6 +10,8 @@ pylint = "*"
 scipy = "*"
 numpy = "*"
 matplotlib = "*"
+dash = "*"
+plotly = "*"
 
 [requires]
 python_version = "3.7"
