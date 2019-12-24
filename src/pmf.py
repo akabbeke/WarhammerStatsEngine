@@ -94,6 +94,9 @@ class PMF(object):
   def expected_value(self):
     return sum([x*p for x, p in enumerate(self.values)])
 
+  def add_value(self, n):
+    return PMF([0.0] * n + self.values)
+
   @classmethod
   def dn(cls, n):
     return PMF([0.0] + [1/n] * n)

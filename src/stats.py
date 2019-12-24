@@ -10,7 +10,6 @@ class AttackSequence(object):
     self._target = target
     self._attacker= attacker
     self._modifiers = modifiers
-    self._result_cache = {}
 
   def _calc_wound_threshold(self, strength, toughness):
     if strength <= toughness/2.0:
@@ -75,13 +74,10 @@ class AttackSequence(object):
     damage_dist = PMF.convolve_many(dice_dist)
     return damage_dist.ceiling(self._target.wounds)
 
-  def run(self, trim_tail=False):
+  def run(self):
     shot_dist = self._calc_shots_dist()
     hit_dist = self._calc_hit_dist(shot_dist)
     wound_dist = self._calc_wound_dist(hit_dist)
     pen_dist = self._calc_pen_dist(wound_dist)
     damage_dist = self._calc_damage_dist(pen_dist)
     return damage_dist
-
-  def run_and_tail(self):
-    return self.run().cumulative().trim_tail().values
