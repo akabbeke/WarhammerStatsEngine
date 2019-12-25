@@ -49,7 +49,7 @@ class Modifiers(object):
       return dist.re_roll_value(1)
     elif re_roll_type == 're_roll_failed':
       return dist.re_roll_less_than(lower_bound_thresh)
-    elif re_roll_type == 're_roll':
+    elif re_roll_type == 're_roll_dice':
       return dist.re_roll_less_than(modified_thresh)
     else:
       return dist

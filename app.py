@@ -193,7 +193,7 @@ def modify_hit_input(n):
       options=[
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
-          {'label': 'Re-roll all rolls', 'value': 're_roll'},
+          {'label': 'Re-roll all rolls', 'value': 're_roll_dice'},
           {'label': 'Add +1', 'value': 'add_1'},
           {'label': 'Add +2', 'value': 'add_2'},
           {'label': 'Add +3', 'value': 'add_3'},
@@ -215,7 +215,7 @@ def modify_wound_input(n):
       options=[
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
-          {'label': 'Re-roll all rolls', 'value': 're_roll'},
+          {'label': 'Re-roll all rolls', 'value': 're_roll_dice'},
           {'label': 'Add +1', 'value': 'add_1'},
           {'label': 'Add +2', 'value': 'add_2'},
           {'label': 'Add +3', 'value': 'add_3'},
@@ -296,11 +296,36 @@ def graph_inputs():
     inputs += gen_tab_inputs(i)
   return inputs
 
+def belrb():
+  return dcc.Markdown('''
+#### 40k Stats Engine
+
+This started as a personal project of mine to build a computer model for the probability distributions
+of dice rolls in 40k. I found a pretty efficient way to do this without the need for a Monte Carlo
+approach, so I decided to turn his into a web app for the community.
+
+The graph produced below is the probability that the attack will do at least that much damage. It's why you always
+have a 100% chance to do zero damage, and it drops from there.
+
+For the shots and damage characteristic, you can either use a fixed number or `XdY` notation to represent a rolling
+X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
+''')
+
+
+def second_berb():
+  return dcc.Markdown('''
+#### Also:
+
+This is still very much a work in progress, and there are probably still some bugs. I'm /u/Uily on Reddit, so please let me know if you find any.
+If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine). I'm still
+working on implementing more features such as exploding 6's and a few others.
+
+There are no **Ads** funding this, so please don't be a dick. Otherwise, I hope you find this useful!
+''')
+
+
 app.layout = html.Div([
-  html.H3(
-    children='Probability of at least N damage',
-    style={'textAlign': 'center'}
-  ),
+  belrb(),
   dcc.Graph(id='damage-graph'),
   dcc.Tabs([
     dcc.Tab(
@@ -308,7 +333,8 @@ app.layout = html.Div([
       label='Profile {}'.format(i),
       children=[tab_settings(i)]) for i in range(1, TAB_COUNT+1)],
     ),
-  ])
+  second_berb(),
+])
 
 def parse_args(args):
   mapped_args = []

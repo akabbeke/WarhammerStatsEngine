@@ -115,6 +115,24 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
   if not enable:
     return []
 
+  # print(dict(
+  #   ws=int(ws or 1),
+  #   bs=int(ws or 1),
+  #   toughness=int(toughness or 1),
+  #   save=8-int(save or 1),
+  #   invul=8-int(invuln or 1),
+  #   fnp=8-int(fnp or 1),
+  #   wounds=int(wounds or 1),
+  #   shots=parse_rsn(shots or 1),
+  #   strength=int(strength or 1),
+  #   ap=int(ap or 0),
+  #   damage=parse_rsn(damage or 1),
+  #   shot_modifiers=shot_modifiers,
+  #   hit_modifiers=hit_modifiers,
+  #   wound_modifiers=wound_modifiers,
+  #   damage_modifiers=damage_modifiers,
+  # ))
+
   modifiers = Modifiers()
   modifiers = apply_shot_modifiers(modifiers, shot_modifiers or [])
   modifiers = apply_hit_modifiers(modifiers, hit_modifiers or [])
