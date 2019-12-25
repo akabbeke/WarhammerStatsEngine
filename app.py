@@ -173,7 +173,7 @@ def graph_settings(n):
 
 app.layout = html.Div([
   html.H1(
-    children='Probability of at least N Damage',
+    children='Probability of at least N damage',
     style={'textAlign': 'center'}
   ),
   dcc.Graph(id='damage-graph'),
