@@ -12,8 +12,8 @@ from src.util import compute
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-server = Flask(__name__)
-app = dash.Dash(name='app1', server=server, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
 
 def graph_settings(n):
   return html.Div([
