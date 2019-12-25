@@ -51,3 +51,9 @@ class Modifiers(object):
     else:
       return dist
 
+  def modify_fnp_thresh(self, thresh):
+    return thresh
+
+  def modify_fnp_dice(self, dist, thresh):
+    return dist
+

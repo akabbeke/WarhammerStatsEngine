@@ -12,6 +12,8 @@ numpy = "*"
 matplotlib = "*"
 dash = "*"
 plotly = "*"
+flask = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.7"

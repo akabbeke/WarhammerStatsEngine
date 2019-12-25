@@ -76,9 +76,7 @@ def apply_wound_modifiers(modifiers, wound_modifier):
   else:
     return modifiers
 
-
-
-def compute(toughness, save, invuln, wounds, ws, shots, strength, ap, damage,
+def compute(toughness, save, invuln, fnp, wounds, ws, shots, strength, ap, damage,
             shot_modifier, hit_modifier, wound_modifier, cumulative=True):
 
   modifiers = Modifiers()
@@ -92,6 +90,7 @@ def compute(toughness, save, invuln, wounds, ws, shots, strength, ap, damage,
     toughness=int(toughness or 1),
     save=int(save or 1),
     invul=int(invuln or 1),
+    fnp=int(fnp or 7),
     wounds=int(wounds or 1),
   )
   weapon = Weapon(

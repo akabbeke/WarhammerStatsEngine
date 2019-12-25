@@ -74,10 +74,19 @@ class AttackSequence(object):
     damage_dist = PMF.convolve_many(dice_dist)
     return damage_dist.ceiling(self._target.wounds)
 
+  def _calc_fnp_dist(self, dist):
+    return self._calc_dice_dists(dist, self._get_fnp_dist())
+
+  def _get_fnp_dist(self):
+    threshold = self._modifiers.modify_fnp_thresh(self._target.fnp)
+    dice = self._modifiers.modify_fnp_dice(PMF.dn(6), threshold)
+    return dice.convert_binomial_less_than(threshold)
+
   def run(self):
     shot_dist = self._calc_shots_dist()
     hit_dist = self._calc_hit_dist(shot_dist)
     wound_dist = self._calc_wound_dist(hit_dist)
     pen_dist = self._calc_pen_dist(wound_dist)
     damage_dist = self._calc_damage_dist(pen_dist)
-    return damage_dist
+    fnp_dist = self._calc_fnp_dist(damage_dist)
+    return fnp_dist
