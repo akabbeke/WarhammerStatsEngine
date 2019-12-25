@@ -8,6 +8,9 @@ class Modifiers(object):
     self._hit_modifier = kwargs.get('hit_modifier', 0)
     self._wound_re_roll = kwargs.get('wound_re_roll')
     self._wound_modifier = kwargs.get('wound_modifier', 0)
+    self._damage_re_roll = kwargs.get('damage_re_roll')
+    self._damage_modifier = kwargs.get('damage_modifier', 0)
+
 
   def modify_shot_dice(self, dists):
     if self._shot_modifier == 're_roll_one_dice':
@@ -56,4 +59,16 @@ class Modifiers(object):
 
   def modify_fnp_dice(self, dist, thresh):
     return dist
+
+  def modify_damage_dice(self, dists):
+    if self._damage_re_roll == 'roll_two_choose_highest':
+      dists = [x.melta() for x in dists]
+    elif self._damage_re_roll == 're_roll_one_dice':
+      dists[0] = dists[0].re_roll_less_than(dists[0].expected_value())
+    elif self._damage_re_roll == 're_roll_1s':
+      dists = [x.re_roll_value(1) for x in dists]
+    elif self._damage_re_roll == 're_roll_dice':
+      dists = [x.re_roll_less_than(x.expected_value()) for x in dists]
+    dists = [x.roll(self._damage_modifier) for x in dists]
+    return dists
 

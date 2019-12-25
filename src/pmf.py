@@ -97,6 +97,17 @@ class PMF(object):
   def add_value(self, n):
     return PMF([0.0] * n + self.values)
 
+  def melta(self):
+    return PMF.max_of_two(self, self)
+
+  def roll(self, n):
+    if n == 0:
+      return self
+    elif n > 0:
+      return PMF([0.0] * n + self.values)
+    else:
+      return PMF([sum(self.values[:(-1*n)+1])] + self.values[(-1*n)+1:])
+
   @classmethod
   def dn(cls, n):
     return PMF([0.0] + [1/n] * n)
@@ -150,6 +161,9 @@ class PMF(object):
 
   @classmethod
   def max_of_two(cls, dist1, dist2):
+    """
+    Compute the PMF for the max of two PMF
+    """
     dist1, dist2 = cls.match_sizes([dist1, dist2])
     new_dist = []
     for value in range(len(dist1)):

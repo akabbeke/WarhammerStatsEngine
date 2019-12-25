@@ -149,11 +149,31 @@ def graph_settings(n):
       multi=True,
       style={'width': '100%'},
     ),
+    html.Label('Modify Damage Rolls'),
+    dcc.Dropdown(
+      persistence=True,
+      id='damage-modifier-{}'.format(n),
+      options=[
+          {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
+          {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
+          {'label': 'Re-roll all dice', 'value': 're_roll_dice'},
+          {'label': 'Melta', 'value': 'roll_two_choose_highest'},
+          {'label': 'Add +1', 'value': 'add_1'},
+          {'label': 'Add +2', 'value': 'add_2'},
+          {'label': 'Add +3', 'value': 'add_3'},
+          {'label': 'Sub -1', 'value': 'sub_1'},
+          {'label': 'Sub -2', 'value': 'sub_2'},
+          {'label': 'Sub -3', 'value': 'sub_3'},
+      ],
+      multi=True,
+      style={'width': '100%'},
+    ),
+    html.Br()
   ], style={})
 
 app.layout = html.Div([
   html.H1(
-    children='Damage Distribution',
+    children='Probability of at least N Damage',
     style={'textAlign': 'center'}
   ),
   dcc.Graph(id='damage-graph'),
@@ -179,6 +199,7 @@ app.layout = html.Div([
       Input('shot-modifier-1', 'value'),
       Input('hit-modifier-1', 'value'),
       Input('wound-modifier-1', 'value'),
+      Input('damage-modifier-1', 'value'),
 
       Input('target-toughness-2', 'value'),
       Input('target-save-2', 'value'),
@@ -193,10 +214,13 @@ app.layout = html.Div([
       Input('shot-modifier-2', 'value'),
       Input('hit-modifier-2', 'value'),
       Input('wound-modifier-2', 'value'),
+      Input('damage-modifier-2', 'value'),
+
     ])
 def update_graph(toughness_1, save_1, invuln_1, fnp_1, wounds_1, ws_1, shots_1, strength_1, ap_1, damage_1,
-                 shot_modifier_1, hit_modifier_1, wound_modifier_1, toughness_2, save_2, invuln_2, fnp_2, wounds_2,
-                 ws_2, shots_2, strength_2, ap_2, damage_2, shot_modifier_2, hit_modifier_2, wound_modifier_2):
+                 shot_modifier_1, hit_modifier_1, wound_modifier_1, damage_modifier_1, toughness_2, save_2,
+                 invuln_2, fnp_2, wounds_2, ws_2, shots_2, strength_2, ap_2, damage_2, shot_modifier_2,
+                 hit_modifier_2, wound_modifier_2, damage_modifier_2):
     values_1 = compute(
       toughness_1,
       8-save_1,
@@ -211,6 +235,7 @@ def update_graph(toughness_1, save_1, invuln_1, fnp_1, wounds_1, ws_1, shots_1, 
       shot_modifier_1,
       hit_modifier_1,
       wound_modifier_1,
+      damage_modifier_1,
     )
     values_2 = compute(
       toughness_2,
@@ -226,6 +251,7 @@ def update_graph(toughness_1, save_1, invuln_1, fnp_1, wounds_1, ws_1, shots_1, 
       shot_modifier_2,
       hit_modifier_2,
       wound_modifier_2,
+      damage_modifier_2,
     )
     return {
       'data': [

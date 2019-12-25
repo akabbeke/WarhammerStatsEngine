@@ -76,13 +76,46 @@ def apply_wound_modifiers(modifiers, wound_modifier):
   else:
     return modifiers
 
+def apply_damage_modifiers(modifiers, damage_modifier):
+  mod_value = 0
+  for mod in damage_modifier:
+    if mod == 'add_1':
+      mod_value += 1
+    if mod == 'add_2':
+      mod_value += 2
+    if mod == 'add_3':
+      mod_value += 3
+    if mod == 'sub_1':
+      mod_value -= 1
+    if mod == 'sub_2':
+      mod_value -= 2
+    if mod == 'sub_3':
+      mod_value -= 3
+  modifiers._damage_modifier = mod_value
+
+  if 're_roll_dice' in damage_modifier:
+    modifiers._damage_re_roll= 're_roll_dice'
+    return modifiers
+  elif 're_roll_1s' in damage_modifier:
+    modifiers._damage_re_roll = 're_roll_1s'
+    return modifiers
+  elif 'roll_two_choose_highest' in damage_modifier:
+    modifiers._damage_re_roll = 'roll_two_choose_highest'
+    return modifiers
+  elif 're_roll_one_dice' in damage_modifier:
+    modifiers._damage_re_roll = 're_roll_one_dice'
+    return modifiers
+  else:
+    return modifiers
+
 def compute(toughness, save, invuln, fnp, wounds, ws, shots, strength, ap, damage,
-            shot_modifier, hit_modifier, wound_modifier, cumulative=True):
+            shot_modifier, hit_modifier, wound_modifier, damage_modifier, cumulative=True):
 
   modifiers = Modifiers()
   modifiers = apply_shot_modifiers(modifiers, shot_modifier or [])
   modifiers = apply_hit_modifiers(modifiers, hit_modifier or [])
   modifiers = apply_wound_modifiers(modifiers, wound_modifier or [])
+  modifiers = apply_damage_modifiers(modifiers, damage_modifier or [])
 
   target = Unit(
     ws=int(ws or 1),
