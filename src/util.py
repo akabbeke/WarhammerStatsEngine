@@ -108,22 +108,26 @@ def apply_damage_modifiers(modifiers, damage_modifier):
   else:
     return modifiers
 
-def compute(toughness, save, invuln, fnp, wounds, ws, shots, strength, ap, damage,
-            shot_modifier, hit_modifier, wound_modifier, damage_modifier, cumulative=True):
+def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
+            wounds=None, shots=None, damage=None, shot_modifiers=None, hit_modifiers=None,
+            wound_modifiers=None, damage_modifiers=None):
+
+  if not enable:
+    return []
 
   modifiers = Modifiers()
-  modifiers = apply_shot_modifiers(modifiers, shot_modifier or [])
-  modifiers = apply_hit_modifiers(modifiers, hit_modifier or [])
-  modifiers = apply_wound_modifiers(modifiers, wound_modifier or [])
-  modifiers = apply_damage_modifiers(modifiers, damage_modifier or [])
+  modifiers = apply_shot_modifiers(modifiers, shot_modifiers or [])
+  modifiers = apply_hit_modifiers(modifiers, hit_modifiers or [])
+  modifiers = apply_wound_modifiers(modifiers, wound_modifiers or [])
+  modifiers = apply_damage_modifiers(modifiers, damage_modifiers or [])
 
   target = Unit(
     ws=int(ws or 1),
     bs=int(ws or 1),
     toughness=int(toughness or 1),
-    save=int(save or 1),
-    invul=int(invuln or 1),
-    fnp=int(fnp or 7),
+    save=8-int(save or 1),
+    invul=8-int(invuln or 1),
+    fnp=8-int(fnp or 1),
     wounds=int(wounds or 1),
   )
   weapon = Weapon(
@@ -139,7 +143,8 @@ def compute(toughness, save, invuln, fnp, wounds, ws, shots, strength, ap, damag
     modifiers,
   )
 
-  return basic.run().cumulative().trim_tail().values
+  values = basic.run().cumulative().trim_tail().values
+  return values
 
 def parse_rsn(value):
   try:

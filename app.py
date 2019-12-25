@@ -1,4 +1,5 @@
 import dash
+import dash_daq as daq
 import re
 import dash_core_components as dcc
 import dash_html_components as html
@@ -8,103 +9,171 @@ from flask import Flask
 
 from src.util import compute
 
+TAB_COUNT = 4
 
+INPUT_NAMES = {}
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
-def graph_settings(n):
+
+
+def tab_disable_input(n):
+  return html.Div([
+    html.Br(),
+    daq.ToggleSwitch(
+      id='enable_{}'.format(n),
+      value=n < 3,
+      label='Disable/Enable',
+      labelPosition='left'
+    ),
+
+  ])
+
+def ws_input(n):
   return html.Div([
     html.Label('Weapon Skill'),
     dcc.Slider(
       persistence=True,
-      id='attacker-ws-{}'.format(n),
+      id='ws_{}'.format(n),
       min=1,
       max=6,
       marks={i: '{}+'.format(i) for i in range(10)},
-      value=3,
+      value=max(1, n%6),
       updatemode='drag',
     ),
+  ])
+
+def toughtness_input(n):
+  return html.Div([
     html.Label('Toughness'),
     dcc.Slider(
       persistence=True,
-      id='target-toughness-{}'.format(n),
+      id='toughness_{}'.format(n),
       min=1,
       max=10,
       marks={i: 'T{}'.format(i) for i in range(10)},
-      value=5,
+      value=max(1, (1+n)%6),
       updatemode='drag',
     ),
+  ])
+
+def strength_input(n):
+  return html.Div([
     html.Label('Strength'),
     dcc.Slider(
       persistence=True,
-      id='attacker-strength-{}'.format(n),
+      id='strength_{}'.format(n),
       min=1,
       max=20,
       marks={i: 'S{}'.format(i) for i in range(20)},
       value=5,
       updatemode='drag',
     ),
+  ])
+
+def ap_input(n):
+  return html.Div([
     html.Label('AP Value'),
     dcc.Slider(
       persistence=True,
-      id='attacker-ap-{}'.format(n),
+      id='ap_{}'.format(n),
       min=0,
       max=7,
       marks={i: '-{}'.format(i) for i in range(20)},
       value=2,
       updatemode='drag',
     ),
+  ])
+
+def save_input(n):
+  return html.Div([
     html.Label('Save'),
     dcc.Slider(
       persistence=True,
-      id='target-save-{}'.format(n),
+      id='save_{}'.format(n),
       min=1,
       max=7,
       marks={i: '{}+'.format(8-i) for i in range(10)},
       value=5,
       updatemode='drag',
     ),
+  ])
+
+def invuln_input(n):
+  return html.Div([
     html.Label('Invuln'),
     dcc.Slider(
       persistence=True,
-      id='target-invuln-{}'.format(n),
+      id='invuln_{}'.format(n),
       min=1,
       max=7,
       marks={i: '{}++'.format(8-i) for i in range(10)},
       value=0,
       updatemode='drag',
     ),
+  ])
+
+def fnp_input(n):
+  return html.Div([
     html.Label('FNP'),
     dcc.Slider(
       persistence=True,
-      id='target-fnp-{}'.format(n),
+      id='fnp_{}'.format(n),
       min=1,
       max=7,
       marks={i: '{}+++'.format(8-i) for i in range(10)},
       value=0,
       updatemode='drag',
     ),
+  ])
+
+def wounds_input(n):
+  return html.Div([
     html.Label('Wounds'),
     dcc.Slider(
       persistence=True,
-      id='target-wounds-{}'.format(n),
+      id='wounds_{}'.format(n),
       min=1,
       max=24,
       marks={i: 'W{}'.format(i) for i in range(24)},
       value=7,
       updatemode='drag',
     ),
+  ])
+
+def shots_input(n):
+  return html.Div([
     html.Label('Shots'),
-    dcc.Input(persistence=True, id='attacker-shots-{}'.format(n), value='2d6', type='text', style={'width': '100%'}),
+    dcc.Input(
+      persistence=True,
+      id='shots_{}'.format(n),
+      value=['2d3', '12', 'd6', '7'][(n-1)%4],
+      type='text',
+      style={'width': '100%'}
+    ),
+  ])
+
+def damage_input(n):
+  return html.Div([
     html.Label('Damage'),
-    dcc.Input(persistence=True, id='attacker-damage-{}'.format(n), value='3d3', type='text', style={'width': '100%'}),
+    dcc.Input(
+      persistence=True,
+      id='damage_{}'.format(n),
+      value=['d3', '3', '2d6', '3d4'][(n-1)%4],
+      type='text',
+      style={'width': '100%'}
+    ),
+  ])
+
+def modify_shot_input(n):
+  return html.Div([
     html.Label('Modify Shot Volume Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='shot-modifier-{}'.format(n),
+      id='shot_modifiers_{}'.format(n),
       options=[
           {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
@@ -113,10 +182,14 @@ def graph_settings(n):
       multi=True,
       style={'width': '100%'},
     ),
+  ])
+
+def modify_hit_input(n):
+  return html.Div([
     html.Label('Modify Hit Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='hit-modifier-{}'.format(n),
+      id='hit_modifiers_{}'.format(n),
       options=[
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
@@ -131,10 +204,14 @@ def graph_settings(n):
       multi=True,
       style={'width': '100%'},
     ),
+  ])
+
+def modify_wound_input(n):
+  return html.Div([
     html.Label('Modify Wound Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='wound-modifier-{}'.format(n),
+      id='wound_modifiers_{}'.format(n),
       options=[
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
@@ -149,10 +226,14 @@ def graph_settings(n):
       multi=True,
       style={'width': '100%'},
     ),
+  ])
+
+def modify_damage_input(n):
+  return html.Div([
     html.Label('Modify Damage Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='damage-modifier-{}'.format(n),
+      id='damage_modifiers_{}'.format(n),
       options=[
           {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
@@ -168,126 +249,116 @@ def graph_settings(n):
       multi=True,
       style={'width': '100%'},
     ),
+  ])
+
+def tab_settings(n):
+  return html.Div([
+    tab_disable_input(n),
+    ws_input(n),
+    toughtness_input(n),
+    strength_input(n),
+    ap_input(n),
+    save_input(n),
+    invuln_input(n),
+    fnp_input(n),
+    wounds_input(n),
+    shots_input(n),
+    damage_input(n),
+    modify_shot_input(n),
+    modify_hit_input(n),
+    modify_wound_input(n),
+    modify_damage_input(n),
     html.Br()
   ], style={})
 
+def gen_tab_inputs(i):
+  return [
+    'enable_{}'.format(i),
+    'ws_{}'.format(i),
+    'toughness_{}'.format(i),
+    'strength_{}'.format(i),
+    'ap_{}'.format(i),
+    'save_{}'.format(i),
+    'invuln_{}'.format(i),
+    'fnp_{}'.format(i),
+    'wounds_{}'.format(i),
+    'shots_{}'.format(i),
+    'damage_{}'.format(i),
+    'shot_modifiers_{}'.format(i),
+    'hit_modifiers_{}'.format(i),
+    'wound_modifiers_{}'.format(i),
+    'damage_modifiers_{}'.format(i),
+  ]
+
+def graph_inputs():
+  inputs = []
+  for i in range(1, TAB_COUNT+1):
+    inputs += gen_tab_inputs(i)
+  return inputs
+
 app.layout = html.Div([
-  html.H1(
+  html.H3(
     children='Probability of at least N damage',
     style={'textAlign': 'center'}
   ),
   dcc.Graph(id='damage-graph'),
   dcc.Tabs([
-    dcc.Tab(label='Attack A', children=[graph_settings(1)]),
-    dcc.Tab(label='Attack B', children=[graph_settings(2)]),
-  ]),
-])
+    dcc.Tab(
+      id='tab_{}'.format(i),
+      label='Profile {}'.format(i),
+      children=[tab_settings(i)]) for i in range(1, TAB_COUNT+1)],
+    ),
+  ])
 
-@app.callback(
-    Output('damage-graph', 'figure'),
-    [
-      Input('target-toughness-1', 'value'),
-      Input('target-save-1', 'value'),
-      Input('target-invuln-1', 'value'),
-      Input('target-fnp-1', 'value'),
-      Input('target-wounds-1', 'value'),
-      Input('attacker-ws-1', 'value'),
-      Input('attacker-shots-1', 'value'),
-      Input('attacker-strength-1', 'value'),
-      Input('attacker-ap-1', 'value'),
-      Input('attacker-damage-1', 'value'),
-      Input('shot-modifier-1', 'value'),
-      Input('hit-modifier-1', 'value'),
-      Input('wound-modifier-1', 'value'),
-      Input('damage-modifier-1', 'value'),
+def parse_args(args):
+  mapped_args = []
+  for i in range(0, TAB_COUNT):
+    tab_dict = {}
+    tab_inputs = gen_tab_inputs(i)
+    trim_length = -1 * len('-{}'.format(i))
+    for j, input_name in enumerate(tab_inputs):
+      tab_dict[input_name[:trim_length]] = args[(len(tab_inputs)*i) + j]
+    mapped_args.append(tab_dict)
+  return mapped_args
 
-      Input('target-toughness-2', 'value'),
-      Input('target-save-2', 'value'),
-      Input('target-invuln-2', 'value'),
-      Input('target-fnp-2', 'value'),
-      Input('target-wounds-2', 'value'),
-      Input('attacker-ws-2', 'value'),
-      Input('attacker-shots-2', 'value'),
-      Input('attacker-strength-2', 'value'),
-      Input('attacker-ap-2', 'value'),
-      Input('attacker-damage-2', 'value'),
-      Input('shot-modifier-2', 'value'),
-      Input('hit-modifier-2', 'value'),
-      Input('wound-modifier-2', 'value'),
-      Input('damage-modifier-2', 'value'),
+def generate_data(args):
+  graph_data = []
+  for i, kwargs in enumerate(parse_args(args)):
+    values = compute(**kwargs)
+    graph_data.append({
+      'x': [i for i, x in enumerate(values)],
+      'y': [100*x for i, x in enumerate(values)],
+      'name': 'P{}'.format(i + 1),
+    })
+  return graph_data
 
-    ])
-def update_graph(toughness_1, save_1, invuln_1, fnp_1, wounds_1, ws_1, shots_1, strength_1, ap_1, damage_1,
-                 shot_modifier_1, hit_modifier_1, wound_modifier_1, damage_modifier_1, toughness_2, save_2,
-                 invuln_2, fnp_2, wounds_2, ws_2, shots_2, strength_2, ap_2, damage_2, shot_modifier_2,
-                 hit_modifier_2, wound_modifier_2, damage_modifier_2):
-    values_1 = compute(
-      toughness_1,
-      8-save_1,
-      8-invuln_1,
-      8-fnp_1,
-      wounds_1,
-      ws_1,
-      shots_1,
-      strength_1,
-      ap_1,
-      damage_1,
-      shot_modifier_1,
-      hit_modifier_1,
-      wound_modifier_1,
-      damage_modifier_1,
-    )
-    values_2 = compute(
-      toughness_2,
-      8-save_2,
-      8-invuln_2,
-      8-fnp_2,
-      wounds_2,
-      ws_2,
-      shots_2,
-      strength_2,
-      ap_2,
-      damage_2,
-      shot_modifier_2,
-      hit_modifier_2,
-      wound_modifier_2,
-      damage_modifier_2,
-    )
-    return {
-      'data': [
-        {
-          'x': [i for i, x in enumerate(values_1)],
-          'y': [100*x for i, x in enumerate(values_1)],
-          'name': 'Attack A',
-        },
-        {
-          'x': [i for i, x in enumerate(values_2)],
-          'y': [100*x for i, x in enumerate(values_2)],
-          'name': 'Attack B',
-        }
-      ],
-      'layout': {
-        'xaxis': {
-            'title': 'Damage',
-            'type': 'linear',
-            'range': [0, 24],
-            'tickmode': 'linear',
-            'tick0': 0,
-            'dtick': 1,
-        },
-        'yaxis': {
-            'title': 'Cumulateive Percentage',
-            'type': 'linear',
-            'range': [0, 100],
-            'tickmode': 'linear',
-            'tick0': 0,
-            'dtick': 10,
-        },
-        # 'transition': {'duration': 50},
-        'margin': {'l': 40, 'b': 40, 't': 10, 'r': 0},
-        'hovermode': 'x'
-      }
+
+@app.callback(Output('damage-graph', 'figure'), [Input(x, 'value') for x in graph_inputs()])
+def update_graph(*args):
+  return {
+    'data': generate_data(args),
+    'layout': {
+      'xaxis': {
+          'title': 'Damage',
+          'type': 'linear',
+          'range': [0, 24],
+          'tickmode': 'linear',
+          'tick0': 0,
+          'dtick': 1,
+      },
+      'yaxis': {
+          'title': 'Cumulateive Percentage',
+          'type': 'linear',
+          'range': [0, 100],
+          'tickmode': 'linear',
+          'tick0': 0,
+          'dtick': 10,
+      },
+      # 'transition': {'duration': 50},
+      'margin': {'l': 40, 'b': 40, 't': 10, 'r': 0},
+      'hovermode': 'x'
     }
+  }
 
 
 if __name__ == '__main__':
