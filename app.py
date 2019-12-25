@@ -168,8 +168,8 @@ app.layout = html.Div([
     [
       Input('target-toughness-1', 'value'),
       Input('target-save-1', 'value'),
-      Input('target-fnp-1', 'value'),
       Input('target-invuln-1', 'value'),
+      Input('target-fnp-1', 'value'),
       Input('target-wounds-1', 'value'),
       Input('attacker-ws-1', 'value'),
       Input('attacker-shots-1', 'value'),
