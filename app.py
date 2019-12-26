@@ -11,8 +11,6 @@ from src.util import compute
 
 TAB_COUNT = 4
 
-INPUT_NAMES = {}
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -43,7 +41,7 @@ def ws_input(n):
       max=6,
       marks={i: '{}+'.format(i) for i in range(10)},
       value=max(1, n%6),
-      updatemode='drag',
+
     ),
   ])
 
@@ -57,7 +55,7 @@ def toughtness_input(n):
       max=10,
       marks={i: 'T{}'.format(i) for i in range(10)},
       value=max(1, (1+n)%6),
-      updatemode='drag',
+
     ),
   ])
 
@@ -71,7 +69,7 @@ def strength_input(n):
       max=20,
       marks={i: 'S{}'.format(i) for i in range(20)},
       value=5,
-      updatemode='drag',
+
     ),
   ])
 
@@ -85,7 +83,7 @@ def ap_input(n):
       max=7,
       marks={i: '-{}'.format(i) for i in range(20)},
       value=2,
-      updatemode='drag',
+
     ),
   ])
 
@@ -99,7 +97,7 @@ def save_input(n):
       max=7,
       marks={i: '{}+'.format(8-i) for i in range(10)},
       value=5,
-      updatemode='drag',
+
     ),
   ])
 
@@ -113,7 +111,7 @@ def invuln_input(n):
       max=7,
       marks={i: '{}++'.format(8-i) for i in range(10)},
       value=0,
-      updatemode='drag',
+
     ),
   ])
 
@@ -127,7 +125,7 @@ def fnp_input(n):
       max=7,
       marks={i: '{}+++'.format(8-i) for i in range(10)},
       value=0,
-      updatemode='drag',
+
     ),
   ])
 
@@ -141,7 +139,7 @@ def wounds_input(n):
       max=24,
       marks={i: 'W{}'.format(i) for i in range(24)},
       value=7,
-      updatemode='drag',
+
     ),
   ])
 
