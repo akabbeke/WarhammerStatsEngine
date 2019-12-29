@@ -36,13 +36,13 @@ class ReRollOnes(Modifier):
 class ReRollFailed(Modifier):
   priority = 99
   def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_value(min(thresh, mod_thresh)) for x in dists]
+    return [x.re_roll_less_than(min(thresh, mod_thresh)) for x in dists]
 
 
 class ReRollAll(Modifier):
   priority = 100
   def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_value(thresh) for x in dists]
+    return [x.re_roll_less_than(mod_thresh) for x in dists]
 
 
 class ReRollLessThanExpectedValue(Modifier):
