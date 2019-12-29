@@ -45,10 +45,10 @@ def wound_modifiers(wound_mods):
     sub_match = re.match(r'sub_(\d+)', mod)
     if add_match:
       value = add_match.groups()[0]
-      mods.append(AddNToThreshold(value))
+      mods.append(AddNToThreshold(int(value)))
     if sub_match:
       value = -1 * sub_match.groups()[0]
-      mods.append(AddNToThreshold(value))
+      mods.append(AddNToThreshold(int(value)))
 
   if 're_roll_dice' in wound_mods:
     mods.append(ReRollAll())
@@ -66,15 +66,17 @@ def damage_modifiers(damage_mods):
     sub_match = re.match(r'sub_(\d+)', mod)
     if add_match:
       value = add_match.groups()[0]
-      mods.append(AddNToThreshold(value))
+      mods.append(AddNToVolume(int(value)))
     if sub_match:
       value = -1 * sub_match.groups()[0]
-      mods.append(AddNToThreshold(value))
+      mods.append(AddNToVolume(int(value)))
 
   if 're_roll_dice' in damage_mods:
     mods.append(ReRollAll())
   elif 're_roll_1s' in damage_mods:
     mods.append(ReRollOnes())
+  elif 'melta' in damage_mods:
+    mods.append(Melta())
   return mods
 
 

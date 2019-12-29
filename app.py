@@ -233,10 +233,10 @@ def modify_damage_input(n):
       persistence=True,
       id='damage_mods_{}'.format(n),
       options=[
-          {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
+          # {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll all dice', 'value': 're_roll_dice'},
-          {'label': 'Melta', 'value': 'roll_two_choose_highest'},
+          {'label': 'Melta', 'value': 'melta'},
           {'label': 'Add +1', 'value': 'add_1'},
           {'label': 'Add +2', 'value': 'add_2'},
           {'label': 'Add +3', 'value': 'add_3'},

@@ -83,10 +83,6 @@ class AddNToInvuln(AddNTo):
 
 
 class AddNToVolume(AddNTo):
-  def __init__(self, *args, **kwargs):
-    self.n = kwargs.get('n', 0)
-    self.priority = self.n
-
   def modify_dice(self, dists, thresh=None, mod_thresh=None):
     return [x.roll(self.n) for x in dists]
 
