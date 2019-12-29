@@ -3,114 +3,83 @@ from .stats import AttackSequence
 from .pmf import PMF
 from .weapons import Weapon
 from .units import Unit
-from .modifiers import Modifiers
+from .modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
+  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, RemoveInvuln
 
-def apply_shot_modifiers(modifiers, shot_modifier):
-  if 're_roll_dice' in shot_modifier:
-    modifiers._shot_modifier = 're_roll_dice'
-    return modifiers
-  elif 're_roll_1s' in shot_modifier:
-    modifiers._shot_modifier = 're_roll_1s'
-    return modifiers
-  elif 're_roll_one_dice' in shot_modifier:
-    modifiers._shot_modifier = 're_roll_one_dice'
-    return modifiers
-  else:
-    return modifiers
 
-def apply_hit_modifiers(modifiers, shot_modifier):
-  mod_value = 0
-  for mod in shot_modifier:
-    if mod == 'add_1':
-      mod_value -= 1
-    if mod == 'add_2':
-      mod_value -= 2
-    if mod == 'add_3':
-      mod_value -= 3
-    if mod == 'sub_1':
-      mod_value += 1
-    if mod == 'sub_2':
-      mod_value += 2
-    if mod == 'sub_3':
-      mod_value += 3
-  modifiers._hit_modifier = mod_value
+def shot_modifiers(shot_mods):
+  mods = []
+  if 're_roll_dice' in shot_mods:
+    mods.append(ReRollLessThanExpectedValue())
+  elif 're_roll_1s' in shot_mods:
+    mods.append(ReRollOnes())
+  return mods
 
-  if 're_roll_dice' in shot_modifier:
-    modifiers._hit_re_roll = 're_roll_dice'
-    return modifiers
-  elif 're_roll_failed' in shot_modifier:
-    modifiers._hit_re_roll = 're_roll_failed'
-    return modifiers
-  elif 're_roll_1s' in shot_modifier:
-    modifiers._hit_re_roll = 're_roll_1s'
-    return modifiers
-  else:
-    return modifiers
 
-def apply_wound_modifiers(modifiers, wound_modifier):
-  mod_value = 0
-  for mod in wound_modifier:
-    if mod == 'add_1':
-      mod_value -= 1
-    if mod == 'add_2':
-      mod_value -= 2
-    if mod == 'add_3':
-      mod_value -= 3
-    if mod == 'sub_1':
-      mod_value += 1
-    if mod == 'sub_2':
-      mod_value += 2
-    if mod == 'sub_3':
-      mod_value += 3
-  modifiers._wound_modifier = mod_value
+def hit_modifiers(hit_mods):
+  mods = []
+  for mod in hit_mods:
+    add_match = re.match(r'add_(\d+)', mod)
+    sub_match = re.match(r'sub_(\d+)', mod)
+    if add_match:
+      value = int(add_match.groups()[0])
+      mods.append(AddNToThreshold(value))
+    if sub_match:
+      value = -1 * int(sub_match.groups()[0])
+      mods.append(AddNToThreshold(value))
 
-  if 're_roll_dice' in wound_modifier:
-    modifiers._wound_re_roll = 're_roll_dice'
-    return modifiers
-  elif 're_roll_failed' in wound_modifier:
-    modifiers._wound_re_roll = 're_roll_failed'
-    return modifiers
-  elif 're_roll_1s' in wound_modifier:
-    modifiers._wound_re_roll = 're_roll_1s'
-    return modifiers
-  else:
-    return modifiers
+  if 're_roll_dice' in hit_mods:
+    mods.append(ReRollAll())
+  elif 're_roll_failed' in hit_mods:
+    mods.append(ReRollFailed())
+  elif 're_roll_1s' in hit_mods:
+    mods.append(ReRollOnes())
 
-def apply_damage_modifiers(modifiers, damage_modifier):
-  mod_value = 0
-  for mod in damage_modifier:
-    if mod == 'add_1':
-      mod_value += 1
-    if mod == 'add_2':
-      mod_value += 2
-    if mod == 'add_3':
-      mod_value += 3
-    if mod == 'sub_1':
-      mod_value -= 1
-    if mod == 'sub_2':
-      mod_value -= 2
-    if mod == 'sub_3':
-      mod_value -= 3
-  modifiers._damage_modifier = mod_value
+  return mods
 
-  if 're_roll_dice' in damage_modifier:
-    modifiers._damage_re_roll= 're_roll_dice'
-    return modifiers
-  elif 're_roll_1s' in damage_modifier:
-    modifiers._damage_re_roll = 're_roll_1s'
-    return modifiers
-  elif 'roll_two_choose_highest' in damage_modifier:
-    modifiers._damage_re_roll = 'roll_two_choose_highest'
-    return modifiers
-  elif 're_roll_one_dice' in damage_modifier:
-    modifiers._damage_re_roll = 're_roll_one_dice'
-    return modifiers
-  else:
-    return modifiers
+
+def wound_modifiers(wound_mods):
+  mods = []
+  for mod in wound_mods:
+    add_match = re.match(r'add_(\d+)', mod)
+    sub_match = re.match(r'sub_(\d+)', mod)
+    if add_match:
+      value = add_match.groups()[0]
+      mods.append(AddNToThreshold(value))
+    if sub_match:
+      value = -1 * sub_match.groups()[0]
+      mods.append(AddNToThreshold(value))
+
+  if 're_roll_dice' in wound_mods:
+    mods.append(ReRollAll())
+  elif 're_roll_failed' in wound_mods:
+    mods.append(ReRollFailed())
+  elif 're_roll_1s' in wound_mods:
+    mods.append(ReRollOnes())
+  return mods
+
+
+def damage_modifiers(damage_mods):
+  mods = []
+  for mod in damage_mods:
+    add_match = re.match(r'add_(\d+)', mod)
+    sub_match = re.match(r'sub_(\d+)', mod)
+    if add_match:
+      value = add_match.groups()[0]
+      mods.append(AddNToThreshold(value))
+    if sub_match:
+      value = -1 * sub_match.groups()[0]
+      mods.append(AddNToThreshold(value))
+
+  if 're_roll_dice' in damage_mods:
+    mods.append(ReRollAll())
+  elif 're_roll_1s' in damage_mods:
+    mods.append(ReRollOnes())
+  return mods
+
 
 def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
-            wounds=None, shots=None, damage=None, shot_modifiers=None, hit_modifiers=None,
-            wound_modifiers=None, damage_modifiers=None):
+            wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, damage_mods=None):
 
   if not enable:
     return []
@@ -133,11 +102,11 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
   #   damage_modifiers=damage_modifiers,
   # ))
 
-  modifiers = Modifiers()
-  modifiers = apply_shot_modifiers(modifiers, shot_modifiers or [])
-  modifiers = apply_hit_modifiers(modifiers, hit_modifiers or [])
-  modifiers = apply_wound_modifiers(modifiers, wound_modifiers or [])
-  modifiers = apply_damage_modifiers(modifiers, damage_modifiers or [])
+  modifiers = ModifierCollection()
+  modifiers.add_mods('shots', shot_modifiers(shot_mods or []))
+  modifiers.add_mods('hit', hit_modifiers(hit_mods or []))
+  modifiers.add_mods('wound', wound_modifiers(wound_mods or []))
+  modifiers.add_mods('damage', damage_modifiers(damage_mods or []))
 
   target = Unit(
     ws=int(ws or 1),
@@ -168,5 +137,9 @@ def parse_rsn(value):
   try:
     return [PMF.static(int(value or 1))]
   except ValueError:
-    number, faces = re.match('(?P<number>\d+)?d(?P<faces>\d+)', value).groups()
-    return [PMF.dn(int(faces))] * (int(number) if number else 1)
+    match = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value)
+    if match:
+      number, faces = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value).groups()
+      return [PMF.dn(int(faces))] * (int(number) if number else 1)
+    else:
+      return []
