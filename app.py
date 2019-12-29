@@ -172,9 +172,8 @@ def modify_shot_input(n):
     html.Label('Modify Shot Volume Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='shot_modifiers_{}'.format(n),
+      id='shot_mods_{}'.format(n),
       options=[
-          {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll all dice', 'value': 're_roll_dice'}
       ],
@@ -188,7 +187,7 @@ def modify_hit_input(n):
     html.Label('Modify Hit Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='hit_modifiers_{}'.format(n),
+      id='hit_mods_{}'.format(n),
       options=[
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
@@ -210,7 +209,7 @@ def modify_wound_input(n):
     html.Label('Modify Wound Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='wound_modifiers_{}'.format(n),
+      id='wound_mods_{}'.format(n),
       options=[
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
           {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
@@ -232,7 +231,7 @@ def modify_damage_input(n):
     html.Label('Modify Damage Rolls'),
     dcc.Dropdown(
       persistence=True,
-      id='damage_modifiers_{}'.format(n),
+      id='damage_mods_{}'.format(n),
       options=[
           {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
           {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
@@ -283,10 +282,10 @@ def gen_tab_inputs(i):
     'wounds_{}'.format(i),
     'shots_{}'.format(i),
     'damage_{}'.format(i),
-    'shot_modifiers_{}'.format(i),
-    'hit_modifiers_{}'.format(i),
-    'wound_modifiers_{}'.format(i),
-    'damage_modifiers_{}'.format(i),
+    'shot_mods_{}'.format(i),
+    'hit_mods_{}'.format(i),
+    'wound_mods_{}'.format(i),
+    'damage_mods_{}'.format(i),
   ]
 
 def graph_inputs():
