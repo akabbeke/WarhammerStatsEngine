@@ -37,8 +37,8 @@ class AttackSequence(object):
     return self._calc_dice_dists(dist, self._get_hit_dist())
 
   def _get_hit_dist(self):
+    dice = self._modifiers.modify_hit_dice(PMF.dn(6), self._attacker.ws)
     threshold = self._modifiers.modify_hit_thresh(self._attacker.ws)
-    dice = self._modifiers.modify_hit_dice(PMF.dn(6), threshold)
     return dice.convert_binomial(threshold)
 
   def _calc_wound_dist(self, dist):

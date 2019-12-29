@@ -26,7 +26,8 @@ class Modifiers(object):
     return self.modify_roll(self._hit_re_roll, dist, thresh, modified_thresh)
 
   def modify_hit_thresh(self, thresh):
-    return min(thresh + self._hit_modifier, 7)
+    new_thresh = min(thresh + self._hit_modifier, 7)
+    return new_thresh
 
   def modify_wound_dice(self, dist, thresh):
     modified_thresh = self.modify_wound_thresh(thresh)
