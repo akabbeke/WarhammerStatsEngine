@@ -28,12 +28,12 @@ def hit_modifiers(hit_mods):
       value = -1 * int(sub_match.groups()[0])
       mods.append(AddNToThreshold(value))
 
-  if 're_roll_dice' in hit_mods:
-    mods.append(ReRollAll())
-  elif 're_roll_failed' in hit_mods:
-    mods.append(ReRollFailed())
-  elif 're_roll_1s' in hit_mods:
-    mods.append(ReRollOnes())
+    if 're_roll_dice' in mod:
+      mods.append(ReRollAll())
+    elif 're_roll_failed' in mod:
+      mods.append(ReRollFailed())
+    elif 're_roll_1s' in mod:
+      mods.append(ReRollOnes())
 
   return mods
 
@@ -47,15 +47,15 @@ def wound_modifiers(wound_mods):
       value = add_match.groups()[0]
       mods.append(AddNToThreshold(int(value)))
     if sub_match:
-      value = -1 * sub_match.groups()[0]
-      mods.append(AddNToThreshold(int(value)))
+      value = -1 * int(sub_match.groups()[0])
+      mods.append(AddNToThreshold(value))
 
-  if 're_roll_dice' in wound_mods:
-    mods.append(ReRollAll())
-  elif 're_roll_failed' in wound_mods:
-    mods.append(ReRollFailed())
-  elif 're_roll_1s' in wound_mods:
-    mods.append(ReRollOnes())
+    if 're_roll_dice' in mod:
+      mods.append(ReRollAll())
+    elif 're_roll_failed' in mod:
+      mods.append(ReRollFailed())
+    elif 're_roll_1s' in mod:
+      mods.append(ReRollOnes())
   return mods
 
 
@@ -68,15 +68,15 @@ def damage_modifiers(damage_mods):
       value = add_match.groups()[0]
       mods.append(AddNToVolume(int(value)))
     if sub_match:
-      value = -1 * sub_match.groups()[0]
-      mods.append(AddNToVolume(int(value)))
+      value = -1 * int(sub_match.groups()[0])
+      mods.append(AddNToVolume(value))
 
-  if 're_roll_dice' in damage_mods:
-    mods.append(ReRollAll())
-  elif 're_roll_1s' in damage_mods:
-    mods.append(ReRollOnes())
-  elif 'melta' in damage_mods:
-    mods.append(Melta())
+    if 're_roll_dice' in mod:
+      mods.append(ReRollAll())
+    elif 're_roll_1s' in mod:
+      mods.append(ReRollOnes())
+    elif 'melta' in mod:
+      mods.append(Melta())
   return mods
 
 

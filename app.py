@@ -173,10 +173,6 @@ def modify_shot_input(n):
     dcc.Dropdown(
       persistence=True,
       id='shot_mods_{}'.format(n),
-      options=[
-          {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
-          {'label': 'Re-roll all dice', 'value': 're_roll_dice'}
-      ],
       multi=True,
       style={'width': '100%'},
     ),
@@ -188,17 +184,6 @@ def modify_hit_input(n):
     dcc.Dropdown(
       persistence=True,
       id='hit_mods_{}'.format(n),
-      options=[
-          {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
-          {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
-          {'label': 'Re-roll all rolls', 'value': 're_roll_dice'},
-          {'label': 'Add +1', 'value': 'add_1'},
-          {'label': 'Add +2', 'value': 'add_2'},
-          {'label': 'Add +3', 'value': 'add_3'},
-          {'label': 'Sub -1', 'value': 'sub_1'},
-          {'label': 'Sub -2', 'value': 'sub_2'},
-          {'label': 'Sub -3', 'value': 'sub_3'},
-      ],
       multi=True,
       style={'width': '100%'},
     ),
@@ -210,17 +195,6 @@ def modify_wound_input(n):
     dcc.Dropdown(
       persistence=True,
       id='wound_mods_{}'.format(n),
-      options=[
-          {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
-          {'label': 'Re-roll failed rolls', 'value': 're_roll_failed'},
-          {'label': 'Re-roll all rolls', 'value': 're_roll_dice'},
-          {'label': 'Add +1', 'value': 'add_1'},
-          {'label': 'Add +2', 'value': 'add_2'},
-          {'label': 'Add +3', 'value': 'add_3'},
-          {'label': 'Sub -1', 'value': 'sub_1'},
-          {'label': 'Sub -2', 'value': 'sub_2'},
-          {'label': 'Sub -3', 'value': 'sub_3'},
-      ],
       multi=True,
       style={'width': '100%'},
     ),
@@ -232,22 +206,64 @@ def modify_damage_input(n):
     dcc.Dropdown(
       persistence=True,
       id='damage_mods_{}'.format(n),
-      options=[
-          # {'label': 'Re-roll one dice', 'value': 're_roll_one_dice'},
-          {'label': 'Re-roll 1\'s', 'value': 're_roll_1s'},
-          {'label': 'Re-roll all dice', 'value': 're_roll_dice'},
-          {'label': 'Melta', 'value': 'melta'},
-          {'label': 'Add +1', 'value': 'add_1'},
-          {'label': 'Add +2', 'value': 'add_2'},
-          {'label': 'Add +3', 'value': 'add_3'},
-          {'label': 'Sub -1', 'value': 'sub_1'},
-          {'label': 'Sub -2', 'value': 'sub_2'},
-          {'label': 'Sub -3', 'value': 'sub_3'},
-      ],
       multi=True,
       style={'width': '100%'},
     ),
   ])
+
+def generate_options(base_options, selected):
+  options = []
+  for option, label, lim in base_options:
+    existing_ids = []
+    for sel_id in selected:
+      match = re.match('{}_(\d+)'.format(option), sel_id)
+      if match:
+        existing_ids.append(int(match.groups()[0]))
+    max_id = max(existing_ids + [0])
+    if len(existing_ids) < lim:
+      ids = existing_ids + [max_id + 1]
+    else:
+      ids = existing_ids
+    for i in ids:
+      options += [{'label': label, 'value': '{}_{}'.format(option, i)}]
+  return options
+
+def generate_modify_shot_options(selected):
+  base_options = [
+    ['re_roll_1s', 'Re-roll 1\'s', 1],
+    ['re_roll_dice', 'Re-roll all rolls', 1],
+  ]
+  return generate_options(base_options, selected)
+
+def generate_modify_hit_options(selected):
+  base_options = [
+    ['re_roll_1s', 'Re-roll 1\'s', 1],
+    ['re_roll_failed', 'Re-roll failed rolls', 1],
+    ['re_roll_dice', 'Re-roll all rolls', 1],
+    ['add_1', 'Add +1', 4],
+    ['sub_1', 'Sub -1', 5],
+  ]
+  return generate_options(base_options, selected)
+
+def generate_modify_wound_options(selected):
+  base_options = [
+    ['re_roll_1s', 'Re-roll 1\'s', 1],
+    ['re_roll_failed', 'Re-roll failed rolls', 1],
+    ['re_roll_dice', 'Re-roll all rolls', 1],
+    ['add_1', 'Add +1', 4],
+    ['sub_1', 'Sub -1', 5],
+  ]
+  return generate_options(base_options, selected)
+
+def generate_modify_damage_options(selected):
+  base_options = [
+    ['re_roll_1s', 'Re-roll 1\'s', 1],
+    ['re_roll_dice', 'Re-roll all rolls', 1],
+    ['melta', 'Melta', 1],
+    ['add_1', 'Add +1', 4],
+    ['sub_1', 'Sub -1', 5],
+  ]
+  return generate_options(base_options, selected)
 
 def tab_settings(n):
   return html.Div([
@@ -296,7 +312,7 @@ def graph_inputs():
 
 def belrb():
   return dcc.Markdown('''
-#### 40k Stats Engine
+## 40k Stats Engine
 
 This started as a personal project of mine to build a computer model for the probability distributions
 of dice rolls in 40k. I found a pretty efficient way to do this without the need for a Monte Carlo
@@ -307,6 +323,9 @@ have a 100% chance to do zero damage, and it drops from there.
 
 For the shots and damage characteristic, you can either use a fixed number or `XdY` notation to represent a rolling
 X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
+
+##### Note: I have removed the +2, +3 modifiers and instead you can now add +1 multiple times
+
 ''')
 
 
@@ -355,6 +374,35 @@ def generate_data(args):
       'name': 'P{}'.format(i + 1),
     })
   return graph_data
+
+for i in range(1, TAB_COUNT+1):
+  @app.callback(
+    dash.dependencies.Output('shot_mods_{}'.format(i), 'options'),
+    [dash.dependencies.Input('shot_mods_{}'.format(i), 'value')],
+  )
+  def update_shot_options(value):
+    return generate_modify_shot_options(value or [])
+
+  @app.callback(
+    dash.dependencies.Output('hit_mods_{}'.format(i), 'options'),
+    [dash.dependencies.Input('hit_mods_{}'.format(i), 'value')],
+  )
+  def update_hit_options(value):
+    return generate_modify_hit_options(value or [])
+
+  @app.callback(
+    dash.dependencies.Output('wound_mods_{}'.format(i), 'options'),
+    [dash.dependencies.Input('wound_mods_{}'.format(i), 'value')],
+  )
+  def update_wound_options(value):
+    return generate_modify_wound_options(value or [])
+
+  @app.callback(
+    dash.dependencies.Output('damage_mods_{}'.format(i), 'options'),
+    [dash.dependencies.Input('damage_mods_{}'.format(i), 'value')],
+  )
+  def update_damage_options(value):
+    return generate_modify_damage_options(value or [])
 
 
 @app.callback(Output('damage-graph', 'figure'), [Input(x, 'value') for x in graph_inputs()])

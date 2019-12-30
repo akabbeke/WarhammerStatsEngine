@@ -191,9 +191,12 @@ class ModifierCollection(object):
     Modify the hit threshold. Important to note the -1 to hit modifiers actually
     are a +1 to the threshold. Similarly +1 to hits are -1 to the threshold.
     """
+    if thresh == 1:
+      # Handle the case where the weapon is auto hit. No to hit modifiers apply
+      return thresh
     for mod in self._hit_mods():
       thresh = mod.modify_threshold(thresh)
-    return thresh
+    return max(thresh, 2) #1's always fail
 
   def modify_hit_dice(self, dists, thresh, mod_thresh):
     """
