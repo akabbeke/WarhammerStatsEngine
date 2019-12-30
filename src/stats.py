@@ -10,7 +10,13 @@ class AttackSequence(object):
     self._target = target
     self._attacker= attacker
     self._mods = mods
-    self._shot_dists = []
+    self._shot_dist = None
+    self._hit_dist = None
+    self._wound_dist = None
+    self._pen_dist = None
+    self._damage_dist = None
+    self._mortal_dists = []
+    self._mortal_dist = []
 
   def _calc_wound_thresh(self, strength, toughness):
     if strength <= toughness/2.0:
@@ -58,8 +64,11 @@ class AttackSequence(object):
       dice_dists = self._mods.modify_hit_dice([PMF.dn(6)] * dice, thresh, mod_thresh)
       hit_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
       exp_dist = self._calc_exp_hit_dist(dice_dists) if can_recurse else PMF([1])
+      mortal_dist = self._calc_mortal_hit_dist(dice_dists)
+      self._mortal_dists.append((mortal_dist * event_prob).rectify_zero())
       dists.append(PMF.convolve_many([hit_dist, exp_dist]) * event_prob)
     return PMF.flatten(dists)
+
 
   def _get_mod_extra_hit(self):
     return self._mods.get_mod_extra_hit()
@@ -72,6 +81,18 @@ class AttackSequence(object):
 
   def _get_extra_shot(self):
     return self._mods.get_extra_shot()
+
+  def _get_hit_mod_mortal_wounds(self):
+    return self._mods.get_mod_mortal_wounds('hit')
+
+  def _get_hit_mortal_wounds(self):
+    return self._mods.get_mortal_wounds('hit')
+
+  def _get_wound_mod_mortal_wounds(self):
+    return self._mods.get_mod_mortal_wounds('wound')
+
+  def _get_wound_mortal_wounds(self):
+    return self._mods.get_mortal_wounds('wound')
 
   def _convolve_dists(self, dist, dice_dist):
     value_dists = []
@@ -109,17 +130,49 @@ class AttackSequence(object):
 
     return PMF.convolve_many(dists)
 
+  def _calc_mortal_hit_dist(self, dice_dists):
+    mortal_dists = []
+    # Handle modifiable mortal_wounds
+    for thresh, value in self._get_hit_mod_mortal_wounds():
+      mod_thresh = self._mods.modify_hit_thresh(thresh)
+      mortal_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      mortal_dists.append(self._convolve_dists(mortal_dist, PMF.static(value)))
+
+    # Handle static mortal_wounds
+    for thresh, value in self._get_hit_mortal_wounds():
+      mortal_dist = PMF.convolve_many([x.convert_binomial(thresh) for x in dice_dists])
+      mortal_dists.append(self._convolve_dists(mortal_dist, PMF.static(value)))
+
+    return PMF.convolve_many(mortal_dists)
+
   def _calc_wound_dist(self, dist):
+    dists = []
     thresh = self._calc_wound_thresh(
       self._weapon.strength,
       self._target.toughness
     )
-    return self._calc_dist(
-      dist,
-      thresh,
-      self._mods.modify_wound_thresh(thresh),
-      self._mods.modify_wound_dice
-    )
+    mod_thresh = self._mods.modify_wound_thresh(thresh)
+    for dice, event_prob in enumerate(dist.values):
+      dice_dists = self._mods.modify_wound_dice([PMF.dn(6)] * dice, thresh, mod_thresh)
+      wound_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      mortal_dist = self._calc_mortal_wound_dist(dice_dists)
+      self._mortal_dists.append((mortal_dist * event_prob).rectify_zero())
+      dists.append(wound_dist * event_prob)
+    return PMF.flatten(dists)
+
+  def _calc_mortal_wound_dist(self, dice_dists):
+    mortal_dists = []
+    # Handle modifiable mortal_wounds
+    for thresh, value in self._get_wound_mod_mortal_wounds():
+      mod_thresh = self._mods.modify_hit_thresh(thresh)
+      mortal_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      mortal_dists.append(self._convolve_dists(mortal_dist, PMF.static(value)))
+
+    # Handle static mortal_wounds
+    for thresh, value in self._get_wound_mortal_wounds():
+      mortal_dist = PMF.convolve_many([x.convert_binomial(thresh) for x in dice_dists])
+      mortal_dists.append(self._convolve_dists(mortal_dist, PMF.static(value)))
+    return PMF.convolve_many(mortal_dists)
 
   def _calc_pen_dist(self, dist):
     mod_thresh = self._mods.modify_pen_thresh(
@@ -157,9 +210,16 @@ class AttackSequence(object):
     )
 
   def run(self):
-    self.shot_dist = self._calc_shots_dist()
-    self.hit_dist = self._calc_hit_dist(self.shot_dist)
-    self.wound_dist = self._calc_wound_dist(self.hit_dist)
-    self.pen_dist = self._calc_pen_dist(self.wound_dist)
-    self.damage_dist = self._calc_damage_dist(self.pen_dist)
-    return self.damage_dist
+    self._shot_dist = self._calc_shots_dist()
+    # print(self._shot_dist.values)
+    self._hit_dist = self._calc_hit_dist(self._shot_dist)
+    # print(self._hit_dist.values)
+    self._wound_dist = self._calc_wound_dist(self._hit_dist)
+    # print(self._wound_dist.values)
+    self._pen_dist = self._calc_pen_dist(self._wound_dist)
+    # print(self._pen_dist.values)
+    self._damage_dist = self._calc_damage_dist(self._pen_dist)
+    # print(self._damage_dist.values)
+    self._mortal_dist = PMF.convolve_many(self._mortal_dists)
+    # print(self._mortal_dist.values)
+    return PMF.convolve_many([self._damage_dist, self._mortal_dist])

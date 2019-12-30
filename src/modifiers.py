@@ -38,6 +38,13 @@ class Modifier(object):
   def extra_shot(self):
     return (0, 0)
 
+  def mod_mortal_wound(self):
+    return (0, 0)
+
+  def mortal_wound(self):
+    return (0, 0)
+
+
 class ExplodingDice(Modifier):
   def __init__(self, thresh, value):
     self.thresh = thresh
@@ -61,6 +68,16 @@ class ModExtraShot(ExplodingDice):
 
 class ExtraShot(ExplodingDice):
   def extra_shot(self):
+    return (self.thresh, self.value)
+
+
+class GenerateMortalWound(ExplodingDice):
+  def mortal_wound(self):
+    return (self.thresh, self.value)
+
+
+class ModGenerateMortalWound(ExplodingDice):
+  def mod_mortal_wound(self):
     return (self.thresh, self.value)
 
 
@@ -161,9 +178,11 @@ class IgnoreInvuln(Modifier):
   def modify_invuln(self, ap):
     return 7
 
+
 class HalfDamage(Modifier):
   def modify_dice(self, dists, thresh=None, mod_thresh=None):
     return [x.div_min_one(2) for x in dists]
+
 
 class ModifierCollection(object):
   """
@@ -206,6 +225,9 @@ class ModifierCollection(object):
 
   def _damage_mods(self):
     return self._data.get('damage', [])
+
+  def _get_mods(self, mods_name):
+    return self._data.get(mods_name, [])
 
   def _mod_dice(self, dists, mods, thresh=None, mod_thresh=None):
     """
@@ -294,59 +316,50 @@ class ModifierCollection(object):
     """
     return self._mod_dice(dists, self._damage_mods())
 
+  def sum_generators(self, mod_list, attr_name):
+    generators = {}
+    for mod in mod_list:
+      thresh, value = getattr(mod, attr_name)()
+
+      if thresh and value:
+        if thresh in generators:
+          generators[thresh] += value
+        else:
+          generators[thresh] = value
+    return generators.items()
+
   def get_mod_extra_hit(self):
     """
-    Get the extra hits on a modfiable value
+    Generate extra hits on a modfiable value
     """
-    mods = {}
-    for mod in self._hit_mods():
-      thresh, value = mod.mod_extra_hit()
-      if thresh and value:
-        if thresh in mods:
-          mods[thresh] += value
-        else:
-          mods[thresh] = value
-    return mods.items()
+    return self.sum_generators(self._hit_mods(), 'mod_extra_hit')
 
   def get_extra_hit(self):
     """
-    Get the extra hits on a static value
+    Generate extra hits on a static value
     """
-    mods = {}
-    for mod in self._hit_mods():
-      thresh, value = mod.extra_hit()
-      if thresh and value:
-        if thresh in mods:
-          mods[thresh] += value
-        else:
-          mods[thresh] = value
-    return mods.items()
+    return self.sum_generators(self._hit_mods(), 'extra_hit')
 
   def get_mod_extra_shot(self):
     """
-    Get the extra shots on a modfiable value
+    Generate extra shots on a modfiable value
     """
-    mods = {}
-    for mod in self._hit_mods():
-      thresh, value = mod.mod_extra_shot()
-      if thresh and value:
-        if thresh in mods:
-          mods[thresh] += value
-        else:
-          mods[thresh] = value
-    return mods.items()
+    return self.sum_generators(self._hit_mods(), 'mod_extra_shot')
 
   def get_extra_shot(self):
     """
-    Get the extra shots on a static value
+    Generate extra shots on a static value
     """
-    mods = {}
-    for mod in self._hit_mods():
-      thresh, value = mod.extra_shot()
-      if thresh and value:
-        if thresh in mods:
-          mods[thresh] += value
-        else:
-          mods[thresh] = value
-    return mods.items()
+    return self.sum_generators(self._hit_mods(), 'extra_shot')
 
+  def get_mod_mortal_wounds(self, mods_name):
+    """
+    Generate mortal wounds on a modfiable value
+    """
+    return self.sum_generators(self._get_mods(mods_name), 'mod_mortal_wound')
+
+  def get_mortal_wounds(self, mods_name):
+    """
+    Generate mortal wounds on a static value
+    """
+    return self.sum_generators(self._get_mods(mods_name), 'mortal_wound')

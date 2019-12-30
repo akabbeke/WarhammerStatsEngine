@@ -5,7 +5,7 @@ from .weapons import Weapon
 from .units import Unit
 from .modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
-  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln
+  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound
 
 
 def shot_modifiers(shot_mods):
@@ -51,6 +51,14 @@ def hit_modifiers(hit_mods):
       mods.append(ExtraShot(6,1))
     elif 'extra_shot_5_1' in mod:
       mods.append(ExtraShot(5,1))
+    elif 'mod_mortal_wound_6_1' in mod:
+      mods.append(ModGenerateMortalWound(6, 1))
+    elif 'mod_mortal_wound_5_1' in mod:
+      mods.append(ModGenerateMortalWound(5, 1))
+    elif 'mortal_wound_6_1' in mod:
+      mods.append(GenerateMortalWound(6, 1))
+    elif 'mortal_wound_5_1' in mod:
+      mods.append(GenerateMortalWound(5, 1))
 
   return mods
 
@@ -73,6 +81,14 @@ def wound_modifiers(wound_mods):
       mods.append(ReRollFailed())
     elif 're_roll_1s' in mod:
       mods.append(ReRollOnes())
+    elif 'mod_mortal_wound_6_1' in mod:
+      mods.append(ModGenerateMortalWound(6, 1))
+    elif 'mod_mortal_wound_5_1' in mod:
+      mods.append(ModGenerateMortalWound(5, 1))
+    elif 'mortal_wound_6_1' in mod:
+      mods.append(GenerateMortalWound(6, 1))
+    elif 'mortal_wound_5_1' in mod:
+      mods.append(GenerateMortalWound(5, 1))
   return mods
 
 

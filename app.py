@@ -256,11 +256,15 @@ def generate_modify_hit_options(selected):
     ['mod_extra_hit_6_1', '+1 hit on 6+', 3],
     ['mod_extra_hit_5_1', '+1 hit on 5+', 3],
     ['extra_hit_6_1', '+1 hit on 6', 3],
-    ['extra_hit_5_1', '+1 hit on 5, 6', 3],
+    ['extra_hit_5_1', '+1 hit on 5 or 6', 3],
     ['mod_extra_shot_6_1', '+1 shot on 6+', 3],
     ['mod_extra_shot_5_1', '+1 shot on 5+', 3],
     ['extra_shot_6_1', '+1 shot on 6', 3],
-    ['extra_shot_6_1', '+1 shot on 5, 6', 3],
+    ['extra_shot_6_1', '+1 shot on 5 or 6', 3],
+    ['mod_mortal_wound_6_1', 'MW on 6+', 4],
+    ['mod_mortal_wound_5_1', 'MW on 5+', 4],
+    ['mortal_wound_6_1', 'MW on 6', 4],
+    ['mortal_wound_5_1', 'MW on 5 or 6', 4],
   ]
   return generate_options(base_options, selected)
 
@@ -270,7 +274,11 @@ def generate_modify_wound_options(selected):
     ['re_roll_failed', 'Re-roll failed rolls', 1],
     ['re_roll_dice', 'Re-roll all rolls', 1],
     ['add_1', 'Add +1', 4],
-    ['sub_1', 'Sub -1', 5],
+    ['sub_1', 'Sub -1', 4],
+    ['mod_mortal_wound_6_1', 'MW on 6+', 4],
+    ['mod_mortal_wound_5_1', 'MW on 5+', 4],
+    ['mortal_wound_6_1', 'MW on 6', 4],
+    ['mortal_wound_5_1', 'MW on 5 or 6', 4],
   ]
   return generate_options(base_options, selected)
 
@@ -358,8 +366,9 @@ For the shots and damage characteristic, you can either use a fixed number or Xd
 X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
 
 ##### Updates
-I have removed the +2, +3 modifiers and instead you can now add +1 multiple times. I also added the 'exploding dice' mechanic
-for hit rolls. You can stack them so for example two "+1 hit on 6+" will yeild +2 hits on a 6+.
+* Removed the +/- 2 and 3 modifiers and instead you can now add +/-1 multiple times.
+* Added the 'exploding dice' mechanic for hit rolls. You can stack them so for example two "+1 hit on 6+" will yield +2 hits on a 6+.
+* Added mortal wound generation for hit and wound rolls
 ''')
 
 
@@ -371,10 +380,9 @@ This is still very much a work in progress, and there are probably still some bu
 If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
 
 Todo:
-* Figure out mortal wound generation
 * Figure out feed-forward abilities like rend
 * Replace the frontend with an actual frontend instead of this cobbled together dash frontend
-* Figure out a way to allow users to create units and have all their weapons output combined (Which russ is the best russ)
+* Figure out a way to allow users to create units and have all their weapons output combined (Which russ is the best russ?)
 * ???
 
 
@@ -407,14 +415,16 @@ def parse_args(args):
 
 def generate_data(args):
   graph_data = []
+  max_len = 24
   for i, kwargs in enumerate(parse_args(args)):
     values = compute(**kwargs)
+    max_len = max(max_len, len(values))
     graph_data.append({
       'x': [i for i, x in enumerate(values)],
       'y': [100*x for i, x in enumerate(values)],
       'name': 'P{}'.format(i + 1),
     })
-  return graph_data
+  return graph_data, max_len
 
 for i in range(1, TAB_COUNT+1):
   @app.callback(
@@ -455,13 +465,14 @@ for i in range(1, TAB_COUNT+1):
 
 @app.callback(Output('damage-graph', 'figure'), [Input(x, 'value') for x in graph_inputs()])
 def update_graph(*args):
+  data, max_len = generate_data(args)
   return {
-    'data': generate_data(args),
+    'data': data,
     'layout': {
       'xaxis': {
           'title': 'Damage',
           'type': 'linear',
-          'range': [0, 24],
+          'range': [0, max_len],
           'tickmode': 'linear',
           'tick0': 0,
           'dtick': 1,

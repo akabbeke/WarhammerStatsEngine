@@ -115,6 +115,10 @@ class PMF(object):
       new_dist[math.ceil(i/divisor)] += value
     return PMF(new_dist)
 
+  def rectify_zero(self):
+    new_dist = [1.0 - sum(self.values[1:])] + self.values[1:]
+    return PMF(new_dist)
+
   @classmethod
   def dn(cls, n):
     return PMF([0.0] + [1/n] * n)
