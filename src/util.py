@@ -141,24 +141,6 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
   if not enable:
     return []
 
-  # print(dict(
-  #   ws=int(ws or 1),
-  #   bs=int(ws or 1),
-  #   toughness=int(toughness or 1),
-  #   save=8-int(save or 1),
-  #   invul=8-int(invuln or 1),
-  #   fnp=8-int(fnp or 1),
-  #   wounds=int(wounds or 1),
-  #   shots=parse_rsn(shots or 1),
-  #   strength=int(strength or 1),
-  #   ap=int(ap or 0),
-  #   damage=parse_rsn(damage or 1),
-  #   shot_modifiers=shot_modifiers,
-  #   hit_modifiers=hit_modifiers,
-  #   wound_modifiers=wound_modifiers,
-  #   damage_modifiers=damage_modifiers,
-  # ))
-
   modifiers = ModifierCollection()
   modifiers.add_mods('shots', shot_modifiers(shot_mods or []))
   modifiers.add_mods('hit', hit_modifiers(hit_mods or []))
@@ -181,14 +163,9 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
     ap=int(ap or 0),
     damage=parse_rsn(damage or 1),
   )
-  basic = AttackSequence(
-    weapon,
-    target,
-    target,
-    modifiers,
-  )
+  attack_sequence = AttackSequence(weapon, target, target, modifiers)
 
-  values = basic.run().cumulative().trim_tail().values
+  values = attack_sequence.run().cumulative().trim_tail().values
   return values
 
 def parse_rsn(value):
