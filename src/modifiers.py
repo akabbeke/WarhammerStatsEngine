@@ -26,6 +26,43 @@ class Modifier(object):
   def modify_invuln(self, invuln):
     return invuln
 
+  def mod_extra_hit(self):
+    return (0, 0)
+
+  def extra_hit(self):
+    return (0, 0)
+
+  def mod_extra_shot(self):
+    return (0, 0)
+
+  def extra_shot(self):
+    return (0, 0)
+
+class ExplodingDice(Modifier):
+  def __init__(self, thresh, value):
+    self.thresh = thresh
+    self.value = value
+
+
+class ModExtraHit(ExplodingDice):
+  def mod_extra_hit(self):
+    return (self.thresh, self.value)
+
+
+class ExtraHit(ExplodingDice):
+  def extra_hit(self):
+    return (self.thresh, self.value)
+
+
+class ModExtraShot(ExplodingDice):
+  def mod_extra_shot(self):
+    return (self.thresh, self.value)
+
+
+class ExtraShot(ExplodingDice):
+  def extra_shot(self):
+    return (self.thresh, self.value)
+
 
 class ReRollOnes(Modifier):
   priority = 1
@@ -256,3 +293,60 @@ class ModifierCollection(object):
     Modify the damage dice
     """
     return self._mod_dice(dists, self._damage_mods())
+
+  def get_mod_extra_hit(self):
+    """
+    Get the extra hits on a modfiable value
+    """
+    mods = {}
+    for mod in self._hit_mods():
+      thresh, value = mod.mod_extra_hit()
+      if thresh and value:
+        if thresh in mods:
+          mods[thresh] += value
+        else:
+          mods[thresh] = value
+    return mods.items()
+
+  def get_extra_hit(self):
+    """
+    Get the extra hits on a static value
+    """
+    mods = {}
+    for mod in self._hit_mods():
+      thresh, value = mod.extra_hit()
+      if thresh and value:
+        if thresh in mods:
+          mods[thresh] += value
+        else:
+          mods[thresh] = value
+    return mods.items()
+
+  def get_mod_extra_shot(self):
+    """
+    Get the extra shots on a modfiable value
+    """
+    mods = {}
+    for mod in self._hit_mods():
+      thresh, value = mod.mod_extra_shot()
+      if thresh and value:
+        if thresh in mods:
+          mods[thresh] += value
+        else:
+          mods[thresh] = value
+    return mods.items()
+
+  def get_extra_shot(self):
+    """
+    Get the extra shots on a static value
+    """
+    mods = {}
+    for mod in self._hit_mods():
+      thresh, value = mod.extra_shot()
+      if thresh and value:
+        if thresh in mods:
+          mods[thresh] += value
+        else:
+          mods[thresh] = value
+    return mods.items()
+

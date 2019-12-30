@@ -10,6 +10,7 @@ class AttackSequence(object):
     self._target = target
     self._attacker= attacker
     self._mods = mods
+    self._shot_dists = []
 
   def _calc_wound_thresh(self, strength, toughness):
     if strength <= toughness/2.0:
@@ -49,13 +50,64 @@ class AttackSequence(object):
       dists.append(PMF.convolve_many(binom_dists) * event_prob)
     return PMF.flatten(dists)
 
-  def _calc_hit_dist(self, dist):
-    return self._calc_dist(
-      dist,
-      self._attacker.ws,
-      self._mods.modify_hit_thresh(self._attacker.ws),
-      self._mods.modify_hit_dice,
-    )
+  def _calc_hit_dist(self, dist, can_recurse=True):
+    dists = []
+    thresh = self._attacker.ws
+    mod_thresh = self._mods.modify_hit_thresh(self._attacker.ws)
+    for dice, event_prob in enumerate(dist.values):
+      dice_dists = self._mods.modify_hit_dice([PMF.dn(6)] * dice, thresh, mod_thresh)
+      hit_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      exp_dist = self._calc_exp_hit_dist(dice_dists) if can_recurse else PMF([1])
+      dists.append(PMF.convolve_many([hit_dist, exp_dist]) * event_prob)
+    return PMF.flatten(dists)
+
+  def _get_mod_extra_hit(self):
+    return self._mods.get_mod_extra_hit()
+
+  def _get_extra_hit(self):
+    return self._mods.get_extra_hit()
+
+  def _get_mod_extra_shot(self):
+    return self._mods.get_mod_extra_shot()
+
+  def _get_extra_shot(self):
+    return self._mods.get_extra_shot()
+
+  def _convolve_dists(self, dist, dice_dist):
+    value_dists = []
+    for dice, event_prob in enumerate(dist.values):
+      value_dists.append(PMF.convolve_many([dice_dist] * dice) * event_prob)
+    return PMF.flatten(value_dists)
+
+  def _calc_exp_hit_dist(self, dice_dists):
+    dists = []
+    # Handle modifiable extra hits
+    for thresh, value in self._get_mod_extra_hit():
+      mod_thresh = self._mods.modify_hit_thresh(thresh)
+      exp_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      dists.append(self._convolve_dists(exp_dist, PMF.static(value)))
+
+    # Handle static extra hits
+    for thresh, value in self._get_extra_hit():
+      exp_dist = PMF.convolve_many([x.convert_binomial(thresh) for x in dice_dists])
+      dists.append(self._convolve_dists(exp_dist, PMF.static(value)))
+
+    # Handle modifiable extra shots
+    for thresh, value in self._get_mod_extra_shot():
+      mod_thresh = self._mods.modify_hit_thresh(thresh)
+      exp_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      shot_dist = self._convolve_dists(exp_dist, PMF.static(value))
+      hit_dist = self._calc_hit_dist(shot_dist, can_recurse=False)
+      dists.append(hit_dist)
+
+    # Handle static extra shots
+    for thresh, value in self._get_extra_shot():
+      exp_dist = PMF.convolve_many([x.convert_binomial(thresh) for x in dice_dists])
+      shot_dist = self._convolve_dists(exp_dist, PMF.static(value))
+      hit_dist = self._calc_hit_dist(shot_dist, can_recurse=False)
+      dists.append(hit_dist)
+
+    return PMF.convolve_many(dists)
 
   def _calc_wound_dist(self, dist):
     thresh = self._calc_wound_thresh(
@@ -105,10 +157,9 @@ class AttackSequence(object):
     )
 
   def run(self):
-    shot_dist = self._calc_shots_dist()
-    hit_dist = self._calc_hit_dist(shot_dist)
-    wound_dist = self._calc_wound_dist(hit_dist)
-    pen_dist = self._calc_pen_dist(wound_dist)
-    damage_dist = self._calc_damage_dist(pen_dist)
-
-    return damage_dist
+    self.shot_dist = self._calc_shots_dist()
+    self.hit_dist = self._calc_hit_dist(self.shot_dist)
+    self.wound_dist = self._calc_wound_dist(self.hit_dist)
+    self.pen_dist = self._calc_pen_dist(self.wound_dist)
+    self.damage_dist = self._calc_damage_dist(self.pen_dist)
+    return self.damage_dist
