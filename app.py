@@ -3,7 +3,7 @@ import dash_daq as daq
 import re
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 from flask import Flask
 
@@ -359,27 +359,26 @@ def graph_inputs():
 def belrb():
   return dcc.Markdown('''
 ### 40k Stats Engine
-The graph produced below is the probability that the attack will do at least that much damage. It's why you always
-have a 100% chance to do zero damage, and it drops from there.
-
-For the shots and damage characteristic, you can either use a fixed number or XdY notation to represent a rolling
-X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
-
-##### Updates
-* Removed the +/- 2 and 3 modifiers and instead you can now add +/-1 multiple times.
-* Added the 'exploding dice' mechanic for hit rolls. You can stack them so for example two "+1 hit on 6+" will yield +2 hits on a 6+.
-* Added mortal wound generation for hit and wound rolls
+The graph is the probability that the attack will do at least that much damage. 100% chance to do zero damage, and it drops from there.
 ''')
 
 
 def second_berb():
   return dcc.Markdown('''
-#### Also:
+### Also:
+For the shots and damage characteristic, you can either use a fixed number or XdY notation to represent a rolling
+X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
+You can also download an image of the graph by clicking the camera icon while hovering over the graph.
+
+##### Updates:
+* Removed the +/- 2 and 3 modifiers and instead you can now add +/-1 multiple times.
+* Added the 'exploding dice' mechanic for hit rolls. You can stack them so for example two "+1 hit on 6+" will yield +2 hits on a 6+.
+* Added mortal wound generation for hit and wound rolls
 
 This is still very much a work in progress, and there are probably still some bugs. I'm /u/Uily on Reddit, so please let me know if you find any.
 If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
 
-Todo:
+##### Todo:
 * Figure out feed-forward abilities like rend
 * Replace the frontend with an actual frontend instead of this cobbled together dash frontend
 * Figure out a way to allow users to create units and have all their weapons output combined (Which russ is the best russ?)
@@ -392,7 +391,33 @@ There are no **Ads** funding this, so please don't be a dick. Otherwise, I hope 
 
 app.layout = html.Div([
   belrb(),
-  dcc.Graph(id='damage-graph'),
+  dcc.Graph(
+    id='damage-graph',
+    figure={
+      'data': [{}] * TAB_COUNT,
+      'layout': {
+        'xaxis': {
+            'title': 'Damage',
+            'type': 'linear',
+            'range': [0, 24],
+            'tickmode': 'linear',
+            'tick0': 0,
+            'dtick': 1,
+        },
+        'yaxis': {
+            'title': 'Cumulateive Percentage',
+            'type': 'linear',
+            'range': [0, 100],
+            'tickmode': 'linear',
+            'tick0': 0,
+            'dtick': 10,
+        },
+        # 'transition': {'duration': 50},
+        'margin': {'l': 40, 'b': 40, 't': 10, 'r': 0},
+        'hovermode': 'x'
+      }
+    }
+  ),
   dcc.Tabs([
     dcc.Tab(
       id='tab_{}'.format(i),
@@ -462,12 +487,42 @@ for i in range(1, TAB_COUNT+1):
   def update_damage_options(value):
     return generate_modify_damage_options(value or [])
 
+def determine_which_tabs_changed(ctx):
+  if not ctx:
+    return list(range(TAB_COUNT))
+  match = re.match(r'.*_(\d+).value', ctx.triggered[0]['prop_id'])
+  if not match:
+    return list(range(TAB_COUNT))
+  else:
+    return [int(match.groups()[0]) - 1]
 
-@app.callback(Output('damage-graph', 'figure'), [Input(x, 'value') for x in graph_inputs()])
+@app.callback(
+  Output('damage-graph', 'figure'),
+  [Input(x, 'value') for x in graph_inputs()],
+  [State('damage-graph', 'figure')]
+)
 def update_graph(*args):
-  data, max_len = generate_data(args)
+
+  graph_args = parse_args(args[:-1])
+  graph_data = args[-1]['data']
+
+  if graph_data == [{}] * TAB_COUNT:
+    tab_numbers = list(range(TAB_COUNT))
+  else:
+    tab_numbers = determine_which_tabs_changed(dash.callback_context)
+
+  for tab_number in tab_numbers:
+    values = compute(**graph_args[tab_number])
+    graph_data[tab_number] = {
+      'x': [i for i, x in enumerate(values)],
+      'y': [100*x for i, x in enumerate(values)],
+      'name': 'P{}'.format(tab_number + 1),
+    }
+
+  max_len = max(max([len(x.get('x', [])) for x in graph_data]), 24)
+
   return {
-    'data': data,
+    'data': graph_data,
     'layout': {
       'xaxis': {
           'title': 'Damage',
