@@ -320,20 +320,16 @@ def graph_inputs():
 
 def belrb():
   return dcc.Markdown('''
-## 40k Stats Engine
-
-This started as a personal project of mine to build a computer model for the probability distributions
-of dice rolls in 40k. I found a pretty efficient way to do this without the need for a Monte Carlo
-approach, so I decided to turn his into a web app for the community.
-
+### 40k Stats Engine
 The graph produced below is the probability that the attack will do at least that much damage. It's why you always
 have a 100% chance to do zero damage, and it drops from there.
 
-For the shots and damage characteristic, you can either use a fixed number or `XdY` notation to represent a rolling
+For the shots and damage characteristic, you can either use a fixed number or XdY notation to represent a rolling
 X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
 
-##### Note: I have removed the +2, +3 modifiers and instead you can now add +1 multiple times
-
+##### Updates
+I have removed the +2, +3 modifiers and instead you can now add +1 multiple times. I also added the 'exploding dice' mechanic
+for hit rolls. You can stack them so for example two "+1 hit on 6+" will yeild +2 hits on a 6+.
 ''')
 
 
