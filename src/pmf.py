@@ -1,3 +1,4 @@
+import math
 from numpy import fft, zeros
 
 
@@ -107,6 +108,12 @@ class PMF(object):
       return PMF([0.0] * n + self.values)
     else:
       return PMF([sum(self.values[:(-1*n)+1])] + self.values[(-1*n)+1:])
+
+  def div_min_one(self, divisor):
+    new_dist = [0.0] * len(self.values)
+    for i, value in enumerate(self.values):
+      new_dist[math.ceil(i/divisor)] += value
+    return PMF(new_dist)
 
   @classmethod
   def dn(cls, n):

@@ -200,6 +200,17 @@ def modify_wound_input(n):
     ),
   ])
 
+def modify_save_input(n):
+  return html.Div([
+    html.Label('Modify Save Rolls'),
+    dcc.Dropdown(
+      persistence=True,
+      id='save_mods_{}'.format(n),
+      multi=True,
+      style={'width': '100%'},
+    ),
+  ])
+
 def modify_damage_input(n):
   return html.Div([
     html.Label('Modify Damage Rolls'),
@@ -263,13 +274,30 @@ def generate_modify_wound_options(selected):
   ]
   return generate_options(base_options, selected)
 
+def generate_modify_save_options(selected):
+  base_options = [
+    ['re_roll_1s', 'Re-roll 1\'s', 1],
+    ['re_roll_failed', 'Re-roll failed rolls', 1],
+    ['re_roll_dice', 'Re-roll all rolls', 1],
+    ['ignore_ap_1', 'Ignore AP -1', 1],
+    ['ignore_ap_2', 'Ignore AP -2', 1],
+    ['ignore_invuln', 'Ignore Invuln', 1],
+    ['add_1', '+1 Save', 4],
+    ['sub_1', '-1 Save', 5],
+    ['add_inv_1', '+1 Invuln', 4],
+    ['sub_inv_1', '-1 Invuln', 5],
+  ]
+  return generate_options(base_options, selected)
+
 def generate_modify_damage_options(selected):
   base_options = [
     ['re_roll_1s', 'Re-roll 1\'s', 1],
     ['re_roll_dice', 'Re-roll all rolls', 1],
     ['melta', 'Melta', 1],
+    ['half_damage', 'Half Damage', 1],
     ['add_1', 'Add +1', 4],
     ['sub_1', 'Sub -1', 5],
+
   ]
   return generate_options(base_options, selected)
 
@@ -289,6 +317,7 @@ def tab_settings(n):
     modify_shot_input(n),
     modify_hit_input(n),
     modify_wound_input(n),
+    modify_save_input(n),
     modify_damage_input(n),
     html.Br()
   ], style={})
@@ -309,6 +338,7 @@ def gen_tab_inputs(i):
     'shot_mods_{}'.format(i),
     'hit_mods_{}'.format(i),
     'wound_mods_{}'.format(i),
+    'save_mods_{}'.format(i),
     'damage_mods_{}'.format(i),
   ]
 
@@ -407,6 +437,13 @@ for i in range(1, TAB_COUNT+1):
   )
   def update_wound_options(value):
     return generate_modify_wound_options(value or [])
+
+  @app.callback(
+    dash.dependencies.Output('save_mods_{}'.format(i), 'options'),
+    [dash.dependencies.Input('save_mods_{}'.format(i), 'value')],
+  )
+  def update_save_options(value):
+    return generate_modify_save_options(value or [])
 
   @app.callback(
     dash.dependencies.Output('damage_mods_{}'.format(i), 'options'),
