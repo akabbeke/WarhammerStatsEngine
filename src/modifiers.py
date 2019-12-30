@@ -157,13 +157,13 @@ class IgnoreAP(Modifier):
     return 0 if ap <= self.ap else ap
 
 
-class RemoveInvuln(Modifier):
-  def __init__(self, *args, **kwargs):
-    self.ap = kwargs.get('ap', 0)
-
+class IgnoreInvuln(Modifier):
   def modify_invuln(self, ap):
     return 7
 
+class HalfDamage(Modifier):
+  def modify_dice(self, dists, thresh=None, mod_thresh=None):
+    return [x.div_min_one(2) for x in dists]
 
 class ModifierCollection(object):
   """
@@ -261,11 +261,11 @@ class ModifierCollection(object):
     Modify the pen threshold by modifying the save, ap, and invuln
     """
     for mod in self._pen_mods():
-      thresh = mod.modify_save(thresh)
+      save = mod.modify_save(save)
     for mod in self._pen_mods():
       ap = mod.modify_ap(ap)
     for mod in self._pen_mods():
-      thresh = mod.modify_invuln(thresh)
+      invuln = mod.modify_invuln(invuln)
     return min(max(save + ap, 2), max(invuln, 2)) # 1's alwasys fail
 
   def modify_pen_dice(self, dists, thresh, mod_thresh):

@@ -4,8 +4,8 @@ from .pmf import PMF
 from .weapons import Weapon
 from .units import Unit
 from .modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
-  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, RemoveInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
-  ExtraShot
+  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
+  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln
 
 
 def shot_modifiers(shot_mods):
@@ -76,6 +76,41 @@ def wound_modifiers(wound_mods):
   return mods
 
 
+def save_modifiers(wound_mods):
+  mods = []
+  for mod in wound_mods:
+    add_match = re.match(r'add_(\d+)', mod)
+    sub_match = re.match(r'sub_(\d+)', mod)
+    add_inv_match = re.match(r'add_inv_(\d+)', mod)
+    sub_inv_match = re.match(r'sub_inv_(\d+)', mod)
+    if add_match:
+      value = add_match.groups()[0]
+      mods.append(AddNToSave(int(value)))
+    if sub_match:
+      value = -1 * int(sub_match.groups()[0])
+      mods.append(AddNToSave(value))
+    if add_inv_match:
+      value = add_inv_match.groups()[0]
+      mods.append(AddNToInvuln(int(value)))
+    if sub_inv_match:
+      value = -1 * int(sub_inv_match.groups()[0])
+      mods.append(AddNToInvuln(value))
+
+    if 're_roll_dice' in mod:
+      mods.append(ReRollAll())
+    elif 're_roll_failed' in mod:
+      mods.append(ReRollFailed())
+    elif 're_roll_1s' in mod:
+      mods.append(ReRollOnes())
+    elif 'ignore_ap_1' in mod:
+      mods.append(IgnoreAP(1))
+    elif 'ignore_ap_2' in mod:
+      mods.append(IgnoreAP(2))
+    elif 'ignore_invuln' in mod:
+      mods.append(IgnoreInvuln())
+  return mods
+
+
 def damage_modifiers(damage_mods):
   mods = []
   for mod in damage_mods:
@@ -94,37 +129,23 @@ def damage_modifiers(damage_mods):
       mods.append(ReRollOnes())
     elif 'melta' in mod:
       mods.append(Melta())
+    elif 'half_damage' in mod:
+      mods.append(HalfDamage())
   return mods
 
 
 def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
-            wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, damage_mods=None):
+            wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, save_mods=None,
+            damage_mods=None):
 
   if not enable:
     return []
-
-  # print(dict(
-  #   ws=int(ws or 1),
-  #   bs=int(ws or 1),
-  #   toughness=int(toughness or 1),
-  #   save=8-int(save or 1),
-  #   invul=8-int(invuln or 1),
-  #   fnp=8-int(fnp or 1),
-  #   wounds=int(wounds or 1),
-  #   shots=parse_rsn(shots or 1),
-  #   strength=int(strength or 1),
-  #   ap=int(ap or 0),
-  #   damage=parse_rsn(damage or 1),
-  #   shot_modifiers=shot_modifiers,
-  #   hit_modifiers=hit_modifiers,
-  #   wound_modifiers=wound_modifiers,
-  #   damage_modifiers=damage_modifiers,
-  # ))
 
   modifiers = ModifierCollection()
   modifiers.add_mods('shots', shot_modifiers(shot_mods or []))
   modifiers.add_mods('hit', hit_modifiers(hit_mods or []))
   modifiers.add_mods('wound', wound_modifiers(wound_mods or []))
+  modifiers.add_mods('pen', save_modifiers(save_mods or []))
   modifiers.add_mods('damage', damage_modifiers(damage_mods or []))
 
   target = Unit(
@@ -142,14 +163,9 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
     ap=int(ap or 0),
     damage=parse_rsn(damage or 1),
   )
-  basic = AttackSequence(
-    weapon,
-    target,
-    target,
-    modifiers,
-  )
+  attack_sequence = AttackSequence(weapon, target, target, modifiers)
 
-  values = basic.run().cumulative().trim_tail().values
+  values = attack_sequence.run().cumulative().trim_tail().values
   return values
 
 def parse_rsn(value):
