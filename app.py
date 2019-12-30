@@ -242,6 +242,14 @@ def generate_modify_hit_options(selected):
     ['re_roll_dice', 'Re-roll all rolls', 1],
     ['add_1', 'Add +1', 4],
     ['sub_1', 'Sub -1', 5],
+    ['mod_extra_hit_6_1', '+1 hit on 6+', 3],
+    ['mod_extra_hit_5_1', '+1 hit on 5+', 3],
+    ['extra_hit_6_1', '+1 hit on 6', 3],
+    ['extra_hit_5_1', '+1 hit on 5, 6', 3],
+    ['mod_extra_shot_6_1', '+1 shot on 6+', 3],
+    ['mod_extra_shot_5_1', '+1 shot on 5+', 3],
+    ['extra_shot_6_1', '+1 shot on 6', 3],
+    ['extra_shot_6_1', '+1 shot on 5, 6', 3],
   ]
   return generate_options(base_options, selected)
 

@@ -4,7 +4,8 @@ from .pmf import PMF
 from .weapons import Weapon
 from .units import Unit
 from .modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
-  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, RemoveInvuln
+  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, RemoveInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
+  ExtraShot
 
 
 def shot_modifiers(shot_mods):
@@ -34,6 +35,22 @@ def hit_modifiers(hit_mods):
       mods.append(ReRollFailed())
     elif 're_roll_1s' in mod:
       mods.append(ReRollOnes())
+    elif 'mod_extra_hit_6_1' in mod:
+      mods.append(ModExtraHit(6,1))
+    elif 'mod_extra_hit_5_1' in mod:
+      mods.append(ModExtraHit(5,1))
+    elif 'extra_hit_6_1' in mod:
+      mods.append(ExtraHit(6,1))
+    elif 'extra_hit_5_1' in mod:
+      mods.append(ExtraHit(5,1))
+    elif 'mod_extra_shot_6_1' in mod:
+      mods.append(ModExtraShot(6,1))
+    elif 'mod_extra_shot_5_1' in mod:
+      mods.append(ModExtraShot(5,1))
+    elif 'extra_shot_6_1' in mod:
+      mods.append(ExtraShot(6,1))
+    elif 'extra_shot_5_1' in mod:
+      mods.append(ExtraShot(5,1))
 
   return mods
 
