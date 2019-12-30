@@ -338,8 +338,15 @@ def second_berb():
 #### Also:
 
 This is still very much a work in progress, and there are probably still some bugs. I'm /u/Uily on Reddit, so please let me know if you find any.
-If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine). I'm still
-working on implementing more features such as exploding 6's and a few others.
+If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
+
+Todo:
+* Figure out mortal wound generation
+* Figure out feed-forward abilities like rend
+* Replace the frontend with an actual frontend instead of this cobbled together dash frontend
+* Figure out a way to allow users to create units and have all their weapons output combined (Which russ is the best russ)
+* ???
+
 
 There are no **Ads** funding this, so please don't be a dick. Otherwise, I hope you find this useful!
 ''')
