@@ -359,7 +359,7 @@ def graph_inputs():
 def belrb():
   return dcc.Markdown('''
 ### 40k Stats Engine
-The graph is the probability that the attack will do at least that much damage. 100% chance to do zero damage, and it drops from there.
+The graph is the probability that the attack will do at least that much damage. 100% chance to do at least zero damage, and it drops from there.
 ''')
 
 
