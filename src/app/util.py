@@ -1,9 +1,9 @@
 import re
-from .stats import AttackSequence
-from .pmf import PMF
-from .weapons import Weapon
-from .units import Unit
-from .modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
+from ..stats.attack import AttackSequence
+from ..stats.pmf import PMF
+from ..stats.weapons import Weapon
+from ..stats.units import Unit
+from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound
 

@@ -69,7 +69,6 @@ class AttackSequence(object):
       dists.append(PMF.convolve_many([hit_dist, exp_dist]) * event_prob)
     return PMF.flatten(dists)
 
-
   def _get_mod_extra_hit(self):
     return self._mods.get_mod_extra_hit()
 
