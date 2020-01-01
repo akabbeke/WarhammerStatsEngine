@@ -197,6 +197,7 @@ class AttackSequence(object):
     dice_dist = self._weapon.damage
     mod_dist = self._mods.modify_damage_dice(dice_dist)
     damage_dist = PMF.convolve_many(mod_dist)
+    print(damage_dist.values)
     fnp_dist = self._calc_fnp_dist(damage_dist)
     return fnp_dist.ceiling(self._target.wounds)
 

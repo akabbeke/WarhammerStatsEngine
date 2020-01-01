@@ -45,6 +45,15 @@ class Modifier(object):
     return (0, 0)
 
 
+class MinimumValue(Modifier):
+  def __init__(self, min_val):
+    self.min_val = min_val
+
+  def modify_dice(self, dists, thresh=None,  mod_thresh=None):
+    print('foo')
+    return [x.min(self.min_val) for x in dists]
+
+
 class ExplodingDice(Modifier):
   def __init__(self, thresh, value):
     self.thresh = thresh

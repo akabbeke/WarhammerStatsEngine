@@ -287,6 +287,7 @@ def generate_modify_damage_options(selected):
   base_options = [
     ['re_roll_1s', 'Re-roll 1\'s', 1],
     ['re_roll_dice', 'Re-roll all rolls', 1],
+    ['minimum_3', 'Minimum 3', 1],
     ['melta', 'Melta', 1],
     ['half_damage', 'Half Damage', 1],
     ['add_1', 'Add +1', 4],

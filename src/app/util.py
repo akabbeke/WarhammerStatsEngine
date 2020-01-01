@@ -5,7 +5,7 @@ from ..stats.weapons import Weapon
 from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
-  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound
+  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue
 
 
 def shot_modifiers(shot_mods):
@@ -147,6 +147,8 @@ def damage_modifiers(damage_mods):
       mods.append(Melta())
     elif 'half_damage' in mod:
       mods.append(HalfDamage())
+    elif 'minimum_3' in mod:
+      mods.append(MinimumValue(3))
   return mods
 
 

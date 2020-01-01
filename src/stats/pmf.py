@@ -119,6 +119,10 @@ class PMF(object):
     new_dist = [1.0 - sum(self.values[1:])] + self.values[1:]
     return PMF(new_dist)
 
+  def min(self, min_val):
+    values = self.expand_to(min_val).values
+    return PMF([0.0] * min_val + [sum(self.values[:min_val+1])] + self.values[min_val+1:])
+
   @classmethod
   def dn(cls, n):
     return PMF([0.0] + [1/n] * n)
