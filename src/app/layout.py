@@ -346,7 +346,7 @@ def graph_inputs(tab_count):
 
 def header():
   return dcc.Markdown('''
-### 40k Stats Engine
+### Warhammer Stats Engine
 The graph is the probability that the attack will do at least that much damage. 100% chance to do at least zero damage, and it drops from there.
 ''')
 
@@ -362,6 +362,7 @@ You can also download an image of the graph by clicking the camera icon while ho
 * Removed the +/- 2 and 3 modifiers and instead you can now add +/-1 multiple times.
 * Added the 'exploding dice' mechanic for hit rolls. You can stack them so for example two "+1 hit on 6+" will yield +2 hits on a 6+.
 * Added mortal wound generation for hit and wound rolls
+* Added Haywire
 
 This is still very much a work in progress, and there are probably still some bugs. I'm /u/Uily on Reddit, so please let me know if you find any.
 If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
