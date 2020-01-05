@@ -5,7 +5,7 @@ from ..stats.weapons import Weapon
 from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
-  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue
+  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire
 
 
 def shot_modifiers(shot_mods):
@@ -89,6 +89,8 @@ def wound_modifiers(wound_mods):
       mods.append(GenerateMortalWound(6, 1))
     elif 'mortal_wound_5_1' in mod:
       mods.append(GenerateMortalWound(5, 1))
+    elif 'haywire' in mod:
+      mods.append(Haywire(5, 1))
   return mods
 
 
@@ -190,9 +192,9 @@ def parse_rsn(value):
   try:
     return [PMF.static(int(value or 1))]
   except ValueError:
-    match = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value)
+    match = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value.lower())
     if match:
-      number, faces = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value).groups()
+      number, faces = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value.lower()).groups()
       return [PMF.dn(int(faces))] * (int(number) if number else 1)
     else:
       return []

@@ -9,6 +9,9 @@ class PMF(object):
   def __init__(self, values=None):
     self.values = values if values is not None else []
 
+  def __str__(self):
+    return str(self.values)
+
   def __len__(self):
     return len(self.values)
 
@@ -138,6 +141,7 @@ class PMF(object):
     The arrays need not have the same length, but each array should
     have length at least 1.
     """
+
     result_length = 1 + sum((len(dist) - 1) for dist in dists)
 
     # Copy each array into a 2d array of the appropriate shape.
@@ -187,4 +191,58 @@ class PMF(object):
       prob += dist2.values[value] * sum(dist1.values[:value])
       new_dist.append(prob)
     return PMF(new_dist)
+
+class PMFCollection(object):
+  """
+  Discrete Probability Distribution - Used to keep track of collections of PMFs
+  """
+  def __init__(self, pmfs=None):
+    self.pmfs = pmfs if pmfs is not None else []
+
+  def __bool__(self):
+    return len(self) > 0
+
+  def __len__(self):
+    return len(self.pmfs)
+
+  def __str__(self):
+    return str([x.values for x in self.pmfs])
+
+  def get(self, index, defualt=None):
+    try:
+      return self.pmfs[index]
+    except IndexError:
+      return defualt
+
+  def thresh_mod(self, thresh_mod):
+    """
+    Modify the collection based on a dice modifer
+    """
+    if thresh_mod == 0 or self.pmfs == []:
+      return self
+    elif thresh_mod > 0:
+      return PMFCollection(self.pmfs[:1] * thresh_mod + self.pmfs)
+    elif thresh_mod < 0:
+      return PMFCollection((self.pmfs + self.pmfs[-1:] * thresh_mod)[-1*len(self.pmfs):])
+
+  def mul_pmf(self, pmf):
+    """
+    Multiply the collection with a pmf and return a confolution of the results
+    """
+    # print('IN:',[x.values for x in self.pmfs], pmf.values)
+    new_pmfs = []
+    for i, value in enumerate(pmf.values):
+      new_pmfs.append((self.get(i, PMF.static(0)) * value).rectify_zero())
+    return PMF.convolve_many(new_pmfs)
+
+  @classmethod
+  def add_many(cls, collection_list):
+    new_pmfs = []
+    for i in range(max([len(x) for x in collection_list] or [0])):
+      new_pmfs.append(PMF.convolve_many([x.get(i, PMF.static(0)) for x in collection_list if x]))
+    return PMFCollection(new_pmfs)
+
+  @classmethod
+  def empty(cls):
+    return PMFCollection([])
 

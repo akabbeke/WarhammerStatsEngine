@@ -1,3 +1,5 @@
+from .pmf import PMF, PMFCollection
+
 class Modifier(object):
   """
   Base class for Modifiers. 'priority' is used for order of opperations and
@@ -27,22 +29,22 @@ class Modifier(object):
     return invuln
 
   def mod_extra_hit(self):
-    return (0, 0)
+    return None
 
   def extra_hit(self):
-    return (0, 0)
+    return None
 
   def mod_extra_shot(self):
-    return (0, 0)
+    return None
 
   def extra_shot(self):
-    return (0, 0)
+    return None
 
   def mod_mortal_wound(self):
-    return (0, 0)
+    return None
 
   def mortal_wound(self):
-    return (0, 0)
+    return None
 
 
 class MinimumValue(Modifier):
@@ -50,44 +52,52 @@ class MinimumValue(Modifier):
     self.min_val = min_val
 
   def modify_dice(self, dists, thresh=None,  mod_thresh=None):
-    print('foo')
     return [x.min(self.min_val) for x in dists]
 
 
 class ExplodingDice(Modifier):
   def __init__(self, thresh, value):
-    self.thresh = thresh
+    self.thresh = max(0, min(7, thresh))
     self.value = value
+
+  def _pmf_collection(self):
+    return PMFCollection([PMF.static(0)] * self.thresh + [PMF.static(self.value)] * (7 - self.thresh))
 
 
 class ModExtraHit(ExplodingDice):
   def mod_extra_hit(self):
-    return (self.thresh, self.value)
+    return self._pmf_collection()
 
 
 class ExtraHit(ExplodingDice):
   def extra_hit(self):
-    return (self.thresh, self.value)
+    return self._pmf_collection()
 
 
 class ModExtraShot(ExplodingDice):
   def mod_extra_shot(self):
-    return (self.thresh, self.value)
+    return self._pmf_collection()
 
 
 class ExtraShot(ExplodingDice):
   def extra_shot(self):
-    return (self.thresh, self.value)
+    return self._pmf_collection()
 
 
 class GenerateMortalWound(ExplodingDice):
   def mortal_wound(self):
-    return (self.thresh, self.value)
+    return self._pmf_collection()
 
 
 class ModGenerateMortalWound(ExplodingDice):
   def mod_mortal_wound(self):
-    return (self.thresh, self.value)
+    return self._pmf_collection()
+
+
+class Haywire(ExplodingDice):
+  def mod_mortal_wound(self):
+    col = [PMF.static(0), PMF.static(0), PMF.static(0), PMF.static(0), PMF.static(1), PMF.static(1), PMF.dn(3)]
+    return PMFCollection(col)
 
 
 class ReRollOnes(Modifier):
@@ -326,16 +336,9 @@ class ModifierCollection(object):
     return self._mod_dice(dists, self._damage_mods())
 
   def sum_generators(self, mod_list, attr_name):
-    generators = {}
-    for mod in mod_list:
-      thresh, value = getattr(mod, attr_name)()
-
-      if thresh and value:
-        if thresh in generators:
-          generators[thresh] += value
-        else:
-          generators[thresh] = value
-    return generators.items()
+    cols = [getattr(mod, attr_name)() for mod in mod_list]
+    cols = [x for x in cols if x]
+    return PMFCollection.add_many(cols)
 
   def get_mod_extra_hit(self):
     """

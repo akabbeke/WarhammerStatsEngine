@@ -265,6 +265,7 @@ def generate_modify_wound_options(selected):
     ['mod_mortal_wound_5_1', 'MW on 5+', 4],
     ['mortal_wound_6_1', 'MW on 6', 4],
     ['mortal_wound_5_1', 'MW on 5 or 6', 4],
+    ['haywire', 'Haywire', 1]
   ]
   return generate_options(base_options, selected)
 
