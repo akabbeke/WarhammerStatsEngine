@@ -10,10 +10,11 @@ from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRo
 
 def shot_modifiers(shot_mods):
   mods = []
-  if 're_roll_dice' in shot_mods:
-    mods.append(ReRollLessThanExpectedValue())
-  elif 're_roll_1s' in shot_mods:
-    mods.append(ReRollOnes())
+  for mod in shot_mods:
+    if 're_roll_dice' in mod:
+      mods.append(ReRollLessThanExpectedValue())
+    elif 're_roll_1s' in mod:
+      mods.append(ReRollOnes())
   return mods
 
 
