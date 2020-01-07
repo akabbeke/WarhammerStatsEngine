@@ -77,8 +77,10 @@ class GraphLayout(object):
     return {
       'data': data or [{}] * self.tab_count,
       'layout': {
+        'showlegend': True,
+        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1.1, x=0.5),
         'xaxis': {
-            'title': 'Probability of Minimum Wounds Dealt',
+            'title': 'Minimum Wounds Dealt to Target',
             'type': 'linear',
             'range': [0, max_len],
             'tickmode': 'linear',
@@ -86,7 +88,7 @@ class GraphLayout(object):
             'dtick': 1,
         },
         'yaxis': {
-            'title': 'Minimum Wounds Dealt to Target',
+            'title': 'Probability of Minimum Wounds Dealt',
             'type': 'linear',
             'range': [0, 100],
             'tickmode': 'linear',
@@ -94,7 +96,6 @@ class GraphLayout(object):
             'dtick': 10,
         },
         'margin': {'l': 40, 'b': 40, 't': 10, 'r': 40},
-        'legend': 'h',
       }
     }
 

@@ -23,19 +23,21 @@ def parse_args(args):
   return mapped_args
 
 def update_graph(*args):
-  graph_args = parse_args(args[:-1])
-  graph_data = args[-1]['data']
+  graph_args = parse_args(args[:-1-TAB_COUNT])
+  graph_data = args[-1-TAB_COUNT]['data']
+  tab_names = args[0-TAB_COUNT:]
 
   if graph_data == [{}] * TAB_COUNT:
     tab_numbers = list(range(TAB_COUNT))
   else:
     tab_numbers = determine_which_tabs_changed(dash.callback_context)
   for tab_number in tab_numbers:
+    tab_name = tab_names[tab_number]
     values = compute(**graph_args[tab_number])
     graph_data[tab_number] = {
       'x': [i for i, x in enumerate(values)],
       'y': [100*x for i, x in enumerate(values)],
-      'name': 'P{}'.format(tab_number),
+      'name': tab_name,
     }
 
   max_len = max(max([len(x.get('x', [])) for x in graph_data]), 24)
@@ -70,7 +72,7 @@ class CallbackController(object):
     @self.app.callback(
       Output('damage-graph', 'figure'),
       [Input(x, 'value') for x in self.graph_inputs()],
-      [State('damage-graph', 'figure')]
+      [State('damage-graph', 'figure')] +[State('tab_name_{}'.format(i), 'value') for i in range(self.tab_count)],
     )
     def graph_callback(*args):
       return update_graph(*args)
@@ -153,35 +155,3 @@ class CallbackController(object):
     )
     def update_damage_options(value):
       return MultiOptionGenerator().damage_options(value or [])
-
-  def lock_target_callback(self):
-    @self.app.callback(
-      self.generate_lock_target_outputs(),
-      self.generate_lock_target_inputs(),
-      self.generate_lock_target_states(),
-    )
-    def update_damage_options(*args):
-      input_len = len(self.input_generator.target_row_input(0))
-      tab_numbers = determine_which_tabs_changed(dash.callback_context)
-      print(tab_numbers)
-      if len(tab_numbers) > 1:
-        return args[self.tab_count:]
-      else:
-        fixed = args[self.tab_count:][tab_numbers[0] * input_len: (tab_numbers[0] + 1) * input_len]
-        return fixed * self.tab_count
-
-
-  def generate_lock_target_outputs(self):
-    outputs = []
-    for i in range(TAB_COUNT):
-      outputs += [Output(y, 'value') for y in self.input_generator.target_row_input(i)]
-    return outputs
-
-  def generate_lock_target_inputs(self):
-    return [Input('target_apply_all_{}'.format(i), 'n_clicks') for i in range(self.tab_count)]
-
-  def generate_lock_target_states(self):
-    states = []
-    for i in range(TAB_COUNT):
-      states += [State(y, 'value') for y in self.input_generator.target_row_input(i)]
-    return states
