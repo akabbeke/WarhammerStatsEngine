@@ -57,6 +57,38 @@ def determine_which_tabs_changed(ctx):
 def setup_option_callbacks(app, tab_count):
   for i in range(1, tab_count+1):
     @app.callback(
+      [
+        dash.dependencies.Output('damage_mods_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('save_mods_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('wound_mods_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('hit_mods_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('shot_mods_{}'.format(i), 'disabled'),
+
+        dash.dependencies.Output('ws_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('toughness_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('strength_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('ap_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('save_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('invuln_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('fnp_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('wounds_{}'.format(i), 'disabled'),
+
+        dash.dependencies.Output('shots_{}'.format(i), 'disabled'),
+        dash.dependencies.Output('damage_{}'.format(i), 'disabled'),
+      ],
+      [dash.dependencies.Input('enable_{}'.format(i), 'value')],
+    )
+    def disable_damage_options(enable):
+        return [not enable] * 15
+
+    @app.callback(
+        dash.dependencies.Output('tab_{}'.format(i), 'label'),
+        [dash.dependencies.Input('tab_name_{}'.format(i), 'value')],
+    )
+    def update_shot_options(value):
+        return value if len(value) > 2 else 'Profile'
+
+    @app.callback(
         dash.dependencies.Output('shot_mods_{}'.format(i), 'options'),
         [dash.dependencies.Input('shot_mods_{}'.format(i), 'value')],
     )
@@ -90,6 +122,8 @@ def setup_option_callbacks(app, tab_count):
     )
     def update_damage_options(value):
         return generate_modify_damage_options(value or [])
+
+
 
 def setup_graph_callback(app, tab_count):
   @app.callback(

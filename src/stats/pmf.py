@@ -126,6 +126,20 @@ class PMF(object):
     values = self.expand_to(min_val).values
     return PMF([0.0] * min_val + [sum(self.values[:min_val+1])] + self.values[min_val+1:])
 
+  def mean(self):
+    total = 0
+    for i, value in enumerate(self.values):
+      total += i * value
+    return total
+
+  def std(self):
+    mean = self.mean()
+    total = 0
+    for i, value in enumerate(self.values):
+      total += i**2 * value
+    return total - mean**2
+
+
   @classmethod
   def dn(cls, n):
     return PMF([0.0] + [1/n] * n)

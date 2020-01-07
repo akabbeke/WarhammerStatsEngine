@@ -3,210 +3,161 @@ import dash_daq
 import re
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 
+
+class Layout(object):
+  def __init__(self, tab_count):
+    self._tab_count = tab_count
 
 def tab_disable_input(n):
-  return html.Div([
-    html.Br(),
-    dash_daq.ToggleSwitch( # pylint: disable=not-callable
-      id='enable_{}'.format(n),
-      value=n < 3,
-      label='Disable/Enable',
-      labelPosition='left'
-    ),
+  checklist = dbc.Checklist(
+    options=[{"label": "Enable", "value": 'enabled'}],
+    value=['enabled'] if n == 1 else [],
+    id='enable_{}'.format(n),
+    switch=True,
+    inline=True,
+  )
+  foo = dbc.Input(
+    type="text",
+    id='tab_name_{}'.format(n),
+    value='Profile {}'.format(n),
+    debounce=True,
+    minLength=2,
+  )
+  return dbc.InputGroup([dbc.InputGroupAddon(checklist), foo], className="mb-2",)
 
-  ])
-
-def ws_input(n):
-  return html.Div([
-    html.Label('Weapon Skill'),
-    dcc.Slider(
-      persistence=True,
-      id='ws_{}'.format(n),
-      min=1,
-      max=6,
-      marks={i: '{}+'.format(i) for i in range(10)},
-      value=max(1, n%6),
-
-    ),
-  ])
-
-def toughtness_input(n):
-  return html.Div([
-    html.Label('Toughness'),
-    dcc.Slider(
-      persistence=True,
-      id='toughness_{}'.format(n),
-      min=1,
-      max=10,
-      marks={i: 'T{}'.format(i) for i in range(10)},
-      value=max(1, (1+n)%6),
-
-    ),
-  ])
-
-def strength_input(n):
-  return html.Div([
-    html.Label('Strength'),
-    dcc.Slider(
-      persistence=True,
-      id='strength_{}'.format(n),
-      min=1,
-      max=20,
-      marks={i: 'S{}'.format(i) for i in range(20)},
-      value=5,
-
-    ),
-  ])
-
-def ap_input(n):
-  return html.Div([
-    html.Label('AP Value'),
-    dcc.Slider(
-      persistence=True,
-      id='ap_{}'.format(n),
-      min=0,
-      max=7,
-      marks={i: '-{}'.format(i) for i in range(20)},
-      value=2,
-
-    ),
-  ])
-
-def save_input(n):
-  return html.Div([
-    html.Label('Save'),
-    dcc.Slider(
-      persistence=True,
-      id='save_{}'.format(n),
-      min=1,
-      max=7,
-      marks={i: '{}+'.format(8-i) for i in range(10)},
-      value=5,
-
-    ),
-  ])
-
-def invuln_input(n):
-  return html.Div([
-    html.Label('Invuln'),
-    dcc.Slider(
-      persistence=True,
-      id='invuln_{}'.format(n),
-      min=1,
-      max=7,
-      marks={i: '{}++'.format(8-i) for i in range(10)},
-      value=0,
-
-    ),
-  ])
-
-def fnp_input(n):
-  return html.Div([
-    html.Label('FNP'),
-    dcc.Slider(
-      persistence=True,
-      id='fnp_{}'.format(n),
-      min=1,
-      max=7,
-      marks={i: '{}+++'.format(8-i) for i in range(10)},
-      value=0,
-
-    ),
-  ])
-
-def wounds_input(n):
-  return html.Div([
-    html.Label('Wounds'),
-    dcc.Slider(
-      persistence=True,
-      id='wounds_{}'.format(n),
-      min=1,
-      max=24,
-      marks={i: 'W{}'.format(i) for i in range(24)},
-      value=7,
-
-    ),
-  ])
-
-def shots_input(n):
-  return html.Div([
-    html.Label('Shots'),
-    dcc.Input(
-      persistence=True,
-      id='shots_{}'.format(n),
-      value=['2d3', '12', 'd6', '7'][(n-1)%4],
-      type='text',
-      style={'width': '100%'}
-    ),
-  ])
+def attack_input(n):
+  # dropdown_menu_items = [dbc.DropdownMenuItem("Apply to all", 'apply_target_{}'.format(n))]
+  return dbc.InputGroup(
+    [
+      # dbc.DropdownMenu(dropdown_menu_items, label="Target", addon_type="prepend", direction="right"),
+      dbc.InputGroupAddon("Target", addon_type="prepend"),
+      dbc.InputGroupAddon("T", addon_type="prepend"),
+      dbc.Select(
+        id='toughness_{}'.format(n),
+        options=[{"label": "{}".format(i), "value": i} for i in range(1,11)],
+        value=4,
+      ),
+      dbc.InputGroupAddon("SV", addon_type="prepend"),
+      dbc.Select(
+        id='save_{}'.format(n),
+        options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
+        value=4,
+      ),
+      dbc.InputGroupAddon("INV", addon_type="prepend"),
+      dbc.Select(
+        id='invuln_{}'.format(n),
+        options=[{"label": "{}++".format(i), "value": i} for i in range(1,8)],
+        value=7,
+      ),
+      dbc.InputGroupAddon("FNP", addon_type="prepend"),
+      dbc.Select(
+        id='fnp_{}'.format(n),
+        options=[{"label": "{}+++".format(i), "value": i} for i in range(1,8)],
+        value=7,
+      ),
+      dbc.InputGroupAddon("W", addon_type="prepend"),
+      dbc.Select(
+        id='wounds_{}'.format(n),
+        options=[{"label": "{}".format(i), "value": i} for i in range(1,24)],
+        value=7,
+      ),
+    ],
+    className="mb-2",
+  )
 
 def damage_input(n):
-  return html.Div([
-    html.Label('Damage'),
-    dcc.Input(
-      persistence=True,
-      id='damage_{}'.format(n),
-      value=['d3', '3', '2d6', '3d4'][(n-1)%4],
-      type='text',
-      style={'width': '100%'}
-    ),
-  ])
+  # dropdown_menu_items = [dbc.DropdownMenuItem("Apply to all", 'apply_attack_{}'.format(n))]
+  return dbc.InputGroup(
+    [
+      # dbc.DropdownMenu(dropdown_menu_items, label="Attack", addon_type="prepend"),
+      dbc.InputGroupAddon("Attack", addon_type="prepend"),
+      dbc.InputGroupAddon("WS", addon_type="prepend"),
+      dbc.Select(
+        id='ws_{}'.format(n),
+        options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
+        value=4,
+      ),
+      dbc.InputGroupAddon("S", addon_type="prepend"),
+      dbc.Select(
+        id='strength_{}'.format(n),
+        options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
+        value=4,
+      ),
+      dbc.InputGroupAddon("AP", addon_type="prepend"),
+      dbc.Select(
+        id='ap_{}'.format(n),
+        options=[{"label": "{}".format(i), "value": i} for i in range(0,7)],
+        value=1,
+      ),
+      dbc.InputGroupAddon("Shots", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id='shots_{}'.format(n),
+        value='2d6',
+        style={'text-align': 'right'},
+      ),
+      dbc.InputGroupAddon("Damage", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id='damage_{}'.format(n),
+        value='2',
+        style={'text-align': 'right'}
+      ),
+    ],
+    className="mb-2",
+  )
 
 def modify_shot_input(n):
-  return html.Div([
-    html.Label('Modify Shot Volume Rolls'),
-    dcc.Dropdown(
-      persistence=True,
-      id='shot_mods_{}'.format(n),
-      multi=True,
-      style={'width': '100%'},
-    ),
-  ])
+  return dcc.Dropdown(
+    persistence=True,
+    id='shot_mods_{}'.format(n),
+    multi=True,
+    placeholder='Modify shot # rolls',
+    className="mb-2",
+  )
 
 def modify_hit_input(n):
-  return html.Div([
-    html.Label('Modify Hit Rolls'),
-    dcc.Dropdown(
-      persistence=True,
-      id='hit_mods_{}'.format(n),
-      multi=True,
-      style={'width': '100%'},
-    ),
-  ])
+  return dcc.Dropdown(
+    persistence=True,
+    id='hit_mods_{}'.format(n),
+    multi=True,
+    placeholder='Modify hit rolls',
+  )
 
 def modify_wound_input(n):
-  return html.Div([
-    html.Label('Modify Wound Rolls'),
-    dcc.Dropdown(
-      persistence=True,
-      id='wound_mods_{}'.format(n),
-      multi=True,
-      style={'width': '100%'},
-    ),
-  ])
+  return dcc.Dropdown(
+    persistence=True,
+    id='wound_mods_{}'.format(n),
+    multi=True,
+    placeholder='Modify wound rolls',
+  )
 
 def modify_save_input(n):
-  return html.Div([
-    html.Label('Modify Save Rolls'),
-    dcc.Dropdown(
-      persistence=True,
-      id='save_mods_{}'.format(n),
-      multi=True,
-      style={'width': '100%'},
-    ),
-  ])
+  return dcc.Dropdown(
+    persistence=True,
+    id='save_mods_{}'.format(n),
+    multi=True,
+    placeholder='Modify save rolls',
+  )
 
 def modify_damage_input(n):
-  return html.Div([
-    html.Label('Modify Damage Rolls'),
-    dcc.Dropdown(
-      persistence=True,
-      id='damage_mods_{}'.format(n),
-      multi=True,
-      style={'width': '100%'},
-    ),
-  ])
+  return dcc.Dropdown(
+    persistence=True,
+    id='damage_mods_{}'.format(n),
+    multi=True,
+    placeholder='Modify damage rolls',
+  )
+
+def _text_input(input_id, value):
+  return dbc.Input(persistence=True, id=input_id, value=value, type='text', style={'width': '100%'})
+
+def _multi_input(input_id):
+  return dcc.Dropdown(persistence=True, id=input_id, multi=True)
+
+def _make_form_group(label, input):
+  return dbc.FormGroup([dbc.Label(label),dbc.Col(input)])
 
 def generate_options(base_options, selected):
   options = []
@@ -298,25 +249,23 @@ def generate_modify_damage_options(selected):
   return generate_options(base_options, selected)
 
 def tab_settings(n):
-  return html.Div([
+  form_input = [
     tab_disable_input(n),
-    ws_input(n),
-    toughtness_input(n),
-    strength_input(n),
-    ap_input(n),
-    save_input(n),
-    invuln_input(n),
-    fnp_input(n),
-    wounds_input(n),
-    shots_input(n),
+    attack_input(n),
     damage_input(n),
-    modify_shot_input(n),
-    modify_hit_input(n),
-    modify_wound_input(n),
-    modify_save_input(n),
-    modify_damage_input(n),
-    html.Br()
-  ], style={})
+    dbc.Row([
+      dbc.Col(modify_shot_input(n)),
+      dbc.Col(modify_hit_input(n)),
+      dbc.Col(modify_wound_input(n)),
+    ]),
+    dbc.Row([
+      dbc.Col(modify_save_input(n)),
+      dbc.Col(modify_damage_input(n)),
+    ]),
+  ]
+
+  return dbc.Card(dbc.CardBody(form_input))
+
 
 def gen_tab_inputs(i):
   return [
@@ -347,34 +296,42 @@ def graph_inputs(tab_count):
 def header():
   return dcc.Markdown('''
 ### Warhammer Stats Engine
-The graph is the probability that the attack will do at least that much damage. 100% chance to do at least zero damage, and it drops from there.
 ''')
 
 
 def footer():
   return dcc.Markdown('''
 ### Also:
-For the shots and damage characteristic, you can either use a fixed number or XdY notation to represent a rolling
-X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack (e.g. re-rolling 1's to hit and -1 to hit).
-You can also download an image of the graph by clicking the camera icon while hovering over the graph.
+For the shots and damage characteristic, you can either use a fixed number or
+XdY notation to represent a rolling
+X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack
+(e.g. re-rolling 1's to hit and -1 to hit).
+You can also download an image of the graph by clicking the camera icon
+while hovering over the graph.
 
 ##### Updates:
 * Removed the +/- 2 and 3 modifiers and instead you can now add +/-1 multiple times.
-* Added the 'exploding dice' mechanic for hit rolls. You can stack them so for example two "+1 hit on 6+" will yield +2 hits on a 6+.
+* Added the 'exploding dice' mechanic for hit rolls. You can stack them so for
+example two "+1 hit on 6+" will yield +2 hits on a 6+.
 * Added mortal wound generation for hit and wound rolls
 * Added Haywire
 
-This is still very much a work in progress, and there are probably still some bugs. I'm /u/Uily on Reddit, so please let me know if you find any.
-If you want to contribute [you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
+This is still very much a work in progress, and there are probably still some bugs.
+I'm /u/Uily on Reddit, so please let me know if you find any.
+If you want to contribute
+[you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
 
 ##### Todo:
 * Figure out feed-forward abilities like rend
-* Replace the frontend with an actual frontend instead of this cobbled together dash frontend
-* Figure out a way to allow users to create units and have all their weapons output combined (Which russ is the best russ?)
+* Replace the frontend with an actual frontend instead of this cobbled
+together dash frontend
+* Figure out a way to allow users to create units and have all their weapons output
+combined (Which russ is the best russ?)
 * ???
 
 
-There are no **Ads** funding this, so please don't be a dick. Otherwise, I hope you find this useful!
+There are no **Ads** funding this, so please don't be a dick. Otherwise,
+I hope you find this useful!
 ''')
 
 def graph_figure_template(data, max_len=24):
@@ -406,25 +363,28 @@ def graph_figure_template(data, max_len=24):
 def damage_graph(tab_count):
   return dcc.Graph(
     id='damage-graph',
-    figure=graph_figure_template([{}] * tab_count)
+    figure=graph_figure_template([{}] * tab_count),
+    # style={"width" : "80%"},
   )
 
 def settings_tabs(tab_count):
+
   tabs = []
   for i in range(1, tab_count+1):
-    tabs.append(
-      dcc.Tab(
-        id='tab_{}'.format(i),
-        label='Profile {}'.format(i),
-        children=[tab_settings(i)]
-      )
-    )
-  return dcc.Tabs(tabs)
+    tabs.append(dbc.Tab(tab_settings(i), id='tab_{}'.format(i)))
+  return dbc.Tabs(
+    tabs,
+    style={
+      'padding-top': '4px',
+      'padding-bottom': '4px',
+    }
+  )
 
 def app_layout(tab_count):
+
   return html.Div([
-    header(),
-    damage_graph(tab_count),
-    settings_tabs(tab_count),
-    footer(),
+    dbc.Row(dbc.Col(header())),
+    dbc.Row(dbc.Col(damage_graph(tab_count)), className="m-2"),
+    dbc.Row(dbc.Col(settings_tabs(tab_count))),
+    dbc.Row(dbc.Col(footer())),
   ])
