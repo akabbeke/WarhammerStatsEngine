@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 
 from flask import Flask
 
-from src.app.layout import app_layout, gen_tab_inputs
+from src.app.layout import app_layout
 from src.app.controller import setup_callbacks
 from src.constants import TAB_COUNT
 
