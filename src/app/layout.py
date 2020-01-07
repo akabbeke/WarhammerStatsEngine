@@ -134,6 +134,7 @@ class InputLayout(object):
       id='enable_{}'.format(tab_index),
       switch=True,
       inline=True,
+      persistence=True,
     )
     tab_name = dbc.Input(
       type="text",
@@ -141,6 +142,7 @@ class InputLayout(object):
       value='Profile {}'.format(tab_index),
       debounce=True,
       minLength=2,
+      persistence=True,
     )
     return dbc.InputGroup(
       [enable_check, tab_name],
@@ -151,7 +153,6 @@ class InputLayout(object):
     return dbc.InputGroup(
       [
         dbc.InputGroupAddon("Target", addon_type="prepend"),
-        # self._target_lock_menue(tab_index),
         *self._toughness_input(tab_index),
         *self._save_input(tab_index),
         *self._invuln_input(tab_index),
@@ -161,12 +162,6 @@ class InputLayout(object):
       className="mb-2",
     )
 
-  def _target_lock_menue(self, tab_index):
-    dropdown_menu_items = [
-      dbc.DropdownMenuItem('Apply to all', id="target_apply_all_{}".format(tab_index)),
-    ]
-    return dbc.DropdownMenu(dropdown_menu_items, label="Target", addon_type="prepend")
-
   def _toughness_input(self, tab_index):
     return [
       dbc.InputGroupAddon("T", addon_type="prepend"),
@@ -174,6 +169,7 @@ class InputLayout(object):
         id='toughness_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,11)],
         value=4,
+        persistence=True,
       ),
     ]
 
@@ -184,6 +180,7 @@ class InputLayout(object):
         id='save_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
         value=4,
+        persistence=True,
       ),
     ]
 
@@ -194,6 +191,7 @@ class InputLayout(object):
         id='invuln_{}'.format(tab_index),
         options=[{"label": "{}++".format(i), "value": i} for i in range(1,8)],
         value=7,
+        persistence=True,
       ),
     ]
 
@@ -204,6 +202,7 @@ class InputLayout(object):
         id='fnp_{}'.format(tab_index),
         options=[{"label": "{}+++".format(i), "value": i} for i in range(1,8)],
         value=7,
+        persistence=True,
       ),
     ]
 
@@ -214,6 +213,7 @@ class InputLayout(object):
         id='wounds_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,24)],
         value=7,
+        persistence=True,
       ),
     ]
 
@@ -221,9 +221,9 @@ class InputLayout(object):
     return dbc.InputGroup(
       [
         dbc.InputGroupAddon("Attack", addon_type="prepend"),
-        *self._weapon_skill_input(tab_index),
         *self._strength_input(tab_index),
         *self._ap_input(tab_index),
+        *self._weapon_skill_input(tab_index),
         *self._shots_input(tab_index),
         *self._damage_input(tab_index),
       ],
@@ -237,6 +237,7 @@ class InputLayout(object):
         id='ws_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
         value=4,
+        persistence=True,
       ),
     ]
 
@@ -247,6 +248,7 @@ class InputLayout(object):
         id='strength_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
         value=4,
+        persistence=True,
       ),
     ]
 
@@ -257,6 +259,7 @@ class InputLayout(object):
         id='ap_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(0,7)],
         value=1,
+        persistence=True,
       ),
     ]
 
@@ -268,6 +271,7 @@ class InputLayout(object):
         id='shots_{}'.format(tab_index),
         value='2d6',
         style={'text-align': 'right'},
+        persistence=True,
       ),
     ]
 
@@ -278,7 +282,8 @@ class InputLayout(object):
         type="text",
         id='damage_{}'.format(tab_index),
         value='2',
-        style={'text-align': 'right'}
+        style={'text-align': 'right'},
+        persistence=True,
       ),
     ]
 
@@ -438,6 +443,7 @@ class InputGenerator(object):
   def data_row_input(self, tab_index):
     return [
       'enable_{}'.format(tab_index),
+      'tab_name_{}'.format(tab_index)
     ]
 
   def target_row_input(self, tab_index):

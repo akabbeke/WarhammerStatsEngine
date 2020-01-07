@@ -25,20 +25,25 @@ def parse_args(args):
 def update_graph(*args):
   graph_args = parse_args(args[:-1-TAB_COUNT])
   graph_data = args[-1-TAB_COUNT]['data']
-  tab_names = args[0-TAB_COUNT:]
 
   if graph_data == [{}] * TAB_COUNT:
     tab_numbers = list(range(TAB_COUNT))
   else:
     tab_numbers = determine_which_tabs_changed(dash.callback_context)
-  for tab_number in tab_numbers:
-    tab_name = tab_names[tab_number]
-    values = compute(**graph_args[tab_number])
-    graph_data[tab_number] = {
-      'x': [i for i, x in enumerate(values)],
-      'y': [100*x for i, x in enumerate(values)],
-      'name': tab_name,
-    }
+  for tab_number in range(TAB_COUNT):
+    if tab_number in tab_numbers:
+      values = compute(**graph_args[tab_number])
+      graph_data[tab_number] = {
+        'x': [i for i, x in enumerate(values)],
+        'y': [100*x for i, x in enumerate(values)],
+        'name': graph_args[tab_number]['tab_name'],
+      }
+    else:
+      values = compute(**graph_args[tab_number])
+      existing_data = graph_data[tab_number]
+      existing_data['name'] = graph_args[tab_number]['tab_name']
+      graph_data[tab_number] = existing_data
+
 
   max_len = max(max([len(x.get('x', [])) for x in graph_data]), 24)
 
@@ -50,7 +55,7 @@ def determine_which_tabs_changed(ctx):
   tabs = []
   for trigger in ctx.triggered:
     match = re.match(r'.*_(\d+).*', trigger['prop_id'])
-    if match:
+    if match and 'tab_name' not in trigger['prop_id']:
       tabs.append(int(match.groups()[0]))
   return list(set(tabs))
 
