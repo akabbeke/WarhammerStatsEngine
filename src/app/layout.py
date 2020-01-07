@@ -150,7 +150,7 @@ class InputLayout(object):
     return dbc.InputGroup(
       [
         dbc.InputGroupAddon("Target", addon_type="prepend"),
-        self._target_lock_menue(tab_index),
+        # self._target_lock_menue(tab_index),
         *self._toughness_input(tab_index),
         *self._save_input(tab_index),
         *self._invuln_input(tab_index),
@@ -162,7 +162,7 @@ class InputLayout(object):
 
   def _target_lock_menue(self, tab_index):
     dropdown_menu_items = [
-      dbc.DropdownMenuItem('Apply to all', id="target-apply-all-{}".format(tab_index)),
+      dbc.DropdownMenuItem('Apply to all', id="target_apply_all_{}".format(tab_index)),
     ]
     return dbc.DropdownMenu(dropdown_menu_items, label="Target", addon_type="prepend")
 
@@ -219,7 +219,7 @@ class InputLayout(object):
   def attack_row_input(self, tab_index):
     return dbc.InputGroup(
       [
-        dbc.InputGroupAddon("Target", addon_type="prepend"),
+        dbc.InputGroupAddon("Attack", addon_type="prepend"),
         *self._weapon_skill_input(tab_index),
         *self._strength_input(tab_index),
         *self._ap_input(tab_index),

@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from flask import Flask
 
 from src.app.layout import app_layout
-from src.app.controller import setup_callbacks
+from src.app.controller import CallbackController
 from src.constants import TAB_COUNT
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
@@ -18,7 +18,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.title = 'Stats Engine'
 app.layout = app_layout(TAB_COUNT)
-setup_callbacks(app, TAB_COUNT)
+CallbackController(app, TAB_COUNT).setup_callbacks()
 
 server = app.server
 
