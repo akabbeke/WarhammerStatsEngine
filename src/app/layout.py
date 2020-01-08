@@ -8,7 +8,10 @@ import dash_bootstrap_components as dbc
 
 
 FOOTER_CONTENT = '''
-### Warhammer Stats Engine
+
+This is still very much a work in progress, and there are probably still some bugs.
+I'm [/u/Uily](https://www.reddit.com/user/uily) on Reddit, so please let me know if
+you find any. Checkout the code for this project here: https://github.com/akabbeke/WarhammerStatsEngine
 
 For the shots and damage characteristic, you can either use a fixed number or
 XdY notation to represent a rolling
@@ -23,11 +26,6 @@ while hovering over the graph.
 example two "+1 hit on 6+" will yield +2 hits on a 6+.
 * Added mortal wound generation for hit and wound rolls
 * Added Haywire
-
-This is still very much a work in progress, and there are probably still some bugs.
-I'm /u/Uily on Reddit, so please let me know if you find any.
-If you want to contribute
-[you can find the repo here](https://github.com/akabbeke/WarhammerStatsEngine).
 
 ##### Todo:
 * Figure out feed-forward abilities like rend
@@ -47,10 +45,24 @@ class Layout(object):
     self.tab_count = tab_count
 
   def layout(self):
-    return html.Div([
-      GraphLayout(self.tab_count).layout(),
-      InputLayout(self.tab_count).layout(),
-    ])
+    return html.Div(
+      [
+        dbc.Row(
+          dbc.Col(
+            GraphLayout(self.tab_count).layout(),
+            className='portlet-container portlet-dropzone',
+          ),
+          style={'align-items': 'center'},
+          className='flex-fill fill d-flex justify-content-start',
+        ),
+        dbc.Row(
+          dbc.Col(
+            InputLayout(self.tab_count).layout(),
+          ),
+        ),
+      ],
+      className='container-fluid d-flex vh-100 flex-column',
+    )
 
 
 class GraphLayout(object):
@@ -58,18 +70,19 @@ class GraphLayout(object):
     self.tab_count = tab_count
 
   def layout(self):
-    return dcc.Graph(
+    content = dcc.Graph(
       id='damage-graph',
       figure=self.figure_template(),
-      className='h-100'
+      style={'height':'60vh'}
     )
+    return content
 
   def figure_template(self, data=None, max_len=24):
     return {
       'data': data or [{}] * self.tab_count,
       'layout': {
         'showlegend': True,
-        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1.1, x=0.5),
+        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1.05, x=0.5),
         'xaxis': {
             'title': 'Minimum Wounds Dealt to Target',
             'type': 'linear',
@@ -86,8 +99,10 @@ class GraphLayout(object):
             'tick0': 0,
             'dtick': 10,
         },
-        'margin': {'l': 40, 'b': 40, 't': 10, 'r': 40},
-      }
+        'title': 'A Fancy Plot',
+        'autosize': True,
+        'title': 'warhammer-stats-engine.com'
+      },
     }
 
 
@@ -107,15 +122,16 @@ class InputLayout(object):
       tabs.append(tab)
     tabs.append(
       dbc.Tab(
-        self.footer(),
-        label='Info',
+        dbc.CardBody(self.footer()),
+
+        label='Info Tab',
         style={'width': '100%'},
       )
     )
     return dbc.Tabs(
       tabs,
       className='nav-justified',
-      style={'padding-top': '4px', 'padding-bottom': '4px'}
+      style={'padding-top': '4px', 'padding-bottom': '4px'},
     )
 
   def footer(self):
@@ -128,7 +144,7 @@ class InputLayout(object):
       self.target_row_input(tab_index),
       *self.modify_input(tab_index),
     ]
-    return dbc.Card(dbc.CardBody(form_input))
+    return dbc.CardBody(form_input)
 
   def data_row_input(self, tab_index):
     content = [
@@ -145,9 +161,8 @@ class InputLayout(object):
     ]
     return dbc.Row(
       [dbc.Col(dbc.InputGroup(content))],
-      className="mb-2 mr-2",
+      className="mb-2 ",
     )
-
 
   def target_row_input(self, tab_index):
     content = dbc.InputGroup(
@@ -160,7 +175,7 @@ class InputLayout(object):
         *self._wounds_input(tab_index),
       ],
     )
-    return dbc.Row([dbc.Col(content)], className="mb-2 mr-2",)
+    return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
   def _toughness_input(self, tab_index):
     return [
@@ -228,7 +243,7 @@ class InputLayout(object):
         *self._damage_input(tab_index),
       ],
     )
-    return dbc.Row([dbc.Col(content)], className="mb-2 mr-2",)
+    return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
   def _weapon_skill_input(self, tab_index):
     return [
@@ -293,11 +308,11 @@ class InputLayout(object):
         dbc.Col(self._modify_shot_input(tab_index)),
         dbc.Col(self._modify_hit_input(tab_index)),
         dbc.Col(self._modify_wound_input(tab_index)),
-      ], className="mr-2",),
+      ], className="",),
       dbc.Row([
         dbc.Col(self._modify_save_input(tab_index)),
         dbc.Col(self._modify_damage_input(tab_index)),
-      ], className="mb-2 mr-2",),
+      ], className="mb-0 ",),
     ]
 
   def _modify_shot_input(self, tab_index):
@@ -306,7 +321,7 @@ class InputLayout(object):
       id='shot_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify shot # rolls',
-      className="mb-2 mr-2",
+      className="mb-2 ",
     )
 
   def _modify_hit_input(self, tab_index):
