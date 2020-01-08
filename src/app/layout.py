@@ -90,6 +90,7 @@ class GraphLayout(object):
             'tickmode': 'linear',
             'tick0': 0,
             'dtick': 1,
+            'fixedrange': True,
         },
         'yaxis': {
             'title': 'Probability of Minimum Wounds Dealt',
@@ -98,6 +99,7 @@ class GraphLayout(object):
             'tickmode': 'linear',
             'tick0': 0,
             'dtick': 10,
+            'fixedrange': True,
         },
         'title': 'A Fancy Plot',
         'autosize': True,
