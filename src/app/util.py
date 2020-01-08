@@ -160,7 +160,11 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
             damage_mods=None):
 
   if not enabled:
-    return []
+    return {
+      'values': [],
+      'mean': 0,
+      'std': 0,
+    }
 
   # print(dict(
   #   ws=int(ws or 1),
@@ -199,10 +203,12 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
     damage=parse_rsn(damage or 1),
   )
   attack_sequence = AttackSequence(weapon, target, target, modifiers)
-
   attack_pmf = attack_sequence.run()
-  # print('mean:', attack_pmf.mean(), 'std:', attack_pmf.std())
-  return attack_pmf.cumulative().trim_tail().values
+  return {
+    'values': attack_pmf.cumulative().trim_tail().values,
+    'mean': attack_pmf.mean(),
+    'std': attack_pmf.std(),
+  }
 
 def parse_rsn(value):
   try:

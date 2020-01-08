@@ -137,7 +137,7 @@ class PMF(object):
     total = 0
     for i, value in enumerate(self.values):
       total += i**2 * value
-    return total - mean**2
+    return (total - mean**2)**(0.5)
 
 
   @classmethod

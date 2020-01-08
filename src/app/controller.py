@@ -29,12 +29,26 @@ class CallbackController(object):
 
   def setup_graph_callbacks(self):
     @self.app.callback(
-      Output('damage-graph', 'figure'),
+      self._graph_update_outputs(),
       [Input(x, y) for x, y in self.graph_inputs()],
-      [State('damage-graph', 'figure')]
+      self._graph_update_states(),
     )
     def graph_callback(*args):
       return self.update_graph(*args)
+
+  def _graph_update_outputs(self):
+    return [
+      Output('damage-graph', 'figure'),
+      *[Output('avg_display_{}'.format(i), 'children') for i in range(self.tab_count)],
+      *[Output('std_display_{}'.format(i), 'children') for i in range(self.tab_count)],
+    ]
+
+  def _graph_update_states(self):
+    return [
+      State('damage-graph', 'figure'),
+      *[State('avg_display_{}'.format(i), 'children') for i in range(self.tab_count)],
+      *[State('std_display_{}'.format(i), 'children') for i in range(self.tab_count)],
+    ]
 
   def setup_input_callbacks(self):
     for i in range(self.tab_count):
@@ -125,8 +139,10 @@ class CallbackController(object):
     return mapped_args
 
   def update_graph(self, *args):
-    graph_args = self.parse_args(args[:-1])
-    graph_data = args[-1]['data']
+    graph_args = self.parse_args(args[:-1-self.tab_count])
+    graph_data = args[-1-2*self.tab_count]['data']
+    averages = list(args[-2*self.tab_count:-1*self.tab_count])
+    stds = list(args[-1*self.tab_count:])
 
     if graph_data == [{}] * TAB_COUNT:
       tab_numbers = list(range(TAB_COUNT))
@@ -134,19 +150,21 @@ class CallbackController(object):
       tab_numbers = self.tabs_changed()
     for tab_number in range(TAB_COUNT):
       if tab_number in tab_numbers:
-        values = compute(**graph_args[tab_number])
+        data = compute(**graph_args[tab_number])
         graph_data[tab_number] = {
-          'x': [i for i, x in enumerate(values)],
-          'y': [100*x for i, x in enumerate(values)],
+          'x': [i for i, x in enumerate(data['values'])],
+          'y': [100*x for i, x in enumerate(data['values'])],
           'name': graph_args[tab_number]['tab_name'],
         }
+        averages[tab_number] = 'Mean: {}'.format(round(data['mean'], 2))
+        stds[tab_number] = 'σ: {}'.format(round(data['std'], 2))
       else:
         values = compute(**graph_args[tab_number])
         existing_data = graph_data[tab_number]
         existing_data['name'] = graph_args[tab_number]['tab_name']
         graph_data[tab_number] = existing_data
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 24)
-    return self.graph_layout.figure_template(graph_data, max_len)
+    return [self.graph_layout.figure_template(graph_data, max_len)] + averages + stds
 
   def tabs_changed(self):
     ctx = dash.callback_context

@@ -159,7 +159,10 @@ class InputLayout(object):
         debounce=True,
         minLength=2,
         persistence=True,
+        maxLength=60
       ),
+      dbc.InputGroupAddon("Mean", addon_type="prepend", id='avg_display_{}'.format(tab_index)),
+      dbc.InputGroupAddon("σ", addon_type="apend", id='std_display_{}'.format(tab_index)),
     ]
     return dbc.Row(
       [dbc.Col(dbc.InputGroup(content))],
@@ -289,6 +292,8 @@ class InputLayout(object):
         value='2d6',
         style={'text-align': 'right'},
         persistence=True,
+        debounce=True,
+        pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
     ]
 
@@ -301,6 +306,8 @@ class InputLayout(object):
         value='2',
         style={'text-align': 'right'},
         persistence=True,
+        debounce=True,
+        pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
     ]
 
