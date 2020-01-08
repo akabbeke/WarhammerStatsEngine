@@ -155,12 +155,26 @@ def damage_modifiers(damage_mods):
   return mods
 
 
-def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
+def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
             wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, save_mods=None,
             damage_mods=None):
 
-  if not enable:
+  if not enabled:
     return []
+
+  # print(dict(
+  #   ws=int(ws or 1),
+  #   bs=int(ws or 1),
+  #   toughness=int(toughness or 1),
+  #   save=int(save or 7),
+  #   invul=int(invuln or 7),
+  #   fnp=int(fnp or 7),
+  #   wounds=int(wounds or 1),
+  #   shots=parse_rsn(shots or 1),
+  #   strength=int(strength or 1),
+  #   ap=int(ap or 0),
+  #   damage=parse_rsn(damage or 1),
+  # ))
 
   modifiers = ModifierCollection()
   modifiers.add_mods('shots', shot_modifiers(shot_mods or []))
@@ -173,9 +187,9 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
     ws=int(ws or 1),
     bs=int(ws or 1),
     toughness=int(toughness or 1),
-    save=8-int(save or 1),
-    invul=8-int(invuln or 1),
-    fnp=8-int(fnp or 1),
+    save=int(save or 7),
+    invul=int(invuln or 7),
+    fnp=int(fnp or 7),
     wounds=int(wounds or 1),
   )
   weapon = Weapon(
@@ -186,8 +200,9 @@ def compute(enable = None, ws=None, toughness=None, strength=None, ap=None, save
   )
   attack_sequence = AttackSequence(weapon, target, target, modifiers)
 
-  values = attack_sequence.run().cumulative().trim_tail().values
-  return values
+  attack_pmf = attack_sequence.run()
+  # print('mean:', attack_pmf.mean(), 'std:', attack_pmf.std())
+  return attack_pmf.cumulative().trim_tail().values
 
 def parse_rsn(value):
   try:

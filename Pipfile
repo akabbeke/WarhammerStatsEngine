@@ -15,6 +15,7 @@ plotly = "*"
 flask = "*"
 gunicorn = "*"
 dash-daq = "*"
+dash-bootstrap-components = "*"
 
 [requires]
 python_version = "3.7"
