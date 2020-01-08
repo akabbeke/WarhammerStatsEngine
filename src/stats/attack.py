@@ -201,15 +201,9 @@ class AttackSequence(object):
 
   def run(self):
     self._shot_dist = self._calc_shots_dist()
-    # print(self._shot_dist.values)
     self._hit_dist = self._calc_hit_dist(self._shot_dist)
-    # print(self._hit_dist.values)
     self._wound_dist = self._calc_wound_dist(self._hit_dist)
-    # print(self._wound_dist.values)
     self._pen_dist = self._calc_pen_dist(self._wound_dist)
-    # print(self._pen_dist.values)
     self._damage_dist = self._calc_damage_dist(self._pen_dist)
-    # print(self._damage_dist.values)
     self._mortal_dist = PMF.convolve_many(self._mortal_dists)
-    # print(self._mortal_dist.values)
     return PMF.convolve_many([self._damage_dist, self._mortal_dist])

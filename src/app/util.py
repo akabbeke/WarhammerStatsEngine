@@ -155,11 +155,11 @@ def damage_modifiers(damage_mods):
   return mods
 
 
-def compute(enable = None, tab_name=None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
+def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
             wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, save_mods=None,
             damage_mods=None):
 
-  if not enable:
+  if not enabled:
     return []
 
   # print(dict(

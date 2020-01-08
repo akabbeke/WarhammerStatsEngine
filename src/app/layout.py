@@ -6,12 +6,10 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 
-HEADER_CONTENT = '''
-### Warhammer Stats Engine
-'''
 
 FOOTER_CONTENT = '''
-### Also:
+### Warhammer Stats Engine
+
 For the shots and damage characteristic, you can either use a fixed number or
 XdY notation to represent a rolling
 X dice with Y sides. You can also add modifiers to the hit and wound rolls that stack
@@ -50,17 +48,9 @@ class Layout(object):
 
   def layout(self):
     return html.Div([
-      self.header(),
       GraphLayout(self.tab_count).layout(),
       InputLayout(self.tab_count).layout(),
-      self.footer(),
     ])
-
-  def header(self):
-    return dcc.Markdown(HEADER_CONTENT)
-
-  def footer(self):
-    return dcc.Markdown(FOOTER_CONTENT)
 
 
 class GraphLayout(object):
@@ -71,6 +61,7 @@ class GraphLayout(object):
     return dcc.Graph(
       id='damage-graph',
       figure=self.figure_template(),
+      className='h-100'
     )
 
   def figure_template(self, data=None, max_len=24):
@@ -111,46 +102,55 @@ class InputLayout(object):
         self.tab_content(i),
         id='tab_{}'.format(i),
         label='Profile {}'.format(i + 1),
+        style={'width': '100%'},
       )
       tabs.append(tab)
+    tabs.append(
+      dbc.Tab(
+        self.footer(),
+        label='Info',
+        style={'width': '100%'},
+      )
+    )
     return dbc.Tabs(
       tabs,
+      className='nav-justified',
       style={'padding-top': '4px', 'padding-bottom': '4px'}
     )
+
+  def footer(self):
+    return dcc.Markdown(FOOTER_CONTENT)
 
   def tab_content(self, tab_index):
     form_input = [
       self.data_row_input(tab_index),
-      self.target_row_input(tab_index),
       self.attack_row_input(tab_index),
+      self.target_row_input(tab_index),
       *self.modify_input(tab_index),
     ]
     return dbc.Card(dbc.CardBody(form_input))
 
   def data_row_input(self, tab_index):
-    enable_check = dbc.Checklist(
-      options=[{"label": "Enable", "value": 'enabled'}],
-      value=['enabled'] if tab_index == 0 else [],
-      id='enable_{}'.format(tab_index),
-      switch=True,
-      inline=True,
-      persistence=True,
-    )
-    tab_name = dbc.Input(
-      type="text",
-      id='tab_name_{}'.format(tab_index),
-      value='Profile {}'.format(tab_index),
-      debounce=True,
-      minLength=2,
-      persistence=True,
-    )
-    return dbc.InputGroup(
-      [enable_check, tab_name],
-      className="mb-2",
+    content = [
+      dbc.InputGroupAddon("Enable", addon_type="prepend"),
+      dbc.InputGroupAddon(dbc.Checkbox(checked=tab_index==0, id='enabled_{}'.format(tab_index)), addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id='tab_name_{}'.format(tab_index),
+        value='Profile {}'.format(tab_index),
+        debounce=True,
+        minLength=2,
+        persistence=True,
+      ),
+    ]
+    return dbc.Row(
+      [dbc.Col(dbc.InputGroup(content))],
+      className="mb-2 mr-2",
     )
 
+
   def target_row_input(self, tab_index):
-    return dbc.InputGroup(
+    content = dbc.InputGroup(
       [
         dbc.InputGroupAddon("Target", addon_type="prepend"),
         *self._toughness_input(tab_index),
@@ -159,8 +159,8 @@ class InputLayout(object):
         *self._fnp_input(tab_index),
         *self._wounds_input(tab_index),
       ],
-      className="mb-2",
     )
+    return dbc.Row([dbc.Col(content)], className="mb-2 mr-2",)
 
   def _toughness_input(self, tab_index):
     return [
@@ -178,7 +178,7 @@ class InputLayout(object):
       dbc.InputGroupAddon("SV", addon_type="prepend"),
       dbc.Select(
         id='save_{}'.format(tab_index),
-        options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
+        options=[{"label": "{}+".format(i), "value": i} for i in range(2,8)],
         value=4,
         persistence=True,
       ),
@@ -189,7 +189,7 @@ class InputLayout(object):
       dbc.InputGroupAddon("INV", addon_type="prepend"),
       dbc.Select(
         id='invuln_{}'.format(tab_index),
-        options=[{"label": "{}++".format(i), "value": i} for i in range(1,8)],
+        options=[{"label": "{}++".format(i), "value": i} for i in range(2,8)],
         value=7,
         persistence=True,
       ),
@@ -200,7 +200,7 @@ class InputLayout(object):
       dbc.InputGroupAddon("FNP", addon_type="prepend"),
       dbc.Select(
         id='fnp_{}'.format(tab_index),
-        options=[{"label": "{}+++".format(i), "value": i} for i in range(1,8)],
+        options=[{"label": "{}+++".format(i), "value": i} for i in range(2,8)],
         value=7,
         persistence=True,
       ),
@@ -211,14 +211,14 @@ class InputLayout(object):
       dbc.InputGroupAddon("W", addon_type="prepend"),
       dbc.Select(
         id='wounds_{}'.format(tab_index),
-        options=[{"label": "{}".format(i), "value": i} for i in range(1,24)],
+        options=[{"label": "{}".format(i), "value": i} for i in range(1,25)],
         value=7,
         persistence=True,
       ),
     ]
 
   def attack_row_input(self, tab_index):
-    return dbc.InputGroup(
+    content = dbc.InputGroup(
       [
         dbc.InputGroupAddon("Attack", addon_type="prepend"),
         *self._strength_input(tab_index),
@@ -227,8 +227,8 @@ class InputLayout(object):
         *self._shots_input(tab_index),
         *self._damage_input(tab_index),
       ],
-      className="mb-2",
     )
+    return dbc.Row([dbc.Col(content)], className="mb-2 mr-2",)
 
   def _weapon_skill_input(self, tab_index):
     return [
@@ -257,7 +257,7 @@ class InputLayout(object):
       dbc.InputGroupAddon("AP", addon_type="prepend"),
       dbc.Select(
         id='ap_{}'.format(tab_index),
-        options=[{"label": "{}".format(i), "value": i} for i in range(0,7)],
+        options=[{"label": "0" if i==0 else "-{}".format(i), "value": i} for i in range(0,7)],
         value=1,
         persistence=True,
       ),
@@ -293,11 +293,11 @@ class InputLayout(object):
         dbc.Col(self._modify_shot_input(tab_index)),
         dbc.Col(self._modify_hit_input(tab_index)),
         dbc.Col(self._modify_wound_input(tab_index)),
-      ]),
+      ], className="mr-2",),
       dbc.Row([
         dbc.Col(self._modify_save_input(tab_index)),
         dbc.Col(self._modify_damage_input(tab_index)),
-      ]),
+      ], className="mb-2 mr-2",),
     ]
 
   def _modify_shot_input(self, tab_index):
@@ -306,7 +306,7 @@ class InputLayout(object):
       id='shot_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify shot # rolls',
-      className="mb-2",
+      className="mb-2 mr-2",
     )
 
   def _modify_hit_input(self, tab_index):
@@ -431,6 +431,7 @@ class MultiOptionGenerator(object):
         options += [{'label': label, 'value': '{}_{}'.format(option, i)}]
     return options
 
+
 class InputGenerator(object):
   def gen_tab_inputs(self, tab_index):
     return [
@@ -442,7 +443,7 @@ class InputGenerator(object):
 
   def data_row_input(self, tab_index):
     return [
-      'enable_{}'.format(tab_index),
+      'enabled_{}'.format(tab_index),
       'tab_name_{}'.format(tab_index)
     ]
 

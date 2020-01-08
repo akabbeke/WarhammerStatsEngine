@@ -243,7 +243,6 @@ class PMFCollection(object):
     """
     Multiply the collection with a pmf and return a confolution of the results
     """
-    # print('IN:',[x.values for x in self.pmfs], pmf.values)
     new_pmfs = []
     for i, value in enumerate(pmf.values):
       new_pmfs.append((self.get(i, PMF.static(0)) * value).rectify_zero())

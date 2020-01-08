@@ -11,63 +11,17 @@ from .util import compute
 
 from ..constants import TAB_COUNT
 
-def parse_args(args):
-  mapped_args = []
-  for i in range(0, TAB_COUNT):
-    tab_dict = {}
-    tab_inputs = InputGenerator().gen_tab_inputs(i)
-    trim_length = -1 * len('-{}'.format(i))
-    for j, input_name in enumerate(tab_inputs):
-      tab_dict[input_name[:trim_length]] = args[(len(tab_inputs)*i) + j]
-    mapped_args.append(tab_dict)
-  return mapped_args
-
-def update_graph(*args):
-  graph_args = parse_args(args[:-1-TAB_COUNT])
-  graph_data = args[-1-TAB_COUNT]['data']
-
-  if graph_data == [{}] * TAB_COUNT:
-    tab_numbers = list(range(TAB_COUNT))
-  else:
-    tab_numbers = determine_which_tabs_changed(dash.callback_context)
-  for tab_number in range(TAB_COUNT):
-    if tab_number in tab_numbers:
-      values = compute(**graph_args[tab_number])
-      graph_data[tab_number] = {
-        'x': [i for i, x in enumerate(values)],
-        'y': [100*x for i, x in enumerate(values)],
-        'name': graph_args[tab_number]['tab_name'],
-      }
-    else:
-      values = compute(**graph_args[tab_number])
-      existing_data = graph_data[tab_number]
-      existing_data['name'] = graph_args[tab_number]['tab_name']
-      graph_data[tab_number] = existing_data
-
-
-  max_len = max(max([len(x.get('x', [])) for x in graph_data]), 24)
-
-  return GraphLayout().figure_template(graph_data, max_len)
-
-def determine_which_tabs_changed(ctx):
-  if not ctx:
-    return list(range(TAB_COUNT))
-  tabs = []
-  for trigger in ctx.triggered:
-    match = re.match(r'.*_(\d+).*', trigger['prop_id'])
-    if match and 'tab_name' not in trigger['prop_id']:
-      tabs.append(int(match.groups()[0]))
-  return list(set(tabs))
-
 class CallbackController(object):
   def __init__(self, app, tab_count):
     self.app = app
     self.tab_count = tab_count
+    self.graph_layout = GraphLayout()
     self.input_generator = InputGenerator()
     self.multi_generator = MultiOptionGenerator()
 
   def graph_inputs(self):
-    return self.input_generator.graph_inputs(self.tab_count)
+    inputs = self.input_generator.graph_inputs(self.tab_count)
+    return [[x, 'checked' if 'enabled' in x else'value'] for x in inputs]
 
   def setup_callbacks(self):
     self.setup_graph_callbacks()
@@ -76,17 +30,15 @@ class CallbackController(object):
   def setup_graph_callbacks(self):
     @self.app.callback(
       Output('damage-graph', 'figure'),
-      [Input(x, 'value') for x in self.graph_inputs()],
-      [State('damage-graph', 'figure')] +[State('tab_name_{}'.format(i), 'value') for i in range(self.tab_count)],
+      [Input(x, y) for x, y in self.graph_inputs()],
+      [State('damage-graph', 'figure')]
     )
     def graph_callback(*args):
-      return update_graph(*args)
+      return self.update_graph(*args)
 
   def setup_input_callbacks(self):
     for i in range(self.tab_count):
       self.setup_input_tab_callback(i)
-
-    # self.lock_target_callback()
 
   def setup_input_tab_callback(self, tab_index):
     self.disable_callback(tab_index)
@@ -100,7 +52,7 @@ class CallbackController(object):
   def disable_callback(self, tab_index):
     @self.app.callback(
       self._disable_outputs(tab_index),
-      [Input('enable_{}'.format(tab_index), 'value')],
+      [Input('enabled_{}'.format(tab_index), 'checked')],
     )
     def disable_tab_options(enable):
         return [not enable] * 15
@@ -160,3 +112,49 @@ class CallbackController(object):
     )
     def update_damage_options(value):
       return MultiOptionGenerator().damage_options(value or [])
+
+  def parse_args(self, args):
+    mapped_args = []
+    for i in range(0, TAB_COUNT):
+      tab_dict = {}
+      tab_inputs = self.input_generator.gen_tab_inputs(i)
+      trim_length = -1 * len('-{}'.format(i))
+      for j, input_name in enumerate(tab_inputs):
+        tab_dict[input_name[:trim_length]] = args[(len(tab_inputs)*i) + j]
+      mapped_args.append(tab_dict)
+    return mapped_args
+
+  def update_graph(self, *args):
+    graph_args = self.parse_args(args[:-1])
+    graph_data = args[-1]['data']
+
+    if graph_data == [{}] * TAB_COUNT:
+      tab_numbers = list(range(TAB_COUNT))
+    else:
+      tab_numbers = self.tabs_changed()
+    for tab_number in range(TAB_COUNT):
+      if tab_number in tab_numbers:
+        values = compute(**graph_args[tab_number])
+        graph_data[tab_number] = {
+          'x': [i for i, x in enumerate(values)],
+          'y': [100*x for i, x in enumerate(values)],
+          'name': graph_args[tab_number]['tab_name'],
+        }
+      else:
+        values = compute(**graph_args[tab_number])
+        existing_data = graph_data[tab_number]
+        existing_data['name'] = graph_args[tab_number]['tab_name']
+        graph_data[tab_number] = existing_data
+    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 24)
+    return self.graph_layout.figure_template(graph_data, max_len)
+
+  def tabs_changed(self):
+    ctx = dash.callback_context
+    if not ctx:
+      return list(range(TAB_COUNT))
+    tabs = []
+    for trigger in ctx.triggered:
+      match = re.match(r'.*_(\d+).*', trigger['prop_id'])
+      if match and 'tab_name' not in trigger['prop_id']:
+        tabs.append(int(match.groups()[0]))
+    return list(set(tabs))
