@@ -71,13 +71,18 @@ class GraphLayout(object):
 
   def layout(self):
     content = dcc.Graph(
-      id='damage-graph',
+      id='damage_graph',
       figure=self.figure_template(),
-      style={'height':'60vh'}
+      # style={'height':'60vh'},
+      config={
+        'scrollZoom': False,
+        'toImageButtonOptions': {'format': 'png', 'filename': 'warhammer_plot.png', 'height': 540, 'width': 960}
+      },
+
     )
     return content
 
-  def figure_template(self, data=None, max_len=24):
+  def figure_template(self, data=None, max_len=10):
     return {
       'data': data or [{}] * self.tab_count,
       'layout': {
@@ -101,7 +106,6 @@ class GraphLayout(object):
             'dtick': 10,
             'fixedrange': True,
         },
-        'title': 'A Fancy Plot',
         'autosize': True,
         'title': 'warhammer-stats-engine.com'
       },
@@ -158,10 +162,10 @@ class InputLayout(object):
         value='Profile {}'.format(tab_index),
         debounce=True,
         minLength=2,
-        persistence=True,
+        persistence=False,
         maxLength=60
       ),
-      dbc.InputGroupAddon("Mean", addon_type="prepend", id='avg_display_{}'.format(tab_index)),
+      dbc.InputGroupAddon("Average", addon_type="prepend", id='avg_display_{}'.format(tab_index)),
       dbc.InputGroupAddon("σ", addon_type="apend", id='std_display_{}'.format(tab_index)),
     ]
     return dbc.Row(
@@ -189,7 +193,7 @@ class InputLayout(object):
         id='toughness_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,11)],
         value=4,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -200,7 +204,7 @@ class InputLayout(object):
         id='save_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(2,8)],
         value=4,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -211,7 +215,7 @@ class InputLayout(object):
         id='invuln_{}'.format(tab_index),
         options=[{"label": "{}++".format(i), "value": i} for i in range(2,8)],
         value=7,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -222,7 +226,7 @@ class InputLayout(object):
         id='fnp_{}'.format(tab_index),
         options=[{"label": "{}+++".format(i), "value": i} for i in range(2,8)],
         value=7,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -233,7 +237,7 @@ class InputLayout(object):
         id='wounds_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,25)],
         value=7,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -257,7 +261,7 @@ class InputLayout(object):
         id='ws_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
         value=4,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -268,7 +272,7 @@ class InputLayout(object):
         id='strength_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
         value=4,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -279,7 +283,7 @@ class InputLayout(object):
         id='ap_{}'.format(tab_index),
         options=[{"label": "0" if i==0 else "-{}".format(i), "value": i} for i in range(0,7)],
         value=1,
-        persistence=True,
+        persistence=False,
       ),
     ]
 
@@ -291,7 +295,7 @@ class InputLayout(object):
         id='shots_{}'.format(tab_index),
         value='2d6',
         style={'text-align': 'right'},
-        persistence=True,
+        persistence=False,
         debounce=True,
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
@@ -305,7 +309,7 @@ class InputLayout(object):
         id='damage_{}'.format(tab_index),
         value='2',
         style={'text-align': 'right'},
-        persistence=True,
+        persistence=False,
         debounce=True,
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
@@ -326,7 +330,7 @@ class InputLayout(object):
 
   def _modify_shot_input(self, tab_index):
     return dcc.Dropdown(
-      persistence=True,
+      persistence=False,
       id='shot_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify shot # rolls',
@@ -335,7 +339,7 @@ class InputLayout(object):
 
   def _modify_hit_input(self, tab_index):
     return dcc.Dropdown(
-      persistence=True,
+      persistence=False,
       id='hit_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify hit rolls',
@@ -343,7 +347,7 @@ class InputLayout(object):
 
   def _modify_wound_input(self, tab_index):
     return dcc.Dropdown(
-      persistence=True,
+      persistence=False,
       id='wound_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify wound rolls',
@@ -351,7 +355,7 @@ class InputLayout(object):
 
   def _modify_save_input(self, tab_index):
     return dcc.Dropdown(
-      persistence=True,
+      persistence=False,
       id='save_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify save rolls',
@@ -359,7 +363,7 @@ class InputLayout(object):
 
   def _modify_damage_input(self, tab_index):
     return dcc.Dropdown(
-      persistence=True,
+      persistence=False,
       id='damage_mods_{}'.format(tab_index),
       multi=True,
       placeholder='Modify damage rolls',
@@ -458,50 +462,65 @@ class MultiOptionGenerator(object):
 
 class InputGenerator(object):
   def gen_tab_inputs(self, tab_index):
+    return {
+      **self.data_row_input(tab_index),
+      **self.target_row_input(tab_index),
+      **self.attack_row_input(tab_index),
+      **self.modify_input(tab_index),
+    }
+
+  def json_inputs(self, tab_count):
+    json_input = []
+    for i in range(tab_count):
+      json_input += self.json_tab_inputs(i)
+    return json_input
+
+  def json_tab_inputs(self, tab_index):
     return [
-      *self.data_row_input(tab_index),
-      *self.target_row_input(tab_index),
-      *self.attack_row_input(tab_index),
-      *self.modify_input(tab_index),
+      f'shot_mods_{tab_index}'
+      f'hit_mods_{tab_index}'
+      f'wound_mods_{tab_index}'
+      f'save_mods_{tab_index}'
+      f'damage_mods_{tab_index}'
     ]
 
   def data_row_input(self, tab_index):
-    return [
-      'enabled_{}'.format(tab_index),
-      'tab_name_{}'.format(tab_index)
-    ]
+    return {
+      f'enabled_{tab_index}': 'checked',
+      f'tab_name_{tab_index}': 'value',
+    }
 
   def target_row_input(self, tab_index):
-    return [
-      'toughness_{}'.format(tab_index),
-      'save_{}'.format(tab_index),
-      'invuln_{}'.format(tab_index),
-      'fnp_{}'.format(tab_index),
-      'wounds_{}'.format(tab_index),
-    ]
+    return {
+      f'toughness_{tab_index}': 'value',
+      f'save_{tab_index}': 'value',
+      f'invuln_{tab_index}': 'value',
+      f'fnp_{tab_index}': 'value',
+      f'wounds_{tab_index}': 'value',
+    }
 
   def attack_row_input(self, tab_index):
-    return [
-      'ws_{}'.format(tab_index),
-      'strength_{}'.format(tab_index),
-      'ap_{}'.format(tab_index),
-      'shots_{}'.format(tab_index),
-      'damage_{}'.format(tab_index),
-    ]
+    return {
+      f'ws_{tab_index}': 'value',
+      f'strength_{tab_index}': 'value',
+      f'ap_{tab_index}': 'value',
+      f'shots_{tab_index}': 'value',
+      f'damage_{tab_index}': 'value',
+    }
 
   def modify_input(self, tab_index):
-    return [
-      'shot_mods_{}'.format(tab_index),
-      'hit_mods_{}'.format(tab_index),
-      'wound_mods_{}'.format(tab_index),
-      'save_mods_{}'.format(tab_index),
-      'damage_mods_{}'.format(tab_index),
-    ]
+    return {
+      f'shot_mods_{tab_index}': 'value',
+      f'hit_mods_{tab_index}': 'value',
+      f'wound_mods_{tab_index}': 'value',
+      f'save_mods_{tab_index}': 'value',
+      f'damage_mods_{tab_index}': 'value',
+    }
 
   def graph_inputs(self, tab_count):
-    inputs = []
+    inputs = {}
     for i in range(tab_count):
-      inputs += self.gen_tab_inputs(i)
+      inputs.update(self.gen_tab_inputs(i))
     return inputs
 
 def app_layout(tab_count):
