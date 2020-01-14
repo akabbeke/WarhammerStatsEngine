@@ -8,184 +8,255 @@ from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRo
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire
 
 
-def shot_modifiers(shot_mods):
+def parse_shot_mods(shot_mods):
+  if not shot_mods:
+    return [], []
   mods = []
-  for mod in shot_mods:
-    if 're_roll_dice' in mod:
-      mods.append(ReRollLessThanExpectedValue())
-    elif 're_roll_1s' in mod:
-      mods.append(ReRollOnes())
+  errors = []
+
+  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
+    mod_mods = []
+    mod_mods += parse_addons(mod)
+    mod_mods += parse_volume_rerolls(mod)
+    mod_mods += parse_special(mod)
+    mod_mods += parse_add(mod)
+
+    if not mod_mods:
+      errors.append(f'"{mod}"" is not a valid shot modifier')
+    mods += mod_mods
+  return mods, errors
+
+def parse_hit_mods(shot_mods):
+  if not shot_mods:
+    return [], []
+  mods = []
+  errors = []
+
+  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
+    mod_mods = []
+    mod_mods += parse_addons(mod)
+    mod_mods += parse_rerolls(mod)
+    mod_mods += parse_special(mod)
+    mod_mods += parse_add(mod)
+
+
+    if not mod_mods:
+      errors.append(f'"{mod}"" is not a valid hit modifier')
+    mods += mod_mods
+  return mods, errors
+
+def parse_wound_mods(shot_mods):
+  if not shot_mods:
+    return [], []
+  mods = []
+  errors = []
+
+  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
+    mod_mods = []
+    mod_mods += parse_addons(mod)
+    mod_mods += parse_rerolls(mod)
+    mod_mods += parse_special(mod)
+    mod_mods += parse_add(mod)
+
+    if not mod_mods:
+      errors.append(f'"{mod}"" is not a valid wound modifier')
+    mods += mod_mods
+  return mods, errors
+
+def parse_save_mods(shot_mods):
+  if not shot_mods:
+    return [], []
+  mods = []
+  errors = []
+
+  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
+    mod_mods = []
+    mod_mods += parse_rerolls(mod)
+    mod_mods += parse_ignore(mod)
+    mod_mods += parse_save_add(mod)
+
+    if not mod_mods:
+      errors.append(f'"{mod}"" is not a valid save modifier')
+    mods += mod_mods
+  return mods, errors
+
+def parse_damage_mods(shot_mods):
+  if not shot_mods:
+    return [], []
+  mods = []
+  errors = []
+
+  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
+    mod_mods = []
+    mod_mods += parse_volume_rerolls(mod)
+    mod_mods += parse_ignore(mod)
+    mod_mods += parse_add(mod)
+
+    if not mod_mods:
+      errors.append(f'"{mod}"" is not a valid damage modifier')
+    mods += mod_mods
+  return mods, errors
+
+def parse_addons(mod):
+  mods = []
+  match = re.match(r'\+?(?P<added_value>[0-9]+) (?P<added_kind>.*) on (a )?(?P<trigger>[0-9]+)(?P<threshold>\+)?', mod)
+  if not match:
+    return mods
+
+
+  added_value = match.groupdict().get('added_value')
+  added_kind = match.groupdict().get('added_kind')
+  trigger = match.groupdict().get('trigger')
+  threshold = match.groupdict().get('threshold')
+
+  int(added_value)
+
+  print(f'"{added_value}"', f'"{added_kind}"', int(trigger), threshold)
+
+  if added_kind in ['mw', 'mortal wound', 'mortal', 'mws', 'mortal wounds', 'mw\'s', 'mortal wound\'s']:
+    if threshold:
+      mods.append(ModGenerateMortalWound(int(trigger), int(added_value)))
+    else:
+      mods.append(GenerateMortalWound(int(trigger), int(added_value)))
+  elif added_kind in ['hit', 'hits']:
+    if threshold:
+      mods.append(ModExtraHit(int(trigger), int(added_value)))
+    else:
+      mods.append(ExtraHit(int(trigger), int(added_value)))
+  elif added_kind in ['shot', 'shots']:
+    if threshold:
+      mods.append(ModExtraShot(int(trigger), int(added_value)))
+    else:
+      mods.append(ExtraShot(int(trigger), int(added_value)))
+  print(mods)
   return mods
 
-
-def hit_modifiers(hit_mods):
+def parse_rerolls(mod):
   mods = []
-  for mod in hit_mods:
-    add_match = re.match(r'add_(\d+)', mod)
-    sub_match = re.match(r'sub_(\d+)', mod)
-    if add_match:
-      value = int(add_match.groups()[0])
-      mods.append(AddNToThreshold(value))
-    if sub_match:
-      value = -1 * int(sub_match.groups()[0])
-      mods.append(AddNToThreshold(value))
+  match = re.match(r'(re(-)?roll) (?P<reroll_kind>.+)', mod)
+  if not match:
+    return mods
 
-    if 're_roll_dice' in mod:
-      mods.append(ReRollAll())
-    elif 're_roll_failed' in mod:
-      mods.append(ReRollFailed())
-    elif 're_roll_1s' in mod:
-      mods.append(ReRollOnes())
-    elif 'mod_extra_hit_6_1' in mod:
-      mods.append(ModExtraHit(6,1))
-    elif 'mod_extra_hit_5_1' in mod:
-      mods.append(ModExtraHit(5,1))
-    elif 'extra_hit_6_1' in mod:
-      mods.append(ExtraHit(6,1))
-    elif 'extra_hit_5_1' in mod:
-      mods.append(ExtraHit(5,1))
-    elif 'mod_extra_shot_6_1' in mod:
-      mods.append(ModExtraShot(6,1))
-    elif 'mod_extra_shot_5_1' in mod:
-      mods.append(ModExtraShot(5,1))
-    elif 'extra_shot_6_1' in mod:
-      mods.append(ExtraShot(6,1))
-    elif 'extra_shot_5_1' in mod:
-      mods.append(ExtraShot(5,1))
-    elif 'mod_mortal_wound_6_1' in mod:
-      mods.append(ModGenerateMortalWound(6, 1))
-    elif 'mod_mortal_wound_5_1' in mod:
-      mods.append(ModGenerateMortalWound(5, 1))
-    elif 'mortal_wound_6_1' in mod:
-      mods.append(GenerateMortalWound(6, 1))
-    elif 'mortal_wound_5_1' in mod:
-      mods.append(GenerateMortalWound(5, 1))
-
+  reroll_kind = match.groupdict().get('reroll_kind')
+  if reroll_kind in ['one', 'ones', '1', '1\'s']:
+    mods.append(ReRollOnes())
+  elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
+    mods.append(ReRollAll())
+  elif reroll_kind in ['all failed', 'all failed dice', 'all failed rolls', 'all failed die']:
+    mods.append(ReRollFailed())
   return mods
 
-
-def wound_modifiers(wound_mods):
+def parse_volume_rerolls(mod):
   mods = []
-  for mod in wound_mods:
-    add_match = re.match(r'add_(\d+)', mod)
-    sub_match = re.match(r'sub_(\d+)', mod)
-    if add_match:
-      value = add_match.groups()[0]
-      mods.append(AddNToThreshold(int(value)))
-    if sub_match:
-      value = -1 * int(sub_match.groups()[0])
-      mods.append(AddNToThreshold(value))
+  match = re.match(r'(re(-)?roll) (?P<reroll_kind>.+)', mod)
+  if not match:
+    return mods
 
-    if 're_roll_dice' in mod:
-      mods.append(ReRollAll())
-    elif 're_roll_failed' in mod:
-      mods.append(ReRollFailed())
-    elif 're_roll_1s' in mod:
-      mods.append(ReRollOnes())
-    elif 'mod_mortal_wound_6_1' in mod:
-      mods.append(ModGenerateMortalWound(6, 1))
-    elif 'mod_mortal_wound_5_1' in mod:
-      mods.append(ModGenerateMortalWound(5, 1))
-    elif 'mortal_wound_6_1' in mod:
-      mods.append(GenerateMortalWound(6, 1))
-    elif 'mortal_wound_5_1' in mod:
-      mods.append(GenerateMortalWound(5, 1))
-    elif 'haywire' in mod:
-      mods.append(Haywire(5, 1))
+  reroll_kind = match.groupdict().get('reroll_kind')
+  if reroll_kind in ['one', 'ones', '1', '1\'s']:
+    mods.append(ReRollOnes())
+  elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
+    mods.append(ReRollLessThanExpectedValue())
   return mods
 
-
-def save_modifiers(wound_mods):
+def parse_special(mod):
   mods = []
-  for mod in wound_mods:
-    add_match = re.match(r'add_(\d+)', mod)
-    sub_match = re.match(r'sub_(\d+)', mod)
-    add_inv_match = re.match(r'add_inv_(\d+)', mod)
-    sub_inv_match = re.match(r'sub_inv_(\d+)', mod)
-    if add_match:
-      value = add_match.groups()[0]
-      mods.append(AddNToSave(int(value)))
-    if sub_match:
-      value = -1 * int(sub_match.groups()[0])
-      mods.append(AddNToSave(value))
-    if add_inv_match:
-      value = add_inv_match.groups()[0]
-      mods.append(AddNToInvuln(int(value)))
-    if sub_inv_match:
-      value = -1 * int(sub_inv_match.groups()[0])
-      mods.append(AddNToInvuln(value))
-
-    if 're_roll_dice' in mod:
-      mods.append(ReRollAll())
-    elif 're_roll_failed' in mod:
-      mods.append(ReRollFailed())
-    elif 're_roll_1s' in mod:
-      mods.append(ReRollOnes())
-    elif 'ignore_ap_1' in mod:
-      mods.append(IgnoreAP(1))
-    elif 'ignore_ap_2' in mod:
-      mods.append(IgnoreAP(2))
-    elif 'ignore_invuln' in mod:
-      mods.append(IgnoreInvuln())
+  if 'haywire' in mod:
+    mods.append(Haywire(5, 1))
+  elif mod in ['roll 2 choose highest', 'roll two choose highest', 'melta']:
+    mods.append(Melta())
+  elif mod in ['half damage']:
+    mods.append(HalfDamage())
+  elif mod in ['minimum 3 damage', 'treat rolls of 1 and 2 as 3']:
+    mods.append(MinimumValue(3))
   return mods
 
-
-def damage_modifiers(damage_mods):
+def parse_add(mod):
   mods = []
-  for mod in damage_mods:
-    add_match = re.match(r'add_(\d+)', mod)
-    sub_match = re.match(r'sub_(\d+)', mod)
-    if add_match:
-      value = add_match.groups()[0]
-      mods.append(AddNToVolume(int(value)))
-    if sub_match:
-      value = -1 * int(sub_match.groups()[0])
-      mods.append(AddNToVolume(value))
+  match = re.match(r'(?P<modify_type>add|sub|subtract)?( )?(?P<modifier>\+|-)?(?P<raw_value>\d+)', mod)
+  if not match:
+    return mods
+  modify_type = match.groupdict().get('modify_type')
+  modifier = match.groupdict().get('modifier')
+  raw_value = match.groupdict().get('raw_value')
 
-    if 're_roll_dice' in mod:
-      mods.append(ReRollAll())
-    elif 're_roll_1s' in mod:
-      mods.append(ReRollOnes())
-    elif 'melta' in mod:
-      mods.append(Melta())
-    elif 'half_damage' in mod:
-      mods.append(HalfDamage())
-    elif 'minimum_3' in mod:
-      mods.append(MinimumValue(3))
+  value = int(raw_value)
+  if modify_type in ['sub', 'subtract'] or modifier == '-':
+    value = -1*int(value)
+
+  mods.append(AddNToThreshold(value))
+  return mods
+
+def parse_ignore(mod):
+  mods = []
+  match = re.match(r'ignore (?P<modifier>[^-\s]+) (\+|-)?(?P<value>\d+)', mod)
+  if not match:
+    return mods
+  modifier = match.groupdict().get('modifier')
+  value = match.groupdict().get('value')
+
+  value = int(value)
+  if modifier in ['ap']:
+    mods.append(IgnoreAP(value))
+  elif modifier in ['inv', 'invuln', 'invulnerable']:
+    mods.append(IgnoreInvuln())
+  return mods
+
+def parse_save_add(mod):
+  mods = []
+  match = re.match(
+    r'(?P<modify_type>add|sub|subtract)?( )?(?P<modifier>\+|-)?(?P<raw_value>\d+)(( to)? (?P<type>(?!to).+))?',
+    mod
+  )
+  if not match:
+    return mods
+  modify_type = match.groupdict().get('modify_type')
+  modifier = match.groupdict().get('modifier')
+  raw_value = match.groupdict().get('raw_value')
+  save_type = match.groupdict().get('type')
+
+  value = int(raw_value)
+  if modify_type in ['sub', 'subtract'] or modifier == '-':
+    value = -1*int(value)
+  if save_type in [None, 'save']:
+    mods.append(AddNToSave(value))
+  elif save_type in ['inv', 'invuln', 'invulnerable']:
+    mods.append(AddNToInvuln(value))
   return mods
 
 
 def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
             wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, save_mods=None,
-            damage_mods=None):
+            damage_mods=None, existing_data=None, re_render=True, tab_number=None):
 
-  if not enabled:
+  if (not re_render and not existing_data) or not enabled:
     return {
-      'values': [],
+      'graph_data': {},
       'mean': 0,
       'std': 0,
+      'errors': []
+    }
+  elif not re_render:
+    existing_data[tab_number]['name'] = tab_name
+    return {
+      'graph_data': existing_data[tab_number],
+      'errors': []
     }
 
-  # print(dict(
-  #   ws=int(ws or 1),
-  #   bs=int(ws or 1),
-  #   toughness=int(toughness or 1),
-  #   save=int(save or 7),
-  #   invul=int(invuln or 7),
-  #   fnp=int(fnp or 7),
-  #   wounds=int(wounds or 1),
-  #   shots=parse_rsn(shots or 1),
-  #   strength=int(strength or 1),
-  #   ap=int(ap or 0),
-  #   damage=parse_rsn(damage or 1),
-  # ))
+  shot_mod_list, shot_mod_error = parse_shot_mods(shot_mods)
+  hit_mod_list, hit_mod_error = parse_hit_mods(hit_mods)
+  wound_mod_list, wound_mod_error = parse_wound_mods(wound_mods)
+  save_mod_list, save_mod_error = parse_save_mods(save_mods)
+  damage_mod_list, damage_mod_error = parse_damage_mods(damage_mods)
+
+  errors = shot_mod_error + hit_mod_error + wound_mod_error + save_mod_error + damage_mod_error
 
   modifiers = ModifierCollection()
-  modifiers.add_mods('shots', shot_modifiers(shot_mods or []))
-  modifiers.add_mods('hit', hit_modifiers(hit_mods or []))
-  modifiers.add_mods('wound', wound_modifiers(wound_mods or []))
-  modifiers.add_mods('pen', save_modifiers(save_mods or []))
-  modifiers.add_mods('damage', damage_modifiers(damage_mods or []))
+  modifiers.add_mods('shots', shot_mod_list)
+  modifiers.add_mods('hit', hit_mod_list)
+  modifiers.add_mods('wound', wound_mod_list)
+  modifiers.add_mods('pen', save_mod_list)
+  modifiers.add_mods('damage', damage_mod_list)
 
   target = Unit(
     ws=int(ws or 1),
@@ -204,10 +275,18 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
   )
   attack_sequence = AttackSequence(weapon, target, target, modifiers)
   attack_pmf = attack_sequence.run()
+  values = attack_pmf.cumulative().trim_tail().values
+
+  graph_data = {
+    'x': [i for i, x in enumerate(values)],
+    'y': [100*x for i, x in enumerate(values)],
+    'name': tab_name,
+  }
   return {
-    'values': attack_pmf.cumulative().trim_tail().values,
+    'graph_data': graph_data,
     'mean': attack_pmf.mean(),
     'std': attack_pmf.std(),
+    'errors': errors
   }
 
 def parse_rsn(value):

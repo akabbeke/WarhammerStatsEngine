@@ -148,14 +148,22 @@ class InputLayout(object):
       self.data_row_input(tab_index),
       self.attack_row_input(tab_index),
       self.target_row_input(tab_index),
-      *self.modify_input(tab_index),
+      self.mod_row(tab_index),
     ]
     return dbc.CardBody(form_input)
 
   def data_row_input(self, tab_index):
     content = [
       dbc.InputGroupAddon("Enable", addon_type="prepend"),
-      dbc.InputGroupAddon(dbc.Checkbox(checked=tab_index==0, id='enabled_{}'.format(tab_index)), addon_type="prepend"),
+      dbc.InputGroupAddon(
+        dbc.Checkbox(checked=tab_index==0, id='enabled_{}'.format(tab_index)),
+        id=f'enabled_addon{tab_index}',
+        addon_type="prepend",
+      ),
+      dbc.Tooltip(
+        f"Enable this tab",
+        target=f'enabled_addon{tab_index}',
+      ),
       dbc.Input(
         type="text",
         id='tab_name_{}'.format(tab_index),
@@ -165,8 +173,20 @@ class InputLayout(object):
         persistence=False,
         maxLength=60
       ),
+      dbc.Tooltip(
+        f"Name this tab",
+        target=f'tab_name_{tab_index}',
+      ),
       dbc.InputGroupAddon("Average", addon_type="prepend", id='avg_display_{}'.format(tab_index)),
+      dbc.Tooltip(
+        f"The mean value of the damage distribution",
+        target=f'avg_display_{tab_index}',
+      ),
       dbc.InputGroupAddon("σ", addon_type="apend", id='std_display_{}'.format(tab_index)),
+      dbc.Tooltip(
+        f"The standard deviation of the distribution",
+        target=f'std_display_{tab_index}',
+      ),
     ]
     return dbc.Row(
       [dbc.Col(dbc.InputGroup(content))],
@@ -195,6 +215,10 @@ class InputLayout(object):
         value=4,
         persistence=False,
       ),
+      dbc.Tooltip(
+        f"Set the toughness of the target",
+        target=f'toughness_{tab_index}',
+      ),
     ]
 
   def _save_input(self, tab_index):
@@ -205,6 +229,10 @@ class InputLayout(object):
         options=[{"label": "{}+".format(i), "value": i} for i in range(2,8)],
         value=4,
         persistence=False,
+      ),
+      dbc.Tooltip(
+        f"Set the save value of the target",
+        target=f'save_{tab_index}',
       ),
     ]
 
@@ -217,6 +245,10 @@ class InputLayout(object):
         value=7,
         persistence=False,
       ),
+      dbc.Tooltip(
+        f"Set the invulnerable save value of the target",
+        target=f'invuln_{tab_index}',
+      ),
     ]
 
   def _fnp_input(self, tab_index):
@@ -228,6 +260,10 @@ class InputLayout(object):
         value=7,
         persistence=False,
       ),
+      dbc.Tooltip(
+        f"Set the feel no pain value of the target",
+        target=f'fnp_{tab_index}',
+      ),
     ]
 
   def _wounds_input(self, tab_index):
@@ -238,6 +274,10 @@ class InputLayout(object):
         options=[{"label": "{}".format(i), "value": i} for i in range(1,25)],
         value=7,
         persistence=False,
+      ),
+      dbc.Tooltip(
+        f"Set the target wounds value",
+        target=f'wounds_{tab_index}',
       ),
     ]
 
@@ -263,6 +303,10 @@ class InputLayout(object):
         value=4,
         persistence=False,
       ),
+      dbc.Tooltip(
+        f"Set the weapons skill value",
+        target=f'ws_{tab_index}',
+      ),
     ]
 
   def _strength_input(self, tab_index):
@@ -273,6 +317,10 @@ class InputLayout(object):
         options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
         value=4,
         persistence=False,
+      ),
+      dbc.Tooltip(
+        f"Set the strength value",
+        target=f'strength_{tab_index}',
       ),
     ]
 
@@ -285,6 +333,10 @@ class InputLayout(object):
         value=1,
         persistence=False,
       ),
+      dbc.Tooltip(
+        f"Set the AP value",
+        target=f'ap_{tab_index}',
+      ),
     ]
 
   def _shots_input(self, tab_index):
@@ -292,12 +344,16 @@ class InputLayout(object):
       dbc.InputGroupAddon("Shots", addon_type="prepend"),
       dbc.Input(
         type="text",
-        id='shots_{}'.format(tab_index),
+        id=f'shots_{tab_index}',
         value='2d6',
         style={'text-align': 'right'},
         persistence=False,
         debounce=True,
         pattern=r'^(\d+)?[dD]?(\d+)$',
+      ),
+      dbc.Tooltip(
+        f"Set the number of shots (1, 2d6, d3, ...)",
+        target=f'shots_{tab_index}',
       ),
     ]
 
@@ -313,151 +369,109 @@ class InputLayout(object):
         debounce=True,
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
+      dbc.Tooltip(
+        f"Set the damage dealt (1, 2d6, d3, ...)",
+        target=f'damage_{tab_index}',
+      ),
     ]
 
-  def modify_input(self, tab_index):
-    return [
-      dbc.Row([
-        dbc.Col(self._modify_shot_input(tab_index)),
-        dbc.Col(self._modify_hit_input(tab_index)),
-        dbc.Col(self._modify_wound_input(tab_index)),
-      ], className="",),
-      dbc.Row([
-        dbc.Col(self._modify_save_input(tab_index)),
-        dbc.Col(self._modify_damage_input(tab_index)),
-      ], className="mb-0 ",),
-    ]
+  def mod_row(self, tab_index):
+    content = dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("Modify", addon_type="prepend"),
+        *self._modify_shot_input(tab_index),
+        *self._modify_hit_input(tab_index),
+        *self._modify_wound_input(tab_index),
+        *self._modify_save_input(tab_index),
+        *self._modify_damage_input(tab_index),
+      ],
+    )
+    return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
   def _modify_shot_input(self, tab_index):
-    return dcc.Dropdown(
-      persistence=False,
-      id='shot_mods_{}'.format(tab_index),
-      multi=True,
-      placeholder='Modify shot # rolls',
-      className="mb-2 ",
-    )
+    return [
+      dbc.InputGroupAddon("Shots", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'shot_mods_{tab_index}',
+        value='',
+        style={'text-align': 'right'},
+        persistence=False,
+        debounce=True,
+      ),
+      dbc.Tooltip(
+        f"Comma separated list of shots roll modifiers ex: 'Add +2', 'roll 2 choose highest', 'reroll ones'",
+        target=f'shot_mods_{tab_index}',
+      ),
+    ]
 
   def _modify_hit_input(self, tab_index):
-    return dcc.Dropdown(
-      persistence=False,
-      id='hit_mods_{}'.format(tab_index),
-      multi=True,
-      placeholder='Modify hit rolls',
-    )
+    return [
+      dbc.InputGroupAddon("Hits", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'hit_mods_{tab_index}',
+        value='',
+        style={'text-align': 'right'},
+        persistence=False,
+        debounce=True,
+      ),
+      dbc.Tooltip(
+        f"Comma separated list of hit roll modifiers ex: 'Sub -3', 'reroll failed', 'reroll all', '+2 shot on 6+', '1 MW on a 5'",
+        target=f'hit_mods_{tab_index}',
+      ),
+    ]
 
   def _modify_wound_input(self, tab_index):
-    return dcc.Dropdown(
-      persistence=False,
-      id='wound_mods_{}'.format(tab_index),
-      multi=True,
-      placeholder='Modify wound rolls',
-    )
+    return [
+      dbc.InputGroupAddon("Wounds", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'wound_mods_{tab_index}',
+        value='',
+        style={'text-align': 'right'},
+        persistence=False,
+        debounce=True,
+      ),
+      dbc.Tooltip(
+        f"Comma separated list of wound roll modifiers ex: '+1', 'reroll failed', 'reroll all', 'haywire'",
+        target=f'wound_mods_{tab_index}',
+      ),
+    ]
 
   def _modify_save_input(self, tab_index):
-    return dcc.Dropdown(
-      persistence=False,
-      id='save_mods_{}'.format(tab_index),
-      multi=True,
-      placeholder='Modify save rolls',
-    )
+    return [
+      dbc.InputGroupAddon("Saves", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'save_mods_{tab_index}',
+        value='',
+        style={'text-align': 'right'},
+        persistence=False,
+        debounce=True,
+      ),
+      dbc.Tooltip(
+        f"Comma separated list of save roll modifiers ex: 'ignore AP -2', '+1' 'reroll failed', '-1 invuln'",
+        target=f'save_mods_{tab_index}',
+      ),
+    ]
 
   def _modify_damage_input(self, tab_index):
-    return dcc.Dropdown(
-      persistence=False,
-      id='damage_mods_{}'.format(tab_index),
-      multi=True,
-      placeholder='Modify damage rolls',
-    )
-
-
-class MultiOptionGenerator(object):
-  def shot_options(self, selected):
-    base_options = [
-      ['re_roll_1s', 'Re-roll 1\'s', 1],
-      ['re_roll_dice', 'Re-roll all rolls', 1],
+    return [
+      dbc.InputGroupAddon("Damage", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'damage_mods_{tab_index}',
+        value='',
+        style={'text-align': 'right'},
+        persistence=False,
+        debounce=True,
+      ),
+      dbc.Tooltip(
+        f"Comma separated list of damage roll modifiers ex: 'minimum 3 damage', 'half damage 'reroll ones', 'melta'",
+        target=f'damage_mods_{tab_index}',
+      ),
     ]
-    return self._generate_options(base_options, selected)
-
-  def hit_options(self, selected):
-    base_options = [
-      ['re_roll_1s', 'Re-roll 1\'s', 1],
-      ['re_roll_failed', 'Re-roll failed rolls', 1],
-      ['re_roll_dice', 'Re-roll all rolls', 1],
-      ['add_1', 'Add +1', 4],
-      ['sub_1', 'Sub -1', 5],
-      ['mod_extra_hit_6_1', '+1 hit on 6+', 3],
-      ['mod_extra_hit_5_1', '+1 hit on 5+', 3],
-      ['extra_hit_6_1', '+1 hit on 6', 3],
-      ['extra_hit_5_1', '+1 hit on 5 or 6', 3],
-      ['mod_extra_shot_6_1', '+1 shot on 6+', 3],
-      ['mod_extra_shot_5_1', '+1 shot on 5+', 3],
-      ['extra_shot_6_1', '+1 shot on 6', 3],
-      ['extra_shot_6_1', '+1 shot on 5 or 6', 3],
-      ['mod_mortal_wound_6_1', 'MW on 6+', 4],
-      ['mod_mortal_wound_5_1', 'MW on 5+', 4],
-      ['mortal_wound_6_1', 'MW on 6', 4],
-      ['mortal_wound_5_1', 'MW on 5 or 6', 4],
-    ]
-    return self._generate_options(base_options, selected)
-
-  def wound_options(self, selected):
-    base_options = [
-      ['re_roll_1s', 'Re-roll 1\'s', 1],
-      ['re_roll_failed', 'Re-roll failed rolls', 1],
-      ['re_roll_dice', 'Re-roll all rolls', 1],
-      ['add_1', 'Add +1', 4],
-      ['sub_1', 'Sub -1', 4],
-      ['mod_mortal_wound_6_1', 'MW on 6+', 4],
-      ['mod_mortal_wound_5_1', 'MW on 5+', 4],
-      ['mortal_wound_6_1', 'MW on 6', 4],
-      ['mortal_wound_5_1', 'MW on 5 or 6', 4],
-      ['haywire', 'Haywire', 1]
-    ]
-    return self._generate_options(base_options, selected)
-
-  def save_options(self, selected):
-    base_options = [
-      ['re_roll_1s', 'Re-roll 1\'s', 1],
-      ['re_roll_failed', 'Re-roll failed rolls', 1],
-      ['re_roll_dice', 'Re-roll all rolls', 1],
-      ['ignore_ap_1', 'Ignore AP -1', 1],
-      ['ignore_ap_2', 'Ignore AP -2', 1],
-      ['ignore_invuln', 'Ignore Invuln', 1],
-      ['add_1', '+1 Save', 4],
-      ['sub_1', '-1 Save', 5],
-      ['add_inv_1', '+1 Invuln', 4],
-      ['sub_inv_1', '-1 Invuln', 5],
-    ]
-    return self._generate_options(base_options, selected)
-
-  def damage_options(self, selected):
-    base_options = [
-      ['re_roll_1s', 'Re-roll 1\'s', 1],
-      ['re_roll_dice', 'Re-roll all rolls', 1],
-      ['minimum_3', 'Minimum 3', 1],
-      ['melta', 'Melta', 1],
-      ['half_damage', 'Half Damage', 1],
-      ['add_1', 'Add +1', 4],
-      ['sub_1', 'Sub -1', 5],
-    ]
-    return self._generate_options(base_options, selected)
-
-  def _generate_options(self, base_options, selected):
-    options = []
-    for option, label, lim in base_options:
-      existing_ids = []
-      for sel_id in selected:
-        match = re.match('{}_(\d+)'.format(option), sel_id)
-        if match:
-          existing_ids.append(int(match.groups()[0]))
-      max_id = max(existing_ids + [0])
-      if len(existing_ids) < lim:
-        ids = existing_ids + [max_id + 1]
-      else:
-        ids = existing_ids
-      for i in ids:
-        options += [{'label': label, 'value': '{}_{}'.format(option, i)}]
-    return options
 
 
 class InputGenerator(object):

@@ -5,7 +5,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
-from .layout import GraphLayout, InputGenerator, MultiOptionGenerator
+from .layout import GraphLayout, InputGenerator
 
 from .util import compute
 
@@ -71,7 +71,6 @@ class CallbackController(object):
     self.tab_count = tab_count
     self.graph_layout = GraphLayout()
     self.input_generator = InputGenerator()
-    self.multi_generator = MultiOptionGenerator()
 
   def graph_inputs(self):
     inputs = self.input_generator.graph_inputs(self.tab_count)
@@ -107,11 +106,6 @@ class CallbackController(object):
   def setup_input_tab_callback(self, tab_index):
     self.disable_callback(tab_index)
     self.tab_name_callback(tab_index)
-    self.shot_mods_callback(tab_index)
-    self.hit_mods_callback(tab_index)
-    self.wound_mods_callback(tab_index)
-    self.save_mods_callback(tab_index)
-    self.damage_mods_callback(tab_index)
 
   def disable_callback(self, tab_index):
     @self.app.callback(
@@ -136,47 +130,6 @@ class CallbackController(object):
     def update_tab_name(value):
         return value if len(value) > 2 else 'Profile'
 
-
-  def shot_mods_callback(self, tab_index):
-    @self.app.callback(
-      Output('shot_mods_{}'.format(tab_index), 'options'),
-      [Input('shot_mods_{}'.format(tab_index), 'value')],
-    )
-    def update_shot_options(value):
-      return self.multi_generator.shot_options(value or [])
-
-  def hit_mods_callback(self, tab_index):
-    @self.app.callback(
-      Output('hit_mods_{}'.format(tab_index), 'options'),
-      [Input('hit_mods_{}'.format(tab_index), 'value')],
-    )
-    def update_hit_options(value):
-      return self.multi_generator.hit_options(value or [])
-
-  def wound_mods_callback(self, tab_index):
-    @self.app.callback(
-      Output('wound_mods_{}'.format(tab_index), 'options'),
-      [Input('wound_mods_{}'.format(tab_index), 'value')],
-    )
-    def update_wound_options(value):
-      return self.multi_generator.wound_options(value or [])
-
-  def save_mods_callback(self, tab_index):
-    @self.app.callback(
-      Output('save_mods_{}'.format(tab_index), 'options'),
-      [Input('save_mods_{}'.format(tab_index), 'value')],
-    )
-    def update_save_options(value):
-      return self.multi_generator.save_options(value or [])
-
-  def damage_mods_callback(self, tab_index):
-    @self.app.callback(
-      Output('damage_mods_{}'.format(tab_index), 'options'),
-      [Input('damage_mods_{}'.format(tab_index), 'value')],
-    )
-    def update_damage_options(value):
-      return MultiOptionGenerator().damage_options(value or [])
-
   def update_graph(self, tab_data):
     graph_data = tab_data[-1]['states']['damage_graph']['data']
     output = {}
@@ -185,21 +138,23 @@ class CallbackController(object):
     else:
       changed_tabs = self.tabs_changed()
     for tab_number in range(self.tab_count):
-      if tab_number in changed_tabs:
-        data = compute(**tab_data[tab_number]['inputs'])
-        graph_data[tab_number] = {
-          'x': [i for i, x in enumerate(data['values'])],
-          'y': [100*x for i, x in enumerate(data['values'])],
-          'name': tab_data[tab_number]['inputs']['tab_name'],
-        }
-        output[f'avg_display_{tab_number}'] = 'Average: {}'.format(round(data['mean'], 2))
+      data = compute(
+        **tab_data[tab_number]['inputs'],
+        existing_data=graph_data,
+        re_render=tab_number in changed_tabs,
+        tab_number=tab_number,
+      )
+      graph_data[tab_number] = data.get('graph_data')
+      if data.get('mean') is not None:
+        output[f'avg_display_{tab_number}'] = 'Mean: {}'.format(round(data['mean'], 2))
+      else:
+        output[f'avg_display_{tab_number}'] = tab_data[tab_number]['states']['avg_display']
+
+      if data.get('std') is not None:
         output[f'std_display_{tab_number}'] = 'σ: {}'.format(round(data['std'], 2))
       else:
-        existing_data = graph_data[tab_number]
-        existing_data['name'] = tab_data[tab_number]['inputs']['tab_name']
-        graph_data[tab_number] = existing_data
-        output[f'avg_display_{tab_number}'] = tab_data[tab_number]['states']['avg_display']
         output[f'std_display_{tab_number}'] = tab_data[tab_number]['states']['std_display']
+
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
     output['damage_graph'] = self.graph_layout.figure_template(graph_data, max_len)
     return output
