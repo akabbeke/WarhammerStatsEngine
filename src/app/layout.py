@@ -45,9 +45,16 @@ class Layout(object):
     self.tab_count = tab_count
 
   def layout(self):
+    return html.Div([
+      dcc.Location(id='url'),
+      html.Div(id='page-content')
+    ])
+
+  def base_layout(self):
     return html.Div(
       [
         self.navbar(),
+        self.base_title(),
         dbc.Row(
           dbc.Col(
             GraphLayout(self.tab_count).layout(),
@@ -67,10 +74,73 @@ class Layout(object):
       className='container-fluid d-flex flex-column',
     )
 
+  def base_title(self):
+    content = dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("Title", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id='title',
+          value='',
+          debounce=True,
+          minLength=2,
+          persistence=False,
+          maxLength=140,
+        ),
+      ],
+    )
+    return dbc.CardBody(dbc.Row([dbc.Col(content)], className="mb-2 ",))
+
+  def static_layout(self):
+    return html.Div(
+      [
+        self.static_navbar(),
+        html.Div(id='page-2-content',style={'display': 'none'}),
+        dcc.RadioItems(
+          id='page-2-radios',
+          options=[{'label': i, 'value': i} for i in ['Orange', 'Blue', 'Red']],
+          value='Orange',
+          style={'display': 'none'}
+        ),
+        dbc.Row(
+          dbc.Col(
+            GraphLayout(self.tab_count).static_layout(),
+            className='portlet-container portlet-dropzone',
+          ),
+          style={'align-items': 'center'},
+          className='flex-fill fill d-flex justify-content-start',
+        ),
+      ],
+      className='container-fluid d-flex flex-column',
+    )
+
   def navbar(self):
     return dbc.NavbarSimple(
       children=[
-          dbc.NavItem(dbc.NavLink("GitHub Repo", href="https://github.com/akabbeke/WarhammerStatsEngine")),
+        dbc.NavItem(
+          dbc.NavLink(
+            "permalink to this graph",
+            id='permalink',
+            href="https://github.com/akabbeke/WarhammerStatsEngine"
+          )
+        ),
+      ],
+      brand="Warhammer-Stats-Engine",
+      brand_href="#",
+      color="primary",
+      dark=True,
+    )
+
+  def static_navbar(self):
+    return dbc.NavbarSimple(
+      children=[
+        dbc.NavItem(
+          dbc.NavLink(
+            "Create your own graph",
+            id='permalink',
+            href="/"
+          )
+        ),
       ],
       brand="Warhammer-Stats-Engine",
       brand_href="#",
@@ -97,12 +167,26 @@ class GraphLayout(object):
     )
     return content
 
-  def figure_template(self, data=None, max_len=10):
+  def static_layout(self):
+    content = dcc.Graph(
+      id='static_damage_graph',
+      style={'height':'75vh'},
+      figure=self.figure_template(),
+      config={
+        'scrollZoom': False,
+        'displayModeBar': False,
+      },
+
+    )
+    return content
+
+  def figure_template(self, data=None, max_len=10, title=None):
     return {
       'data': data or [{}] * self.tab_count,
       'layout': {
+        'title': title,
         'showlegend': True,
-        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1.1, x=0.5),
+        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1, x=0.5),
         'template': 'plotly_dark',
         'xaxis': {
             'title': 'Minimum Wounds Dealt to Target',
@@ -580,7 +664,7 @@ class InputGenerator(object):
     }
 
   def graph_inputs(self, tab_count):
-    inputs = {}
+    inputs = {'title': 'value'}
     for i in range(tab_count):
       inputs.update(self.gen_tab_inputs(i))
     return inputs

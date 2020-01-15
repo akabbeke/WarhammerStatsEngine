@@ -22,6 +22,7 @@ external_stylesheets = [
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.title = 'Stats Engine'
+app.config.suppress_callback_exceptions = True
 app.layout = app_layout(TAB_COUNT)
 CallbackController(app, TAB_COUNT).setup_callbacks()
 

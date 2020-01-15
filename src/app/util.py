@@ -275,7 +275,7 @@ def parse_save_add(mod):
 
 def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
             wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, save_mods=None,
-            damage_mods=None, existing_data=None, re_render=True, tab_index=None):
+            damage_mods=None, existing_data=None, re_render=True, tab_index=None, title=None):
 
   if (not re_render and not existing_data) or not enabled:
     return {
