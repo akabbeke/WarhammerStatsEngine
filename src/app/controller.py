@@ -174,6 +174,8 @@ class CallbackController(object):
       return mapper.dict_to_output(result_dict)
 
   def setup_graph_callbacks(self):
+    inputs = self.input_generator.graph_inputs(self.tab_count)
+    inputs.update({'url': 'href'})
     mapper = CallbackMapper(
       outputs=self._graph_outputs(),
       inputs=self.input_generator.graph_inputs(self.tab_count),
