@@ -126,7 +126,7 @@ class Layout(object):
         ),
       ],
       brand="Warhammer-Stats-Engine",
-      brand_href="#",
+      brand_href="/",
       color="primary",
       dark=True,
     )
@@ -143,7 +143,7 @@ class Layout(object):
         ),
       ],
       brand="Warhammer-Stats-Engine",
-      brand_href="#",
+      brand_href="/",
       color="primary",
       dark=True,
     )
