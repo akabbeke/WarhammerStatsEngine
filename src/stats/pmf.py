@@ -237,7 +237,7 @@ class PMFCollection(object):
     elif thresh_mod > 0:
       return PMFCollection(self.pmfs[:1] * thresh_mod + self.pmfs)
     elif thresh_mod < 0:
-      return PMFCollection((self.pmfs + self.pmfs[-1:] * thresh_mod)[-1*len(self.pmfs):])
+      return PMFCollection((self.pmfs + self.pmfs[-1:] * (-1 * thresh_mod))[-1*len(self.pmfs):])
 
   def mul_pmf(self, pmf):
     """

@@ -82,7 +82,7 @@ class CallbackController(object):
 
   def setup_graph_callbacks(self):
     mapper = CallbackMapper(
-      outputs=self._graph_updates(),
+      outputs=self._graph_outputs(),
       inputs=self.input_generator.graph_inputs(self.tab_count),
       states=self._graph_updates(),
     )
@@ -98,6 +98,22 @@ class CallbackController(object):
       **{f'avg_display_{i}': 'children' for i in range(self.tab_count)},
       **{f'std_display_{i}': 'children' for i in range(self.tab_count)},
     }
+
+  def _graph_outputs(self):
+    return {
+      **self._graph_updates(),
+      **{f'shot_mods_{i}': 'invalid' for i in range(self.tab_count)},
+      **{f'hit_mods_{i}': 'invalid' for i in range(self.tab_count)},
+      **{f'wound_mods_{i}': 'invalid' for i in range(self.tab_count)},
+      **{f'save_mods_{i}': 'invalid' for i in range(self.tab_count)},
+      **{f'damage_mods_{i}': 'invalid' for i in range(self.tab_count)},
+      **{f'shot_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
+      **{f'hit_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
+      **{f'wound_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
+      **{f'save_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
+      **{f'damage_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
+    }
+
 
   def setup_input_callbacks(self):
     for i in range(self.tab_count):
@@ -137,23 +153,36 @@ class CallbackController(object):
       changed_tabs = list(range(self.tab_count))
     else:
       changed_tabs = self.tabs_changed()
-    for tab_number in range(self.tab_count):
+    for tab_index in range(self.tab_count):
       data = compute(
-        **tab_data[tab_number]['inputs'],
+        **tab_data[tab_index]['inputs'],
         existing_data=graph_data,
-        re_render=tab_number in changed_tabs,
-        tab_number=tab_number,
+        re_render=tab_index in changed_tabs,
+        tab_index=tab_index,
       )
-      graph_data[tab_number] = data.get('graph_data')
+      graph_data[tab_index] = data.get('graph_data')
       if data.get('mean') is not None:
-        output[f'avg_display_{tab_number}'] = 'Mean: {}'.format(round(data['mean'], 2))
+        output[f'avg_display_{tab_index}'] = 'Mean: {}'.format(round(data['mean'], 2))
       else:
-        output[f'avg_display_{tab_number}'] = tab_data[tab_number]['states']['avg_display']
+        output[f'avg_display_{tab_index}'] = tab_data[tab_index]['states']['avg_display']
 
       if data.get('std') is not None:
-        output[f'std_display_{tab_number}'] = 'σ: {}'.format(round(data['std'], 2))
+        output[f'std_display_{tab_index}'] = 'σ: {}'.format(round(data['std'], 2))
       else:
-        output[f'std_display_{tab_number}'] = tab_data[tab_number]['states']['std_display']
+        output[f'std_display_{tab_index}'] = tab_data[tab_index]['states']['std_display']
+
+
+      output[f'shot_mods_{tab_index}'] = bool(data.get('shot_mod_error'))
+      output[f'hit_mods_{tab_index}'] = bool(data.get('hit_mod_error'))
+      output[f'wound_mods_{tab_index}'] = bool(data.get('wound_mod_error'))
+      output[f'save_mods_{tab_index}'] = bool(data.get('save_mod_error'))
+      output[f'damage_mods_{tab_index}'] = bool(data.get('damage_mod_error'))
+
+      output[f'shot_mods_tooltip_{tab_index}'] = '\n'.join(data.get('shot_mod_error', []))
+      output[f'hit_mods_tooltip_{tab_index}'] = '\n'.join(data.get('hit_mod_error', []))
+      output[f'wound_mods_tooltip_{tab_index}'] = '\n'.join(data.get('wound_mod_error', []))
+      output[f'save_mods_tooltip_{tab_index}'] = '\n'.join(data.get('save_mod_error', []))
+      output[f'damage_mods_tooltip_{tab_index}'] = '\n'.join(data.get('damage_mod_error', []))
 
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
     output['damage_graph'] = self.graph_layout.figure_template(graph_data, max_len)

@@ -17,12 +17,21 @@ def parse_shot_mods(shot_mods):
   for mod in [x.strip() for x in shot_mods.lower().split(',')]:
     mod_mods = []
     mod_mods += parse_addons(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_volume_rerolls(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_special(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_add(mod)
 
     if not mod_mods:
-      errors.append(f'"{mod}"" is not a valid shot modifier')
+      errors.append(f'"{mod}" is not a valid shot modifier')
     mods += mod_mods
   return mods, errors
 
@@ -35,13 +44,25 @@ def parse_hit_mods(shot_mods):
   for mod in [x.strip() for x in shot_mods.lower().split(',')]:
     mod_mods = []
     mod_mods += parse_addons(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_rerolls(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_special(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_add(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
 
 
     if not mod_mods:
-      errors.append(f'"{mod}"" is not a valid hit modifier')
+      errors.append(f'"{mod}" is not a valid hit modifier')
     mods += mod_mods
   return mods, errors
 
@@ -54,12 +75,24 @@ def parse_wound_mods(shot_mods):
   for mod in [x.strip() for x in shot_mods.lower().split(',')]:
     mod_mods = []
     mod_mods += parse_addons(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_rerolls(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_special(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_add(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
 
     if not mod_mods:
-      errors.append(f'"{mod}"" is not a valid wound modifier')
+      errors.append(f'"{mod}" is not a valid wound modifier')
     mods += mod_mods
   return mods, errors
 
@@ -72,11 +105,20 @@ def parse_save_mods(shot_mods):
   for mod in [x.strip() for x in shot_mods.lower().split(',')]:
     mod_mods = []
     mod_mods += parse_rerolls(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_ignore(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_save_add(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
 
     if not mod_mods:
-      errors.append(f'"{mod}"" is not a valid save modifier')
+      errors.append(f'"{mod}" is not a valid save modifier')
     mods += mod_mods
   return mods, errors
 
@@ -89,11 +131,20 @@ def parse_damage_mods(shot_mods):
   for mod in [x.strip() for x in shot_mods.lower().split(',')]:
     mod_mods = []
     mod_mods += parse_volume_rerolls(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_ignore(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
     mod_mods += parse_add(mod)
+    if mod_mods:
+      mods += mod_mods
+      continue
 
     if not mod_mods:
-      errors.append(f'"{mod}"" is not a valid damage modifier')
+      errors.append(f'"{mod}" is not a valid damage modifier')
     mods += mod_mods
   return mods, errors
 
@@ -111,8 +162,6 @@ def parse_addons(mod):
 
   int(added_value)
 
-  print(f'"{added_value}"', f'"{added_kind}"', int(trigger), threshold)
-
   if added_kind in ['mw', 'mortal wound', 'mortal', 'mws', 'mortal wounds', 'mw\'s', 'mortal wound\'s']:
     if threshold:
       mods.append(ModGenerateMortalWound(int(trigger), int(added_value)))
@@ -128,7 +177,6 @@ def parse_addons(mod):
       mods.append(ModExtraShot(int(trigger), int(added_value)))
     else:
       mods.append(ExtraShot(int(trigger), int(added_value)))
-  print(mods)
   return mods
 
 def parse_rerolls(mod):
@@ -227,7 +275,7 @@ def parse_save_add(mod):
 
 def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=None, ap=None, save=None, invuln=None, fnp=None,
             wounds=None, shots=None, damage=None, shot_mods=None, hit_mods=None, wound_mods=None, save_mods=None,
-            damage_mods=None, existing_data=None, re_render=True, tab_number=None):
+            damage_mods=None, existing_data=None, re_render=True, tab_index=None):
 
   if (not re_render and not existing_data) or not enabled:
     return {
@@ -237,9 +285,9 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
       'errors': []
     }
   elif not re_render:
-    existing_data[tab_number]['name'] = tab_name
+    existing_data[tab_index]['name'] = tab_name
     return {
-      'graph_data': existing_data[tab_number],
+      'graph_data': existing_data[tab_index],
       'errors': []
     }
 
@@ -248,8 +296,6 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
   wound_mod_list, wound_mod_error = parse_wound_mods(wound_mods)
   save_mod_list, save_mod_error = parse_save_mods(save_mods)
   damage_mod_list, damage_mod_error = parse_damage_mods(damage_mods)
-
-  errors = shot_mod_error + hit_mod_error + wound_mod_error + save_mod_error + damage_mod_error
 
   modifiers = ModifierCollection()
   modifiers.add_mods('shots', shot_mod_list)
@@ -281,13 +327,26 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
     'x': [i for i, x in enumerate(values)],
     'y': [100*x for i, x in enumerate(values)],
     'name': tab_name,
+    "colorscale": [[0, "rgba(255, 255, 255,0)"], [1, "#75baf2"]],
   }
-  return {
+  output = {
     'graph_data': graph_data,
     'mean': attack_pmf.mean(),
     'std': attack_pmf.std(),
-    'errors': errors
+    'errors': shot_mod_error + hit_mod_error + wound_mod_error + save_mod_error + damage_mod_error,
   }
+  if shot_mods:
+    output['shot_mod_error'] = shot_mod_error
+  if hit_mods:
+    output['hit_mod_error'] = hit_mod_error
+  if wound_mods:
+    output['wound_mod_error'] = wound_mod_error
+  if save_mods:
+    output['save_mod_error'] = save_mod_error
+  if damage_mods:
+    output['damage_mod_error'] = damage_mod_error
+
+  return output
 
 def parse_rsn(value):
   try:

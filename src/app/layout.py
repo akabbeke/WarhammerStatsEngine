@@ -47,6 +47,7 @@ class Layout(object):
   def layout(self):
     return html.Div(
       [
+        self.navbar(),
         dbc.Row(
           dbc.Col(
             GraphLayout(self.tab_count).layout(),
@@ -56,14 +57,28 @@ class Layout(object):
           className='flex-fill fill d-flex justify-content-start',
         ),
         dbc.Row(
-          dbc.Col(
-            InputLayout(self.tab_count).layout(),
-          ),
+          [
+            dbc.Col(
+              InputLayout(self.tab_count).layout(),
+            ),
+          ]
         ),
       ],
       className='container-fluid d-flex vh-100 flex-column',
     )
 
+  def navbar(self):
+    return dbc.NavbarSimple(
+      children=[
+          dbc.NavItem(dbc.NavLink("GitHub Repo", href="https://github.com/akabbeke/WarhammerStatsEngine")),
+      ],
+      brand="Warhammer-Stats-Engine",
+      brand_href="#",
+      color="primary",
+      dark=True,
+    )
+
+app_color = {"graph_bg": "#082255", "graph_line": "#a3a7b0"}
 
 class GraphLayout(object):
   def __init__(self, tab_count=0):
@@ -73,10 +88,9 @@ class GraphLayout(object):
     content = dcc.Graph(
       id='damage_graph',
       figure=self.figure_template(),
-      # style={'height':'60vh'},
       config={
         'scrollZoom': False,
-        'toImageButtonOptions': {'format': 'png', 'filename': 'warhammer_plot.png', 'height': 540, 'width': 960}
+        'displayModeBar': False,
       },
 
     )
@@ -87,7 +101,8 @@ class GraphLayout(object):
       'data': data or [{}] * self.tab_count,
       'layout': {
         'showlegend': True,
-        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1.05, x=0.5),
+        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1.1, x=0.5),
+        'template': 'plotly_dark',
         'xaxis': {
             'title': 'Minimum Wounds Dealt to Target',
             'type': 'linear',
@@ -95,6 +110,8 @@ class GraphLayout(object):
             'tickmode': 'linear',
             'tick0': 0,
             'dtick': 1,
+            "gridcolor": app_color["graph_line"],
+            "color": app_color["graph_line"],
             'fixedrange': True,
         },
         'yaxis': {
@@ -104,10 +121,20 @@ class GraphLayout(object):
             'tickmode': 'linear',
             'tick0': 0,
             'dtick': 10,
+            "gridcolor": app_color["graph_line"],
+            "color": app_color["graph_line"],
             'fixedrange': True,
         },
+        'margin':{
+          'l': 70,
+          'r': 70,
+          'b': 50,
+          't': 50,
+          'pad': 4,
+        },
         'autosize': True,
-        'title': 'warhammer-stats-engine.com'
+        'plot_bgcolor': 'rgba(0,0,0,0)',
+        'paper_bgcolor': 'rgba(0,0,0,0)',
       },
     }
 
@@ -208,7 +235,7 @@ class InputLayout(object):
 
   def _toughness_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("T", addon_type="prepend"),
+      dbc.InputGroupAddon("T", id=f'toughness_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='toughness_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,11)],
@@ -217,13 +244,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the toughness of the target",
-        target=f'toughness_{tab_index}',
+        target=f'toughness_addon_{tab_index}',
       ),
     ]
 
   def _save_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("SV", addon_type="prepend"),
+      dbc.InputGroupAddon("SV", id=f'save_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='save_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(2,8)],
@@ -232,13 +259,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the save value of the target",
-        target=f'save_{tab_index}',
+        target=f'save_addon_{tab_index}',
       ),
     ]
 
   def _invuln_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("INV", addon_type="prepend"),
+      dbc.InputGroupAddon("INV", id=f'invuln_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='invuln_{}'.format(tab_index),
         options=[{"label": "{}++".format(i), "value": i} for i in range(2,8)],
@@ -247,13 +274,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the invulnerable save value of the target",
-        target=f'invuln_{tab_index}',
+        target=f'invuln_addon_{tab_index}',
       ),
     ]
 
   def _fnp_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("FNP", addon_type="prepend"),
+      dbc.InputGroupAddon("FNP", id=f'fnp_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='fnp_{}'.format(tab_index),
         options=[{"label": "{}+++".format(i), "value": i} for i in range(2,8)],
@@ -262,13 +289,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the feel no pain value of the target",
-        target=f'fnp_{tab_index}',
+        target=f'fnp_addon_{tab_index}',
       ),
     ]
 
   def _wounds_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("W", addon_type="prepend"),
+      dbc.InputGroupAddon("W", id=f'wounds_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='wounds_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,25)],
@@ -277,7 +304,7 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the target wounds value",
-        target=f'wounds_{tab_index}',
+        target=f'wounds_addon_{tab_index}',
       ),
     ]
 
@@ -296,7 +323,7 @@ class InputLayout(object):
 
   def _weapon_skill_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("WS", addon_type="prepend"),
+      dbc.InputGroupAddon("WS", id=f'ws_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='ws_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
@@ -305,13 +332,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the weapons skill value",
-        target=f'ws_{tab_index}',
+        target=f'ws_addon_{tab_index}',
       ),
     ]
 
   def _strength_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("S", addon_type="prepend"),
+      dbc.InputGroupAddon("S", id=f'strength_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='strength_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
@@ -320,13 +347,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the strength value",
-        target=f'strength_{tab_index}',
+        target=f'strength_addon_{tab_index}',
       ),
     ]
 
   def _ap_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("AP", addon_type="prepend"),
+      dbc.InputGroupAddon("AP", id=f'ap_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
         id='ap_{}'.format(tab_index),
         options=[{"label": "0" if i==0 else "-{}".format(i), "value": i} for i in range(0,7)],
@@ -335,13 +362,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the AP value",
-        target=f'ap_{tab_index}',
+        target=f'ap_addon_{tab_index}',
       ),
     ]
 
   def _shots_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Shots", addon_type="prepend"),
+      dbc.InputGroupAddon("#", id=f'shots_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'shots_{tab_index}',
@@ -353,13 +380,13 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the number of shots (1, 2d6, d3, ...)",
-        target=f'shots_{tab_index}',
+        target=f'shots_addon_{tab_index}',
       ),
     ]
 
   def _damage_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Damage", addon_type="prepend"),
+      dbc.InputGroupAddon("D", id=f'damage_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id='damage_{}'.format(tab_index),
@@ -371,7 +398,7 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Set the damage dealt (1, 2d6, d3, ...)",
-        target=f'damage_{tab_index}',
+        target=f'damage_addon_{tab_index}',
       ),
     ]
 
@@ -390,7 +417,7 @@ class InputLayout(object):
 
   def _modify_shot_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Shots", addon_type="prepend"),
+      dbc.InputGroupAddon("Shots", id=f'shot_mods_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'shot_mods_{tab_index}',
@@ -400,14 +427,18 @@ class InputLayout(object):
         debounce=True,
       ),
       dbc.Tooltip(
-        f"Comma separated list of shots roll modifiers ex: 'Add +2', 'roll 2 choose highest', 'reroll ones'",
+        children="Comma separated list of shots roll modifiers ex: 'Add +2', 'roll 2 choose highest', 'reroll ones'",
+        target=f'shot_mods_addon_{tab_index}',
+      ),
+      dbc.Tooltip(
         target=f'shot_mods_{tab_index}',
+        id=f'shot_mods_tooltip_{tab_index}',
       ),
     ]
 
   def _modify_hit_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Hits", addon_type="prepend"),
+      dbc.InputGroupAddon("Hits", id=f'hit_mods_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'hit_mods_{tab_index}',
@@ -417,14 +448,18 @@ class InputLayout(object):
         debounce=True,
       ),
       dbc.Tooltip(
-        f"Comma separated list of hit roll modifiers ex: 'Sub -3', 'reroll failed', 'reroll all', '+2 shot on 6+', '1 MW on a 5'",
+        children="Comma separated list of hit roll modifiers ex: 'Sub -3', 'reroll failed', 'reroll all', '+2 shot on 6+', '1 MW on a 5'",
+        target=f'hit_mods_addon_{tab_index}',
+      ),
+      dbc.Tooltip(
         target=f'hit_mods_{tab_index}',
+        id=f'hit_mods_tooltip_{tab_index}',
       ),
     ]
 
   def _modify_wound_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Wounds", addon_type="prepend"),
+      dbc.InputGroupAddon("Wounds", id=f'wound_mods_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'wound_mods_{tab_index}',
@@ -435,13 +470,17 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Comma separated list of wound roll modifiers ex: '+1', 'reroll failed', 'reroll all', 'haywire'",
+        target=f'wound_mods_addon_{tab_index}',
+      ),
+      dbc.Tooltip(
         target=f'wound_mods_{tab_index}',
+        id=f'wound_mods_tooltip_{tab_index}',
       ),
     ]
 
   def _modify_save_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Saves", addon_type="prepend"),
+      dbc.InputGroupAddon("Saves", id=f'save_mods_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'save_mods_{tab_index}',
@@ -452,13 +491,17 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Comma separated list of save roll modifiers ex: 'ignore AP -2', '+1' 'reroll failed', '-1 invuln'",
+        target=f'save_mods_addon_{tab_index}',
+      ),
+      dbc.Tooltip(
         target=f'save_mods_{tab_index}',
+        id=f'save_mods_tooltip_{tab_index}',
       ),
     ]
 
   def _modify_damage_input(self, tab_index):
     return [
-      dbc.InputGroupAddon("Damage", addon_type="prepend"),
+      dbc.InputGroupAddon("Damage", id=f'damage_mods_addon_{tab_index}', addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'damage_mods_{tab_index}',
@@ -469,7 +512,11 @@ class InputLayout(object):
       ),
       dbc.Tooltip(
         f"Comma separated list of damage roll modifiers ex: 'minimum 3 damage', 'half damage 'reroll ones', 'melta'",
+        target=f'damage_mods_addon_{tab_index}',
+      ),
+      dbc.Tooltip(
         target=f'damage_mods_{tab_index}',
+        id=f'damage_mods_tooltip_{tab_index}',
       ),
     ]
 

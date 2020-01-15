@@ -12,7 +12,12 @@ from src.app.layout import app_layout
 from src.app.controller import CallbackController
 from src.constants import TAB_COUNT
 
-external_stylesheets = [dbc.themes.BOOTSTRAP]
+external_stylesheets = [
+  'https://bootswatch.com/4/lux/bootstrap.min.css',
+  'https://bootswatch.com/_vendor/jquery/dist/jquery.min.js',
+  'https://bootswatch.com/_vendor/popper.js/dist/umd/popper.min.js',
+  'https://bootswatch.com/_vendor/bootstrap/dist/js/bootstrap.min.js',
+]
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
