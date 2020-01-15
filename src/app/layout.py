@@ -64,7 +64,7 @@ class Layout(object):
           ]
         ),
       ],
-      className='container-fluid d-flex vh-100 flex-column',
+      className='container-fluid d-flex flex-column',
     )
 
   def navbar(self):
@@ -87,6 +87,7 @@ class GraphLayout(object):
   def layout(self):
     content = dcc.Graph(
       id='damage_graph',
+      style={'height':'60vh'},
       figure=self.figure_template(),
       config={
         'scrollZoom': False,
