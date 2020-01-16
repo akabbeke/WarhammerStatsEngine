@@ -111,6 +111,26 @@ class ReRollFailed(Modifier):
   def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
     return [x.re_roll_less_than(min(thresh, mod_thresh)) for x in dists]
 
+class ReRollOneDice(Modifier):
+  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
+    if not dists:
+      return dists
+    dists[0] = dists[0].re_roll_less_than(thresh)
+    return dists
+
+class ModReRollOneDice(Modifier):
+  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
+    if not dists:
+      return dists
+    dists[0] = dists[0].re_roll_less_than(mod_thresh)
+    return dists
+
+class ReRollOneDiceVolume(Modifier):
+  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
+    if not dists:
+      return dists
+    dists[0] = dists[0].re_roll_less_than(dists[0].expected_value())
+    return dists
 
 class ReRollAll(Modifier):
   priority = 100

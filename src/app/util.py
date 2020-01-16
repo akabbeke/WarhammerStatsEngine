@@ -5,7 +5,8 @@ from ..stats.weapons import Weapon
 from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
-  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire
+  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
+  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume
 
 
 def parse_shot_mods(shot_mods):
@@ -189,6 +190,8 @@ def parse_rerolls(mod):
     mods.append(ReRollOnes())
   elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
     mods.append(ReRollAll())
+  elif reroll_kind in ['one', '1', 'one dice', '1 dice']:
+    mods.append(ModReRollOneDice())
   elif reroll_kind in ['failed', 'all failed', 'all failed dice', 'failed dice', 'failed rolls', 'all failed rolls', 'all failed die']:
     mods.append(ReRollFailed())
   return mods
@@ -200,7 +203,9 @@ def parse_volume_rerolls(mod):
     return mods
 
   reroll_kind = match.groupdict().get('reroll_kind')
-  if reroll_kind in ['ones', '1\'s']:
+  if reroll_kind in ['one', '1', 'one dice', '1 dice']:
+    mods.append(ReRollOneDiceVolume())
+  elif reroll_kind in ['ones', '1\'s']:
     mods.append(ReRollOnes())
   elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
     mods.append(ReRollLessThanExpectedValue())
