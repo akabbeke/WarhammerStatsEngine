@@ -60,7 +60,6 @@ def parse_hit_mods(shot_mods):
       mods += mod_mods
       continue
 
-
     if not mod_mods:
       errors.append(f'"{mod}" is not a valid hit modifier')
     mods += mod_mods
@@ -130,11 +129,11 @@ def parse_damage_mods(shot_mods):
 
   for mod in [x.strip() for x in shot_mods.lower().split(',')]:
     mod_mods = []
-    mod_mods += parse_volume_rerolls(mod)
+    mod_mods += parse_special(mod)
     if mod_mods:
       mods += mod_mods
       continue
-    mod_mods += parse_ignore(mod)
+    mod_mods += parse_volume_rerolls(mod)
     if mod_mods:
       mods += mod_mods
       continue
@@ -190,7 +189,7 @@ def parse_rerolls(mod):
     mods.append(ReRollOnes())
   elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
     mods.append(ReRollAll())
-  elif reroll_kind in ['all failed', 'all failed dice', 'all failed rolls', 'all failed die']:
+  elif reroll_kind in ['failed', 'all failed', 'all failed dice', 'failed dice', 'failed rolls', 'all failed rolls', 'all failed die']:
     mods.append(ReRollFailed())
   return mods
 
@@ -201,7 +200,7 @@ def parse_volume_rerolls(mod):
     return mods
 
   reroll_kind = match.groupdict().get('reroll_kind')
-  if reroll_kind in ['one', 'ones', '1', '1\'s']:
+  if reroll_kind in ['ones', '1\'s']:
     mods.append(ReRollOnes())
   elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
     mods.append(ReRollLessThanExpectedValue())
@@ -215,7 +214,7 @@ def parse_special(mod):
     mods.append(Melta())
   elif mod in ['half damage']:
     mods.append(HalfDamage())
-  elif mod in ['minimum 3 damage', 'treat rolls of 1 and 2 as 3']:
+  elif mod in ['min 3', 'minimum 3', 'minimum 3 damage', 'treat rolls of 1 and 2 as 3']:
     mods.append(MinimumValue(3))
   return mods
 

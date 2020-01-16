@@ -84,7 +84,8 @@ class Layout(object):
           value='',
           debounce=True,
           minLength=2,
-          persistence=False,
+          persistence=True,
+          persistence_type='session',
           maxLength=140,
         ),
       ],
@@ -174,7 +175,7 @@ class GraphLayout(object):
       figure=self.figure_template(),
       config={
         'scrollZoom': False,
-        'displayModeBar': False,
+        # 'displayModeBar': False,
       },
 
     )
@@ -187,7 +188,7 @@ class GraphLayout(object):
         'title': title,
         'showlegend': True,
         'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1, x=0.5),
-        'template': 'plotly_dark',
+        # 'template': 'plotly_dark',
         'xaxis': {
             'title': 'Minimum Wounds Dealt to Target',
             'type': 'linear',
@@ -282,7 +283,8 @@ class InputLayout(object):
         value='Profile {}'.format(tab_index),
         debounce=True,
         minLength=2,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         maxLength=60
       ),
       dbc.Tooltip(
@@ -325,7 +327,8 @@ class InputLayout(object):
         id='toughness_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,11)],
         value=4,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the toughness of the target",
@@ -340,7 +343,8 @@ class InputLayout(object):
         id='save_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(2,8)],
         value=4,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the save value of the target",
@@ -355,7 +359,8 @@ class InputLayout(object):
         id='invuln_{}'.format(tab_index),
         options=[{"label": "{}++".format(i), "value": i} for i in range(2,8)],
         value=7,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the invulnerable save value of the target",
@@ -370,7 +375,8 @@ class InputLayout(object):
         id='fnp_{}'.format(tab_index),
         options=[{"label": "{}+++".format(i), "value": i} for i in range(2,8)],
         value=7,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the feel no pain value of the target",
@@ -385,7 +391,8 @@ class InputLayout(object):
         id='wounds_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,25)],
         value=7,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the target wounds value",
@@ -413,7 +420,8 @@ class InputLayout(object):
         id='ws_{}'.format(tab_index),
         options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
         value=4,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the weapons skill value",
@@ -428,7 +436,8 @@ class InputLayout(object):
         id='strength_{}'.format(tab_index),
         options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
         value=4,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the strength value",
@@ -443,7 +452,8 @@ class InputLayout(object):
         id='ap_{}'.format(tab_index),
         options=[{"label": "0" if i==0 else "-{}".format(i), "value": i} for i in range(0,7)],
         value=1,
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
       ),
       dbc.Tooltip(
         f"Set the AP value",
@@ -459,7 +469,8 @@ class InputLayout(object):
         id=f'shots_{tab_index}',
         value='2d6',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
@@ -477,7 +488,8 @@ class InputLayout(object):
         id='damage_{}'.format(tab_index),
         value='2',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
@@ -508,7 +520,8 @@ class InputLayout(object):
         id=f'shot_mods_{tab_index}',
         value='',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
       ),
       dbc.Tooltip(
@@ -529,7 +542,8 @@ class InputLayout(object):
         id=f'hit_mods_{tab_index}',
         value='',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
       ),
       dbc.Tooltip(
@@ -550,7 +564,8 @@ class InputLayout(object):
         id=f'wound_mods_{tab_index}',
         value='',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
       ),
       dbc.Tooltip(
@@ -571,7 +586,8 @@ class InputLayout(object):
         id=f'save_mods_{tab_index}',
         value='',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
       ),
       dbc.Tooltip(
@@ -592,7 +608,8 @@ class InputLayout(object):
         id=f'damage_mods_{tab_index}',
         value='',
         style={'text-align': 'right'},
-        persistence=False,
+        persistence=True,
+        persistence_type='session',
         debounce=True,
       ),
       dbc.Tooltip(
