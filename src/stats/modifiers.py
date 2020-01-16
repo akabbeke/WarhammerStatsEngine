@@ -179,6 +179,15 @@ class AddNToVolume(AddNTo):
   def modify_dice(self, dists, thresh=None, mod_thresh=None):
     return [x.roll(self.n) for x in dists]
 
+class AddD6(AddNTo):
+  def modify_dice(self, dists, thresh=None, mod_thresh=None):
+    dists.append(PMF.dn(6))
+    return dists
+
+class AddD3(AddNTo):
+  def modify_dice(self, dists, thresh=None, mod_thresh=None):
+    dists.append(PMF.dn(3))
+    return dists
 
 class SetToN(Modifier):
   def __init__(self, value=0, *args, **kwargs):

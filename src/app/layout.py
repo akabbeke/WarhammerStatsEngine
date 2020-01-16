@@ -565,6 +565,8 @@ class InputLayout(object):
       {'label': f'Reroll one dice', 'value': f'reroll_one_dicevol'},
       {'label': f'Reroll ones', 'value': f'reroll_ones'},
       {'label': f'Roll two dice choose highest', 'value': f'reroll_melta'},
+      {'label': f'Add +D6', 'value': f'addvol_d6'},
+      {'label': f'Add +D3', 'value': f'addvol_d3'},
     ]
     for i in range(1, 7):
       options.append({'label': f'Add +{i}', 'value': f'add_{i}'})

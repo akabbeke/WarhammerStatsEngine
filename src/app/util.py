@@ -6,7 +6,7 @@ from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume
+  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3
 
 
 def parse_mods(raw_mods):
@@ -79,6 +79,11 @@ def parse_mods(raw_mods):
       mods.append(HalfDamage())
     elif mod_type == 'minval':
       mods.append(MinimumValue(int(mod_data)))
+    elif mod_type == 'addvol':
+      if mod_data == 'd6':
+        mods.append(AddD6())
+      elif mod_data == 'd3':
+        mods.append(AddD3())
   return mods
 
 
