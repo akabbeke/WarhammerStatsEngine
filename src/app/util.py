@@ -9,271 +9,76 @@ from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRo
   ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume
 
 
-def parse_shot_mods(shot_mods):
-  if not shot_mods:
-    return [], []
+def parse_mods(raw_mods):
+  if not raw_mods:
+    return []
   mods = []
-  errors = []
-
-  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
-    mod_mods = []
-    mod_mods += parse_addons(mod)
-    if mod_mods:
-      mods += mod_mods
+  for mod in raw_mods:
+    match = re.match(r'(?P<mod_type>[a-zA-Z]+)_?(?P<mod_data>.+)?', mod)
+    if not match:
       continue
-    mod_mods += parse_volume_rerolls(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_special(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_add(mod)
+    mod_type = match.groupdict().get('mod_type')
+    mod_data = match.groupdict().get('mod_data')
 
-    if not mod_mods:
-      errors.append(f'"{mod}" is not a valid shot modifier')
-    mods += mod_mods
-  return mods, errors
-
-def parse_hit_mods(shot_mods):
-  if not shot_mods:
-    return [], []
-  mods = []
-  errors = []
-
-  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
-    mod_mods = []
-    mod_mods += parse_addons(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_rerolls(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_special(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_add(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-
-    if not mod_mods:
-      errors.append(f'"{mod}" is not a valid hit modifier')
-    mods += mod_mods
-  return mods, errors
-
-def parse_wound_mods(shot_mods):
-  if not shot_mods:
-    return [], []
-  mods = []
-  errors = []
-
-  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
-    mod_mods = []
-    mod_mods += parse_addons(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_rerolls(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_special(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_add(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-
-    if not mod_mods:
-      errors.append(f'"{mod}" is not a valid wound modifier')
-    mods += mod_mods
-  return mods, errors
-
-def parse_save_mods(shot_mods):
-  if not shot_mods:
-    return [], []
-  mods = []
-  errors = []
-
-  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
-    mod_mods = []
-    mod_mods += parse_rerolls(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_ignore(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_save_add(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-
-    if not mod_mods:
-      errors.append(f'"{mod}" is not a valid save modifier')
-    mods += mod_mods
-  return mods, errors
-
-def parse_damage_mods(shot_mods):
-  if not shot_mods:
-    return [], []
-  mods = []
-  errors = []
-
-  for mod in [x.strip() for x in shot_mods.lower().split(',')]:
-    mod_mods = []
-    mod_mods += parse_special(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_volume_rerolls(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-    mod_mods += parse_add(mod)
-    if mod_mods:
-      mods += mod_mods
-      continue
-
-    if not mod_mods:
-      errors.append(f'"{mod}" is not a valid damage modifier')
-    mods += mod_mods
-  return mods, errors
-
-def parse_addons(mod):
-  mods = []
-  match = re.match(r'\+?(?P<added_value>[0-9]+) (?P<added_kind>.*) on (a )?(?P<trigger>[0-9]+)(?P<threshold>\+)?', mod)
-  if not match:
-    return mods
-
-
-  added_value = match.groupdict().get('added_value')
-  added_kind = match.groupdict().get('added_kind')
-  trigger = match.groupdict().get('trigger')
-  threshold = match.groupdict().get('threshold')
-
-  int(added_value)
-
-  if added_kind in ['mw', 'mortal wound', 'mortal', 'mws', 'mortal wounds', 'mw\'s', 'mortal wound\'s']:
-    if threshold:
-      mods.append(ModGenerateMortalWound(int(trigger), int(added_value)))
-    else:
-      mods.append(GenerateMortalWound(int(trigger), int(added_value)))
-  elif added_kind in ['hit', 'hits']:
-    if threshold:
-      mods.append(ModExtraHit(int(trigger), int(added_value)))
-    else:
-      mods.append(ExtraHit(int(trigger), int(added_value)))
-  elif added_kind in ['shot', 'shots']:
-    if threshold:
-      mods.append(ModExtraShot(int(trigger), int(added_value)))
-    else:
-      mods.append(ExtraShot(int(trigger), int(added_value)))
-  return mods
-
-def parse_rerolls(mod):
-  mods = []
-  match = re.match(r'(re(-)?roll) (?P<reroll_kind>.+)', mod)
-  if not match:
-    return mods
-
-  reroll_kind = match.groupdict().get('reroll_kind')
-  if reroll_kind in ['one', 'ones', '1', '1\'s']:
-    mods.append(ReRollOnes())
-  elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
-    mods.append(ReRollAll())
-  elif reroll_kind in ['one', '1', 'one dice', '1 dice']:
-    mods.append(ModReRollOneDice())
-  elif reroll_kind in ['failed', 'all failed', 'all failed dice', 'failed dice', 'failed rolls', 'all failed rolls', 'all failed die']:
-    mods.append(ReRollFailed())
-  return mods
-
-def parse_volume_rerolls(mod):
-  mods = []
-  match = re.match(r'(re(-)?roll) (?P<reroll_kind>.+)', mod)
-  if not match:
-    return mods
-
-  reroll_kind = match.groupdict().get('reroll_kind')
-  if reroll_kind in ['one', '1', 'one dice', '1 dice']:
-    mods.append(ReRollOneDiceVolume())
-  elif reroll_kind in ['ones', '1\'s']:
-    mods.append(ReRollOnes())
-  elif reroll_kind in ['all', 'all dice', 'all die', 'all rolls', 'all roll']:
-    mods.append(ReRollLessThanExpectedValue())
-  return mods
-
-def parse_special(mod):
-  mods = []
-  if 'haywire' in mod:
-    mods.append(Haywire(5, 1))
-  elif mod in ['roll 2 choose highest', 'roll two choose highest', 'melta']:
-    mods.append(Melta())
-  elif mod in ['half damage']:
-    mods.append(HalfDamage())
-  elif mod in ['min 3', 'minimum 3', 'minimum 3 damage', 'treat rolls of 1 and 2 as 3']:
-    mods.append(MinimumValue(3))
-  return mods
-
-def parse_add(mod):
-  mods = []
-  match = re.match(r'(?P<modify_type>add|sub|subtract)?( )?(?P<modifier>\+|-)?(?P<raw_value>\d+)', mod)
-  if not match:
-    return mods
-  modify_type = match.groupdict().get('modify_type')
-  modifier = match.groupdict().get('modifier')
-  raw_value = match.groupdict().get('raw_value')
-
-  value = int(raw_value)
-  if modify_type in ['sub', 'subtract'] or modifier == '-':
-    value = -1*int(value)
-
-  mods.append(AddNToThreshold(value))
-  return mods
-
-def parse_ignore(mod):
-  mods = []
-  match = re.match(r'ignore (?P<modifier>[^-\s]+) (\+|-)?(?P<value>\d+)', mod)
-  if not match:
-    return mods
-  modifier = match.groupdict().get('modifier')
-  value = match.groupdict().get('value')
-
-  value = int(value)
-  if modifier in ['ap']:
-    mods.append(IgnoreAP(value))
-  elif modifier in ['inv', 'invuln', 'invulnerable']:
-    mods.append(IgnoreInvuln())
-  return mods
-
-def parse_save_add(mod):
-  mods = []
-  match = re.match(
-    r'(?P<modify_type>add|sub|subtract)?( )?(?P<modifier>\+|-)?(?P<raw_value>\d+)(( to)? (?P<type>(?!to).+))?',
-    mod
-  )
-  if not match:
-    return mods
-  modify_type = match.groupdict().get('modify_type')
-  modifier = match.groupdict().get('modifier')
-  raw_value = match.groupdict().get('raw_value')
-  save_type = match.groupdict().get('type')
-
-  value = int(raw_value)
-  if modify_type in ['sub', 'subtract'] or modifier == '-':
-    value = -1*int(value)
-  if save_type in [None, 'save']:
-    mods.append(AddNToSave(value))
-  elif save_type in ['inv', 'invuln', 'invulnerable']:
-    mods.append(AddNToInvuln(value))
+    if mod_type == 'reroll':
+      if mod_data == 'allvol':
+        mods.append(ReRollLessThanExpectedValue())
+      elif mod_data == 'one_dicevol':
+        mods.append(ReRollOneDiceVolume())
+      elif mod_data == 'ones':
+        mods.append(ReRollOnes())
+      elif mod_data == 'melta':
+        mods.append(Melta())
+      elif mod_data == 'all':
+        mods.append(ReRollAll())
+      elif mod_data == 'failed':
+        mods.append(ReRollFailed())
+      elif mod_data == 'one_dice':
+        mods.append(ModReRollOneDice())
+    elif mod_type == 'add':
+      mods.append(AddNToThreshold(int(mod_data)))
+    elif mod_type == 'sub':
+      mods.append(AddNToThreshold(-1*int(mod_data)))
+    elif mod_type == 'addon':
+      match = re.match(r'(?P<value>\d+)_(?P<addon>[a-zA-Z]+)_(?P<thresh>\d+)(?P<modable>_mod)?', mod_data.lower())
+      if not match:
+        continue
+      value = match.groupdict().get('value')
+      addon = match.groupdict().get('addon')
+      thresh = match.groupdict().get('thresh')
+      modable = match.groupdict().get('modable')
+      if modable:
+        if addon == 'mw':
+          mods.append(ModGenerateMortalWound(int(thresh), int(value)))
+        elif addon == 'hit':
+          mods.append(ModExtraHit(int(thresh), int(value)))
+        elif addon == 'shot':
+          mods.append(ModExtraShot(int(thresh), int(value)))
+      else:
+        if addon == 'mw':
+          mods.append(GenerateMortalWound(int(thresh), int(value)))
+        elif addon == 'hit':
+          mods.append(ExtraHit(int(thresh), int(value)))
+        elif addon == 'shot':
+          mods.append(ExtraShot(int(thresh), int(value)))
+    elif mod_type == 'haywire':
+      mods.append(Haywire(5, 1))
+    elif mod_type == 'ignoreap':
+      mods.append(IgnoreAP(int(mod_data)))
+    elif mod_type == 'ignoreinv':
+      mods.append(IgnoreInvuln())
+    elif mod_type == 'saveadd':
+      mods.append(AddNToSave(int(mod_data)))
+    elif mod_type == 'savesub':
+      mods.append(AddNToSave(-1*int(mod_data)))
+    elif mod_type == 'invadd':
+      mods.append(AddNToInvuln(int(mod_data)))
+    elif mod_type == 'invsub':
+      mods.append(AddNToInvuln(-1*int(mod_data)))
+    elif mod_type == 'halfdam':
+      mods.append(HalfDamage())
+    elif mod_type == 'minval':
+      mods.append(MinimumValue(int(mod_data)))
   return mods
 
 
@@ -295,18 +100,12 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
       'errors': []
     }
 
-  shot_mod_list, shot_mod_error = parse_shot_mods(shot_mods)
-  hit_mod_list, hit_mod_error = parse_hit_mods(hit_mods)
-  wound_mod_list, wound_mod_error = parse_wound_mods(wound_mods)
-  save_mod_list, save_mod_error = parse_save_mods(save_mods)
-  damage_mod_list, damage_mod_error = parse_damage_mods(damage_mods)
-
   modifiers = ModifierCollection()
-  modifiers.add_mods('shots', shot_mod_list)
-  modifiers.add_mods('hit', hit_mod_list)
-  modifiers.add_mods('wound', wound_mod_list)
-  modifiers.add_mods('pen', save_mod_list)
-  modifiers.add_mods('damage', damage_mod_list)
+  modifiers.add_mods('shots', parse_mods(shot_mods))
+  modifiers.add_mods('hit', parse_mods(hit_mods))
+  modifiers.add_mods('wound', parse_mods(wound_mods))
+  modifiers.add_mods('pen', parse_mods(save_mods))
+  modifiers.add_mods('damage', parse_mods(damage_mods))
 
   target = Unit(
     ws=int(ws or 1),
@@ -331,24 +130,12 @@ def compute(enabled = None, tab_name=None, ws=None, toughness=None, strength=Non
     'x': [i for i, x in enumerate(values)],
     'y': [100*x for i, x in enumerate(values)],
     'name': tab_name,
-    "colorscale": [[0, "rgba(255, 255, 255,0)"], [1, "#75baf2"]],
   }
   output = {
     'graph_data': graph_data,
     'mean': attack_pmf.mean(),
     'std': attack_pmf.std(),
-    'errors': shot_mod_error + hit_mod_error + wound_mod_error + save_mod_error + damage_mod_error,
   }
-  if shot_mods:
-    output['shot_mod_error'] = shot_mod_error
-  if hit_mods:
-    output['hit_mod_error'] = hit_mod_error
-  if wound_mods:
-    output['wound_mod_error'] = wound_mod_error
-  if save_mods:
-    output['save_mod_error'] = save_mod_error
-  if damage_mods:
-    output['damage_mod_error'] = damage_mod_error
 
   return output
 

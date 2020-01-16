@@ -177,7 +177,7 @@ class CallbackController(object):
     inputs = self.input_generator.graph_inputs(self.tab_count)
     inputs.update({'url': 'href'})
     mapper = CallbackMapper(
-      outputs=self._graph_outputs(),
+      outputs=self._graph_updates(),
       inputs=self.input_generator.graph_inputs(self.tab_count),
       states=self._graph_updates(),
     )
@@ -212,12 +212,13 @@ class CallbackController(object):
 
   def parse_static_graph_args(self, graph_args):
     foo = {}
-
     for key, value in graph_args.items():
       match = re.match(r'(?P<sub_key>.+)_(?P<tab_index>\d+)', key)
       if match:
         sub_key = match.groupdict().get('sub_key')
         tab_index = int(match.groupdict().get('tab_index'))
+        if sub_key in ['shot_mods', 'hit_mods','wound_mods', 'save_mods', 'damage_mods']:
+          value = value.split(',')
         if tab_index in foo:
           foo[tab_index][sub_key] = value
         else:
@@ -247,7 +248,10 @@ class CallbackController(object):
       tab_data[tab_index]['inputs']
       if tab_data[tab_index]['inputs'].get('enabled'):
         for key, value in tab_data[tab_index]['inputs'].items():
-          url_args[f'{key}_{tab_index}'] = value
+          if key in ['shot_mods', 'hit_mods','wound_mods', 'save_mods', 'damage_mods']:
+            url_args[f'{key}_{tab_index}'] = ','.join(value or [])
+          else:
+            url_args[f'{key}_{tab_index}'] = value
     url_args.update(tab_data[-1]['inputs'])
     min_map = self.url_minify.to_min()
     url_args = {min_map.get(x, x):y for x,y in url_args.items()}
@@ -259,21 +263,6 @@ class CallbackController(object):
       **{'damage_graph': 'figure'},
       **{f'avg_display_{i}': 'children' for i in range(self.tab_count)},
       **{f'std_display_{i}': 'children' for i in range(self.tab_count)},
-    }
-
-  def _graph_outputs(self):
-    return {
-      **self._graph_updates(),
-      **{f'shot_mods_{i}': 'invalid' for i in range(self.tab_count)},
-      **{f'hit_mods_{i}': 'invalid' for i in range(self.tab_count)},
-      **{f'wound_mods_{i}': 'invalid' for i in range(self.tab_count)},
-      **{f'save_mods_{i}': 'invalid' for i in range(self.tab_count)},
-      **{f'damage_mods_{i}': 'invalid' for i in range(self.tab_count)},
-      **{f'shot_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
-      **{f'hit_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
-      **{f'wound_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
-      **{f'save_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
-      **{f'damage_mods_tooltip_{i}': 'children' for i in range(self.tab_count)},
     }
 
 
@@ -349,19 +338,6 @@ class CallbackController(object):
         output[f'std_display_{tab_index}'] = 'σ: {}'.format(round(data['std'], 2))
       else:
         output[f'std_display_{tab_index}'] = tab_data[tab_index]['states']['std_display']
-
-
-      output[f'shot_mods_{tab_index}'] = bool(data.get('shot_mod_error'))
-      output[f'hit_mods_{tab_index}'] = bool(data.get('hit_mod_error'))
-      output[f'wound_mods_{tab_index}'] = bool(data.get('wound_mod_error'))
-      output[f'save_mods_{tab_index}'] = bool(data.get('save_mod_error'))
-      output[f'damage_mods_{tab_index}'] = bool(data.get('damage_mod_error'))
-
-      output[f'shot_mods_tooltip_{tab_index}'] = '\n'.join(data.get('shot_mod_error', []))
-      output[f'hit_mods_tooltip_{tab_index}'] = '\n'.join(data.get('hit_mod_error', []))
-      output[f'wound_mods_tooltip_{tab_index}'] = '\n'.join(data.get('wound_mod_error', []))
-      output[f'save_mods_tooltip_{tab_index}'] = '\n'.join(data.get('save_mod_error', []))
-      output[f'damage_mods_tooltip_{tab_index}'] = '\n'.join(data.get('damage_mod_error', []))
 
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
     output['damage_graph'] = self.graph_layout.figure_template(graph_data, max_len)
