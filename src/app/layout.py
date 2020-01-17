@@ -8,7 +8,6 @@ import dash_bootstrap_components as dbc
 
 
 FOOTER_CONTENT = '''
-
 This is still very much a work in progress, and there are probably still some bugs.
 I'm [/u/Uily](https://www.reddit.com/user/uily) on Reddit, so please let me know if
 you find any. Checkout the code for this project here: https://github.com/akabbeke/WarhammerStatsEngine
@@ -29,25 +28,21 @@ example two "+1 hit on 6+" will yield +2 hits on a 6+.
 
 ##### Todo:
 * Figure out feed-forward abilities like rend
-* Replace the frontend with an actual frontend instead of this cobbled
-together dash frontend
-* Figure out a way to allow users to create units and have all their weapons output
-combined (Which russ is the best russ?)
 * ???
 
-
-There are no **Ads** funding this, so please don't be a dick. Otherwise,
+There are no **ads** funding this, so please don't be a dick. Otherwise,
 I hope you find this useful!
 '''
 
 class Layout(object):
-  def __init__(self, tab_count=0):
+  def __init__(self, tab_count=0, weapon_count=0):
     self.tab_count = tab_count
+    self.weapon_count = 4
 
   def layout(self):
     return html.Div([
       dcc.Location(id='url'),
-      html.Div(id='page-content')
+      html.Div(id='page_content')
     ])
 
   def base_layout(self):
@@ -67,7 +62,7 @@ class Layout(object):
         dbc.Row(
           [
             dbc.Col(
-              InputLayout(self.tab_count).layout(),
+              InputLayout(self.tab_count, self.weapon_count).layout(),
             ),
           ]
         ),
@@ -227,22 +222,18 @@ class GraphLayout(object):
 
 
 class InputLayout(object):
-  def __init__(self, tab_count=0):
+  def __init__(self, tab_count=0, weapon_count=0):
     self.tab_count = tab_count
+    self.weapon_count = weapon_count
 
   def layout(self):
     tabs = []
     for i in range(self.tab_count):
-      tab = dbc.Tab(
-        self.tab_content(i),
-        id='tab_{}'.format(i),
-        label='Profile {}'.format(i + 1),
-        style={'width': '100%'},
-      )
+      tab = InputTabLayout(i, self.tab_count, self.weapon_count).layout()
       tabs.append(tab)
     tabs.append(
       dbc.Tab(
-        dbc.CardBody(self.footer()),
+        dbc.CardBody(dcc.Markdown(FOOTER_CONTENT)),
 
         label='Info Tab',
         style={'width': '100%'},
@@ -251,223 +242,331 @@ class InputLayout(object):
     return dbc.Tabs(
       tabs,
       className='nav-justified',
-      style={'padding-top': '4px', 'padding-bottom': '4px'},
+      style={'padding-top': '4px', 'padding-bottom': '0px'},
     )
 
-  def footer(self):
-    return dcc.Markdown(FOOTER_CONTENT)
 
-  def tab_content(self, tab_index):
+class InputTabLayout(object):
+  def __init__(self, tab_index, tab_count=0, weapon_count=0):
+    self.tab_index = tab_index
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+
+  def layout(self):
+    return dbc.Tab(
+      self.tab_content(),
+      id='tab_{}'.format(self.tab_index),
+      label='Profile {}'.format(self.tab_index + 1),
+      style={'width': '100%'},
+    )
+
+  def tab_content(self):
     form_input = [
-      self.data_row_input(tab_index),
-      self.attack_row_input(tab_index),
-      self.target_row_input(tab_index),
-      *self.mod_rows(tab_index),
+      self._data_input_row(),
+      self._target_input_row(),
+      self._weapon_tabs(),
     ]
-    return dbc.CardBody(form_input)
+    return self._wrap_card(form_input)
 
-  def data_row_input(self, tab_index):
+  def _wrap_card(self, content):
+    return dbc.Card(dbc.CardBody(content),className="mb-2 ")
+
+  def _data_input_row(self):
+    return dbc.Row(
+      [
+        dbc.Col(self._tab_enable_inout(), width=3),
+        dbc.Col(self._tab_name_input()),
+        dbc.Col(html.P("Average", id=f'avgdisplay_{self.tab_index}'), width=1),
+        dbc.Col(html.P("σ", id=f'stddisplay_{self.tab_index}'), width=1),
+      ],
+      className='mb-2',
+    )
+
+  def _tab_enable_inout(self):
     content = [
-      dbc.InputGroupAddon("Enable", addon_type="prepend"),
-      dbc.InputGroupAddon(
-        dbc.Checkbox(checked=tab_index==0, id='enabled_{}'.format(tab_index)),
-        id=f'enabled_addon{tab_index}',
-        addon_type="prepend",
-      ),
-      dbc.Tooltip(
-        f"Enable this tab",
-        target=f'enabled_addon{tab_index}',
-      ),
+      dbc.InputGroupAddon("Tab", addon_type="prepend"),
+      dbc.Select(
+        options=[
+          {"label": "Enabled", "value": 'enabled'},
+          {"label": "Disabled", "value": 'disabled'}
+        ],
+        value='enabled' if self.tab_index == 0 else 'disabled',
+        disabled=self.tab_index == 0,
+        id=f'enabled_{self.tab_index}',
+        persistence=True,
+        persistence_type='session',
+      )
+    ]
+    return dbc.InputGroup(content, size="sm")
+
+  def _tab_name_input(self):
+    content = [
+      dbc.InputGroupAddon("Name", addon_type="prepend"),
       dbc.Input(
         type="text",
-        id='tab_name_{}'.format(tab_index),
-        value='Profile {}'.format(tab_index),
+        id=f'tabname_{self.tab_index}',
+        value=f'Profile {self.tab_index}',
         debounce=True,
         minLength=2,
         persistence=True,
         persistence_type='session',
         maxLength=60
       ),
-      dbc.Tooltip(
-        f"Name this tab",
-        target=f'tab_name_{tab_index}',
-      ),
-      dbc.InputGroupAddon("Average", addon_type="prepend", id='avg_display_{}'.format(tab_index)),
-      dbc.Tooltip(
-        f"The mean value of the damage distribution",
-        target=f'avg_display_{tab_index}',
-      ),
-      dbc.InputGroupAddon("σ", addon_type="apend", id='std_display_{}'.format(tab_index)),
-      dbc.Tooltip(
-        f"The standard deviation of the distribution",
-        target=f'std_display_{tab_index}',
-      ),
     ]
-    return dbc.Row(
-      [dbc.Col(dbc.InputGroup(content))],
-      className="mb-2 ",
-    )
+    return dbc.InputGroup(content, size="sm")
 
-  def target_row_input(self, tab_index):
+  def _target_input_row(self):
     content = dbc.InputGroup(
       [
         dbc.InputGroupAddon("Target", addon_type="prepend"),
-        *self._toughness_input(tab_index),
-        *self._save_input(tab_index),
-        *self._invuln_input(tab_index),
-        *self._fnp_input(tab_index),
-        *self._wounds_input(tab_index),
+        *self._toughness_input(),
+        *self._save_input(),
+        *self._invuln_input(),
+        *self._fnp_input(),
+        *self._wounds_input(),
       ],
+      size="sm",
     )
     return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
-  def _toughness_input(self, tab_index):
+  def _toughness_input(self):
     return [
-      dbc.InputGroupAddon("T", id=f'toughness_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon('T', id=f'toughness_addon_{self.tab_index}', addon_type='prepend'),
       dbc.Select(
-        id='toughness_{}'.format(tab_index),
-        options=[{"label": "{}".format(i), "value": i} for i in range(1,11)],
+        id=f'toughness_{self.tab_index}',
+        options=[{'label': f'{i}', 'value': i} for i in range(1,11)],
         value=4,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the toughness of the target",
-        target=f'toughness_addon_{tab_index}',
+        'Set the toughness of the target',
+        target=f'toughness_addon_{self.tab_index}',
       ),
     ]
 
-  def _save_input(self, tab_index):
+  def _save_input(self):
     return [
-      dbc.InputGroupAddon("SV", id=f'save_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon('SV', id=f'save_addon_{self.tab_index}', addon_type='prepend'),
       dbc.Select(
-        id='save_{}'.format(tab_index),
-        options=[{"label": "{}+".format(i), "value": i} for i in range(2,8)],
+        id=f'save_{self.tab_index}',
+        options=[{'label': f'{i}+', 'value': i} for i in range(2,8)],
         value=4,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the save value of the target",
-        target=f'save_addon_{tab_index}',
+        'Set the save value of the target',
+        target=f'save_addon_{self.tab_index}',
       ),
     ]
 
-  def _invuln_input(self, tab_index):
+  def _invuln_input(self):
     return [
-      dbc.InputGroupAddon("INV", id=f'invuln_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon('INV', id=f'invuln_addon_{self.tab_index}', addon_type='prepend'),
       dbc.Select(
-        id='invuln_{}'.format(tab_index),
-        options=[{"label": "{}++".format(i), "value": i} for i in range(2,8)],
+        id=f'invuln_{self.tab_index}',
+        options=[{'label': f'{i}++', 'value': i} for i in range(2,8)],
         value=7,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the invulnerable save value of the target",
-        target=f'invuln_addon_{tab_index}',
+        'Set the invulnerable save value of the target',
+        target=f'invuln_addon_{self.tab_index}',
       ),
     ]
 
-  def _fnp_input(self, tab_index):
+  def _fnp_input(self):
     return [
-      dbc.InputGroupAddon("FNP", id=f'fnp_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon('FNP', id=f'fnp_addon_{self.tab_index}', addon_type='prepend'),
       dbc.Select(
-        id='fnp_{}'.format(tab_index),
-        options=[{"label": "{}+++".format(i), "value": i} for i in range(2,8)],
+        id=f'fnp_{self.tab_index}',
+        options=[{'label': f'{i}+++', 'value': i} for i in range(2,8)],
         value=7,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the feel no pain value of the target",
-        target=f'fnp_addon_{tab_index}',
+        'Set the feel no pain value of the target',
+        target=f'fnp_addon_{self.tab_index}',
       ),
     ]
 
-  def _wounds_input(self, tab_index):
+  def _wounds_input(self):
     return [
-      dbc.InputGroupAddon("W", id=f'wounds_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon('W', id=f'wounds_addon_{self.tab_index}', addon_type='prepend'),
       dbc.Select(
-        id='wounds_{}'.format(tab_index),
-        options=[{"label": "{}".format(i), "value": i} for i in range(1,25)],
+        id=f'wounds_{self.tab_index}',
+        options=[{'label': f'{i}', 'value': i} for i in range(1,25)],
         value=7,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the target wounds value",
-        target=f'wounds_addon_{tab_index}',
+        'Set the target wounds value',
+        target=f'wounds_addon_{self.tab_index}',
       ),
     ]
 
-  def attack_row_input(self, tab_index):
-    content = dbc.InputGroup(
-      [
-        dbc.InputGroupAddon("Attack", addon_type="prepend"),
-        *self._strength_input(tab_index),
-        *self._ap_input(tab_index),
-        *self._weapon_skill_input(tab_index),
-        *self._shots_input(tab_index),
-        *self._damage_input(tab_index),
-      ],
+  def _weapon_tabs(self):
+    weapon_tabs = []
+    for weapon_index in range(self.weapon_count):
+      weapon_tab = WeaponTabLayout(
+        self.tab_index,
+        weapon_index,
+        self.tab_count,
+        self.weapon_count
+      ).layout()
+      weapon_tabs.append(weapon_tab)
+    return dbc.Tabs(
+      weapon_tabs,
+      className='nav-justified',
+      style={'padding-top': '0px', 'padding-bottom': '0px'},
     )
+
+
+class WeaponTabLayout(object):
+  def __init__(self, tab_index, weapon_index, tab_count=0, weapon_count=0):
+    self.tab_index = tab_index
+    self.weapon_index = weapon_index
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+
+  def layout(self):
+    return dbc.Tab(
+      self._tab_content(),
+      label='Weapon {}'.format(self.weapon_index + 1),
+      style={'width': '100%'},
+    )
+
+  def _tab_content(self):
+    form_input = [
+      self._weapon_name_row(),
+      self._attack_input_row(),
+      *self._modifier_rows()
+    ]
+    return self._wrap_card(form_input)
+
+  def _wrap_card(self, content):
+    return dbc.Card(dbc.CardBody(content))
+
+  def _wrap_single_row(self, content):
     return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
-  def _weapon_skill_input(self, tab_index):
+  def _weapon_name_row(self):
+    content = [
+      dbc.InputGroupAddon("Name", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'weaponname_{self.tab_index}_{self.weapon_index}',
+        value=f'Weapon {self.weapon_index+1}',
+        debounce=True,
+        minLength=2,
+        persistence=True,
+        persistence_type='session',
+        maxLength=60
+      ),
+    ]
+    return self._wrap_single_row(dbc.InputGroup(content, size="sm",))
+
+  def _attack_input_row(self):
+    content = [
+      *self._weapon_enable_input(),
+      *self._strength_input(),
+      *self._ap_input(),
+      *self._weapon_skill_input(),
+      *self._shots_input(),
+      *self._damage_input(),
+    ]
+
+    return self._wrap_single_row(dbc.InputGroup(content, size="sm",))
+
+  def _weapon_enable_input(self):
     return [
-      dbc.InputGroupAddon("WS", id=f'ws_addon_{tab_index}', addon_type="prepend"),
       dbc.Select(
-        id='ws_{}'.format(tab_index),
-        options=[{"label": "{}+".format(i), "value": i} for i in range(1,8)],
+        options=[
+          {'label': 'Enabled', 'value': 'enabled'},
+          {'label': 'Disabled', 'value': 'disabled'}
+        ],
+        value='enabled' if self.weapon_index == 0 else 'disabled',
+        disabled=self.weapon_index == 0,
+        persistence=True,
+        persistence_type='session',
+        id=f'weaponenabled_{self.tab_index}_{self.weapon_index}',
+      ),
+    ]
+
+  def _weapon_skill_input(self):
+    return [
+      dbc.InputGroupAddon(
+        'WS',
+        id=f'ws_addon_{self.tab_index}_{self.weapon_index}',
+        addon_type='prepend'
+      ),
+      dbc.Select(
+        id=f'ws_{self.tab_index}_{self.weapon_index}',
+        options=[{'label': f'{i}+', 'value': i} for i in range(1,8)],
         value=4,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the weapons skill value",
-        target=f'ws_addon_{tab_index}',
+        'Set the weapons skill value',
+        target=f'ws_addon_{self.tab_index}_{self.weapon_index}',
       ),
     ]
 
-  def _strength_input(self, tab_index):
+  def _strength_input(self):
     return [
-      dbc.InputGroupAddon("S", id=f'strength_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon(
+        'S',
+        id=f'strength_addon_{self.tab_index}_{self.weapon_index}',
+        addon_type='prepend'
+      ),
       dbc.Select(
-        id='strength_{}'.format(tab_index),
-        options=[{"label": "{}".format(i), "value": i} for i in range(1,21)],
+        id=f'strength_{self.tab_index}_{self.weapon_index}',
+        options=[{'label': f'{i}', 'value': i} for i in range(1,21)],
         value=4,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the strength value",
-        target=f'strength_addon_{tab_index}',
+        'Set the strength value',
+        target=f'strength_addon_{self.tab_index}_{self.weapon_index}',
       ),
     ]
 
-  def _ap_input(self, tab_index):
+  def _ap_input(self):
     return [
-      dbc.InputGroupAddon("AP", id=f'ap_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon(
+        'AP',
+        id=f'ap_addon_{self.tab_index}_{self.weapon_index}',
+        addon_type="prepend"
+      ),
       dbc.Select(
-        id='ap_{}'.format(tab_index),
-        options=[{"label": "0" if i==0 else "-{}".format(i), "value": i} for i in range(0,7)],
+        id=f'ap_{self.tab_index}_{self.weapon_index}',
+        options=[{'label': '0' if i==0 else f'-{i}', 'value': i} for i in range(0,7)],
         value=1,
         persistence=True,
         persistence_type='session',
       ),
       dbc.Tooltip(
-        f"Set the AP value",
-        target=f'ap_addon_{tab_index}',
+        'Set the AP value',
+        target=f'ap_addon_{self.tab_index}_{self.weapon_index}',
       ),
     ]
 
-  def _shots_input(self, tab_index):
+  def _shots_input(self):
     return [
-      dbc.InputGroupAddon("#", id=f'shots_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon(
+        '#',
+        id=f'shots_addon_{self.tab_index}_{self.weapon_index}',
+        addon_type="prepend"
+      ),
       dbc.Input(
-        type="text",
-        id=f'shots_{tab_index}',
+        type='text',
+        id=f'shots_{self.tab_index}_{self.weapon_index}',
         value='2d6',
         style={'text-align': 'right'},
         persistence=True,
@@ -476,17 +575,21 @@ class InputLayout(object):
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
       dbc.Tooltip(
-        f"Set the number of shots (1, 2d6, d3, ...)",
-        target=f'shots_addon_{tab_index}',
+        'Set the number of shots (1, 2d6, d3, ...)',
+        target=f'shots_addon_{self.tab_index}_{self.weapon_index}',
       ),
     ]
 
-  def _damage_input(self, tab_index):
+  def _damage_input(self):
     return [
-      dbc.InputGroupAddon("D", id=f'damage_addon_{tab_index}', addon_type="prepend"),
+      dbc.InputGroupAddon(
+        'D',
+        id=f'damage_addon_{self.tab_index}_{self.weapon_index}',
+        addon_type='prepend'
+      ),
       dbc.Input(
-        type="text",
-        id='damage_{}'.format(tab_index),
+        type='text',
+        id=f'damage_{self.tab_index}_{self.weapon_index}',
         value='2',
         style={'text-align': 'right'},
         persistence=True,
@@ -495,18 +598,18 @@ class InputLayout(object):
         pattern=r'^(\d+)?[dD]?(\d+)$',
       ),
       dbc.Tooltip(
-        f"Set the damage dealt (1, 2d6, d3, ...)",
-        target=f'damage_addon_{tab_index}',
+        'Set the damage dealt (1, 2d6, d3, ...)',
+        target=f'damage_addon_{self.tab_index}_{self.weapon_index}',
       ),
     ]
 
-  def mod_rows(self, tab_index):
+  def _modifier_rows(self):
     shot_modifier = dcc.Dropdown(
       options=self._shot_modifier_options(),
       multi=True,
       placeholder='Modify shot volume rolls',
       optionHeight=20,
-      id=f'shot_mods_{tab_index}',
+      id=f'shotmods_{self.tab_index}_{self.weapon_index}',
       persistence=True,
       persistence_type='session',
       value=[],
@@ -516,7 +619,7 @@ class InputLayout(object):
       multi=True,
       placeholder='Modify hit rolls',
       optionHeight=20,
-      id=f'hit_mods_{tab_index}',
+      id=f'hitmods_{self.tab_index}_{self.weapon_index}',
       persistence=True,
       persistence_type='session',
       value=[],
@@ -526,7 +629,7 @@ class InputLayout(object):
       multi=True,
       placeholder='Modify wound rolls',
       optionHeight=20,
-      id=f'wound_mods_{tab_index}',
+      id=f'woundmods_{self.tab_index}_{self.weapon_index}',
       persistence=True,
       persistence_type='session',
       value=[],
@@ -536,7 +639,7 @@ class InputLayout(object):
       multi=True,
       placeholder='Modify save rolls',
       optionHeight=20,
-      id=f'save_mods_{tab_index}',
+      id=f'savemods_{self.tab_index}_{self.weapon_index}',
       persistence=True,
       persistence_type='session',
       value=[],
@@ -546,17 +649,14 @@ class InputLayout(object):
       multi=True,
       placeholder='Modify damage rolls',
       optionHeight=20,
-      id=f'damage_mods_{tab_index}',
+      id=f'damagemods_{self.tab_index}_{self.weapon_index}',
       persistence=True,
       persistence_type='session',
       value=[],
     )
     return [
-      dbc.Row(dbc.Col(shot_modifier), className="mb-2 "),
-      dbc.Row(dbc.Col(hit_modifier), className="mb-2 "),
-      dbc.Row(dbc.Col(wound_modifier), className="mb-2 "),
-      dbc.Row(dbc.Col(save_modifier), className="mb-2 "),
-      dbc.Row(dbc.Col(damage_modifier), className="mb-2 "),
+      dbc.Row([dbc.Col(shot_modifier), dbc.Col(hit_modifier)], className="mb-2 "),
+      dbc.Row([dbc.Col(wound_modifier), dbc.Col(save_modifier), dbc.Col(damage_modifier)]),
     ]
 
   def _shot_modifier_options(self):
@@ -654,70 +754,3 @@ class InputLayout(object):
     for i in range(2, 7):
       options.append({'label': f'Minimum {i} damage', 'value': f'minval_{i}'})
     return options
-
-
-class InputGenerator(object):
-  def gen_tab_inputs(self, tab_index):
-    return {
-      **self.data_row_input(tab_index),
-      **self.target_row_input(tab_index),
-      **self.attack_row_input(tab_index),
-      **self.modify_input(tab_index),
-    }
-
-  def json_inputs(self, tab_count):
-    json_input = []
-    for i in range(tab_count):
-      json_input += self.json_tab_inputs(i)
-    return json_input
-
-  def json_tab_inputs(self, tab_index):
-    return [
-      f'shot_mods_{tab_index}'
-      f'hit_mods_{tab_index}'
-      f'wound_mods_{tab_index}'
-      f'save_mods_{tab_index}'
-      f'damage_mods_{tab_index}'
-    ]
-
-  def data_row_input(self, tab_index):
-    return {
-      f'enabled_{tab_index}': 'checked',
-      f'tab_name_{tab_index}': 'value',
-    }
-
-  def target_row_input(self, tab_index):
-    return {
-      f'toughness_{tab_index}': 'value',
-      f'save_{tab_index}': 'value',
-      f'invuln_{tab_index}': 'value',
-      f'fnp_{tab_index}': 'value',
-      f'wounds_{tab_index}': 'value',
-    }
-
-  def attack_row_input(self, tab_index):
-    return {
-      f'ws_{tab_index}': 'value',
-      f'strength_{tab_index}': 'value',
-      f'ap_{tab_index}': 'value',
-      f'shots_{tab_index}': 'value',
-      f'damage_{tab_index}': 'value',
-    }
-
-  def modify_input(self, tab_index):
-    return {
-      f'shot_mods_{tab_index}': 'value',
-      f'hit_mods_{tab_index}': 'value',
-      f'wound_mods_{tab_index}': 'value',
-      f'save_mods_{tab_index}': 'value',
-      f'damage_mods_{tab_index}': 'value',
-    }
-
-  def graph_inputs(self, tab_count):
-    inputs = {'title': 'value'}
-    for i in range(tab_count):
-      inputs.update(self.gen_tab_inputs(i))
-    return inputs
-
-def app_layout(tab_count):
-  return Layout(tab_count).layout()

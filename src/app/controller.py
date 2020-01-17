@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import dash
 import dash_daq as daq
 import re
@@ -6,92 +8,15 @@ import dash_html_components as html
 from urllib.parse import urlparse, parse_qsl, urlencode
 from dash.dependencies import Input, Output, State
 
-from .layout import GraphLayout, InputGenerator, Layout
+from .layout import GraphLayout, Layout
 
-from .util import compute
+from .util import ComputeController, URLMinify, InputGenerator
 
 from ..constants import TAB_COUNT
+from ..stats.pmf import PMF
 
-class URLMinify(object):
-  def __init__(self, tab_count):
-    self.tab_count = tab_count
-    self.mapping = [
-      *self.data_row(),
-      *self.target_row(),
-      *self.attack_row(),
-      *self.modify_row(),
-    ]
-
-  def minify(self, key):
-    return self.to_min().get(key, key)
-
-  def maxify(self, key):
-    return self.to_max().get(key, key)
-
-  def to_min(self):
-    return {x:y for x, y in self.mapping}
-
-  def to_max(self):
-    return {y:x for x, y in self.mapping}
-
-  def data_row(self):
-    row = []
-    for i in range(self.tab_count):
-      row += self.data_row_input(i)
-    return row
-
-  def data_row_input(self, tab_index):
-    return [
-      [f'enabled_{tab_index}', f'e_{tab_index}'],
-      [f'tab_name_{tab_index}', f'tn_{tab_index}'],
-    ]
-
-  def target_row(self):
-    row = []
-    for i in range(self.tab_count):
-      row += self.target_row_input(i)
-    return row
-
-  def target_row_input(self, tab_index):
-    return [
-      [f'toughness_{tab_index}', f't_{tab_index}'],
-      [f'save_{tab_index}', f'sv_{tab_index}'],
-      [f'invuln_{tab_index}', f'inv_{tab_index}'],
-      [f'fnp_{tab_index}', f'fn_{tab_index}'],
-      [f'wounds_{tab_index}', f'w_{tab_index}'],
-    ]
-
-  def attack_row(self):
-    row = []
-    for i in range(self.tab_count):
-      row += self.attack_row_input(i)
-    return row
-
-  def attack_row_input(self, tab_index):
-    return [
-      [f'ws_{tab_index}', f'ws_{tab_index}'],
-      [f'strength_{tab_index}', f's_{tab_index}'],
-      [f'ap_{tab_index}', f'ap_{tab_index}'],
-      [f'shots_{tab_index}', f'sh_{tab_index}'],
-      [f'damage_{tab_index}', f'dm_{tab_index}'],
-    ]
-
-  def modify_row(self):
-    row = []
-    for i in range(self.tab_count):
-      row += self.modify_input(i)
-    return row
-
-  def modify_input(self, tab_index):
-    return [
-      [f'shot_mods_{tab_index}', f'shm_{tab_index}'],
-      [f'hit_mods_{tab_index}', f'hm_{tab_index}'],
-      [f'wound_mods_{tab_index}', f'wm_{tab_index}'],
-      [f'save_mods_{tab_index}', f'svm_{tab_index}'],
-      [f'damage_mods_{tab_index}', f'dmm_{tab_index}'],
-    ]
-
-
+def recurse_default():
+  return defaultdict(recurse_default)
 
 class CallbackMapper(object):
   def __init__(self, outputs=None, inputs=None, states=None):
@@ -114,24 +39,34 @@ class CallbackMapper(object):
   def states(self):
     return [State(k, self._states[k]) for k in self._states_order]
 
-  def input_to_kwargs_by_tab(self, args, tab_count):
+  def input_to_kwargs_by_tab(self, args, tab_count, weapon_count):
     inputs = self.input_to_kwargs(args)
-    tab_inputs = {i: {'inputs': {}, 'states': {}} for i in range(-1, tab_count)}
-    for k in inputs['inputs']:
-      match = re.match(r'(.*)_(\d+).*', k)
+    parsed_inputs = recurse_default()
+    parsed_inputs = self.parse_kwargs(inputs, parsed_inputs, 'inputs')
+    parsed_inputs = self.parse_kwargs(inputs, parsed_inputs, 'states')
+    return self.default_to_regular(parsed_inputs)
+
+  def default_to_regular(self, d):
+    if isinstance(d, defaultdict):
+        d = {k: self.default_to_regular(v) for k, v in d.items()}
+    return d
+
+  def parse_kwargs(self, inputs, parsed_inputs=None, parse_field=None):
+    parsed_inputs = parsed_inputs or recurse_default()
+    parse_field = parse_field or 'inputs'
+    for raw_input_name, value in inputs[parse_field].items():
+      match = re.match(r'(?P<input_name>[^_]+)_(?P<tab>\d+)(_(?P<weapon>\d+))?', raw_input_name)
       if match:
-        name, number = match.groups()
-        tab_inputs[int(number)]['inputs'][name] = inputs['inputs'][k]
+        input_name = match.groupdict().get('input_name')
+        tab = match.groupdict().get('tab')
+        weapon = match.groupdict().get('weapon')
+        if weapon:
+          parsed_inputs[int(tab)]['weapons'][int(weapon)][parse_field][input_name] = value
+        else:
+          parsed_inputs[int(tab)][parse_field][input_name] = value
       else:
-        tab_inputs[-1]['inputs'][k] = inputs['inputs'][k]
-    for k in inputs['states']:
-      match = re.match(r'(.*)_(\d+).*', k)
-      if match:
-        name, number = match.groups()
-        tab_inputs[int(number)]['states'][name] = inputs['states'][k]
-      else:
-        tab_inputs[-1]['states'][k] = inputs['states'][k]
-    return tab_inputs
+        parsed_inputs[-1][parse_field][raw_input_name] = value
+    return parsed_inputs
 
   def input_to_kwargs(self, args):
     input_dict = {}
@@ -146,48 +81,123 @@ class CallbackMapper(object):
     return [outputs[k] for k in self._outputs_order]
 
 
-class CallbackController(object):
-  def __init__(self, app, tab_count):
+class URLCallbackController(object):
+  def __init__(self, app, tab_count, weapon_count):
     self.app = app
     self.tab_count = tab_count
+    self.weapon_count = weapon_count
     self.layout_generator = Layout(self.tab_count)
-    self.graph_layout = GraphLayout()
-    self.input_generator = InputGenerator()
-    self.url_minify = URLMinify(self.tab_count)
 
   def setup_callbacks(self):
-    self.setup_url_callbacks()
-    self.setup_graph_callbacks()
-    self.setup_input_callbacks()
-    self.setup_static_link_callbacks()
-    self.setup_static_graph_callbacks()
-
-  def setup_url_callbacks(self):
-    mapper = CallbackMapper(outputs={'page-content': 'children'}, inputs={'url': 'pathname'})
+    mapper = CallbackMapper(outputs={'page_content': 'children'}, inputs={'url': 'pathname'})
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def page_content(pathname):
       result_dict = {}
       if pathname == '/':
-        result_dict['page-content'] = self.layout_generator.base_layout()
+        result_dict['page_content'] = self.layout_generator.base_layout()
       elif pathname == '/static':
-        result_dict['page-content'] = self.layout_generator.static_layout()
+        result_dict['page_content'] = self.layout_generator.static_layout()
       return mapper.dict_to_output(result_dict)
 
-  def setup_graph_callbacks(self):
-    inputs = self.input_generator.graph_inputs(self.tab_count)
+
+class GraphCallbackController(object):
+  def __init__(self, app, tab_count, weapon_count):
+    self.app = app
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+    self.input_generator = InputGenerator()
+    self.graph_layout_generator = GraphLayout()
+    self.compute_controller = ComputeController()
+
+  def setup_callbacks(self):
+    inputs = self.input_generator.graph_inputs(self.tab_count, self.weapon_count)
     inputs.update({'url': 'href'})
     mapper = CallbackMapper(
       outputs=self._graph_updates(),
-      inputs=self.input_generator.graph_inputs(self.tab_count),
+      inputs=self.input_generator.graph_inputs(self.tab_count, self.weapon_count),
       states=self._graph_updates(),
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def graph_callback(*args):
-      tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count)
-      result_dict = self.update_graph(tab_data)
+      tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count, self.weapon_count)
+      result_dict = self._update_graph(tab_data)
       return mapper.dict_to_output(result_dict)
 
-  def setup_static_graph_callbacks(self):
+  def _graph_updates(self):
+    return {
+      **{'damage_graph': 'figure'},
+      **{f'avgdisplay_{i}': 'children' for i in range(self.tab_count)},
+      **{f'stddisplay_{i}': 'children' for i in range(self.tab_count)},
+    }
+
+  def _update_graph(self, tab_data):
+    graph_data = tab_data[-1]['states']['damage_graph']['data']
+    output = {}
+    if graph_data == [{}] * self.tab_count:
+      changed_tabs = list(range(self.tab_count))
+    else:
+      changed_tabs = self._tabs_changed()
+    for tab_index in range(self.tab_count):
+      if tab_index in changed_tabs:
+        tab_graph_data = self._tab_graph_data(tab_index, tab_data[tab_index])
+        graph_data[tab_index] = tab_graph_data['graph_data']
+        output[f'avgdisplay_{tab_index}'] = 'Mean: {}'.format(round(tab_graph_data['mean'], 2))
+        output[f'stddisplay_{tab_index}'] = 'σ: {}'.format(round(tab_graph_data['std'], 2))
+      else:
+        output[f'avgdisplay_{tab_index}'] = tab_data[tab_index]['states']['avgdisplay']
+        output[f'stddisplay_{tab_index}'] = tab_data[tab_index]['states']['stddisplay']
+
+    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
+    output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len)
+    return output
+
+  def _tab_graph_data(self, tab_index, data):
+    tab_pmfs = []
+    tab_data = data['inputs']
+    tab_enabled = tab_data.get('enabled') == 'enabled'
+    for weapon_index in range(self.weapon_count):
+      weapon_data = data['weapons'][weapon_index]['inputs']
+      weapon_enabled = weapon_data.get('weaponenabled') == 'enabled'
+      if tab_enabled and weapon_enabled:
+        tab_pmfs.append(self.compute_controller.compute(**tab_data, **weapon_data))
+    tab_pmf = PMF.convolve_many(tab_pmfs)
+    values = tab_pmf.cumulative().trim_tail().values
+    if len(values) > 1:
+      graph_data = {
+        'x': [i for i, x in enumerate(values)],
+        'y': [100*x for i, x in enumerate(values)],
+        'name': tab_data.get('tabname'),
+      }
+    else:
+      graph_data = {}
+    return {
+      'graph_data': graph_data,
+      'mean': tab_pmf.mean(),
+      'std': tab_pmf.std(),
+    }
+
+  def _tabs_changed(self):
+    ctx = dash.callback_context
+    if not ctx:
+      return list(range(TAB_COUNT))
+    tabs = []
+    for trigger in ctx.triggered:
+      match = re.match(r'(?P<input_name>[^_]+)_(?P<tab>\d+)(_(?P<weapon>\d+))?', trigger['prop_id'])
+      if match:
+        tabs.append(int(match.groupdict().get('tab')))
+    return list(set(tabs))
+
+
+class StaticGraphCallbackController(object):
+  def __init__(self, app, tab_count, weapon_count):
+    self.app = app
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+    self.graph_layout_generator = GraphLayout()
+    self.compute_controller = ComputeController()
+    self.url_minify = URLMinify(self.tab_count)
+
+  def setup_callbacks(self):
     mapper = CallbackMapper(
       outputs={'page-2-content': 'children', 'static_damage_graph': 'figure'},
       inputs={'url': 'href', 'page-2-radios': 'value'},
@@ -210,8 +220,24 @@ class CallbackController(object):
     max_map = self.url_minify.to_max()
     return {max_map.get(x, x):y for x,y in state.items()}
 
+  def update_static_graph(self, graph_args):
+    title = graph_args.get(-1, {}).get('title')
+    if not graph_args:
+      return self.graph_layout_generator.figure_template()
+    graph_data = []
+    for tab_index in [x for x in sorted(graph_args.keys()) if x != -1]:
+      data = self.compute_controller.compute(
+        **graph_args[tab_index],
+        existing_data=graph_args,
+        re_render=True,
+        tab_index=tab_index,
+      )
+      graph_data.append(data.get('graph_data'))
+    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
+    return self.graph_layout_generator.figure_template(graph_data, max_len, title)
+
   def parse_static_graph_args(self, graph_args):
-    foo = {}
+    parsed_args = {}
     for key, value in graph_args.items():
       match = re.match(r'(?P<sub_key>.+)_(?P<tab_index>\d+)', key)
       if match:
@@ -219,26 +245,57 @@ class CallbackController(object):
         tab_index = int(match.groupdict().get('tab_index'))
         if sub_key in ['shot_mods', 'hit_mods','wound_mods', 'save_mods', 'damage_mods']:
           value = value.split(',')
-        if tab_index in foo:
-          foo[tab_index][sub_key] = value
+        if tab_index in parsed_args:
+          parsed_args[tab_index][sub_key] = value
         else:
-          foo[tab_index] = {sub_key: value}
+          parsed_args[tab_index] = {sub_key: value}
       else:
-        if -1 in foo:
-          foo[-1][key] = value
+        if -1 in parsed_args:
+          parsed_args[-1][key] = value
         else:
-          foo[-1] = {key: value}
+          parsed_args[-1] = {key: value}
+    return parsed_args
 
-    return foo
 
-  def setup_static_link_callbacks(self):
+class InputsCallbackController(object):
+  def __init__(self, app, tab_count, weapon_count):
+    self.app = app
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+
+  def setup_callbacks(self):
+    for tab_index in range(self.tab_count):
+      self._setup_input_tab_callback(tab_index)
+
+  def _setup_input_tab_callback(self, tab_index):
+    # self.disable_callback(tab_index)
+    self._tabname_callback(tab_index)
+
+  def _tabname_callback(self, tab_index):
+    @self.app.callback(
+      Output(f'tab_{tab_index}', 'label'),
+      [Input(f'tabname_{tab_index}', 'value')],
+    )
+    def update_tab_name(value):
+        return value if len(value) > 2 else 'Profile'
+
+
+class LinkCallbackController(object):
+  def __init__(self, app, tab_count, weapon_count):
+    self.app = app
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+    self.input_generator = InputGenerator()
+    self.url_minify = URLMinify(self.tab_count)
+
+  def setup_callbacks(self):
     mapper = CallbackMapper(
       outputs={'permalink': 'href'},
-      inputs=self.input_generator.graph_inputs(self.tab_count),
+      inputs=self.input_generator.graph_inputs(self.tab_count, self.weapon_count),
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def static_graph_callback(*args):
-      tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count)
+      tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count, self.weapon_count)
       result_dict = {'permalink': self.convert_args_to_url(tab_data)}
       return mapper.dict_to_output(result_dict)
 
@@ -258,98 +315,51 @@ class CallbackController(object):
     state = urlencode(url_args)
     return f'/static?{state}'
 
-  def _graph_updates(self):
-    return {
-      **{'damage_graph': 'figure'},
-      **{f'avg_display_{i}': 'children' for i in range(self.tab_count)},
-      **{f'std_display_{i}': 'children' for i in range(self.tab_count)},
-    }
 
 
-  def setup_input_callbacks(self):
-    for i in range(self.tab_count):
-      self.setup_input_tab_callback(i)
+class CallbackController(object):
+  def __init__(self, app, tab_count, weapon_count):
+    self.app = app
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
 
-  def setup_input_tab_callback(self, tab_index):
-    self.disable_callback(tab_index)
-    self.tab_name_callback(tab_index)
-
-  def disable_callback(self, tab_index):
-    @self.app.callback(
-      self._disable_outputs(tab_index),
-      [Input('enabled_{}'.format(tab_index), 'checked')],
+    self.url_callback_controller = URLCallbackController(
+      self.app,
+      self.tab_count,
+      self.weapon_count
     )
-    def disable_tab_options(enable):
-        return [not enable] * 15
 
-  def _disable_outputs(self, tab_index):
-    ids = ['damage_mods_{}', 'save_mods_{}', 'wound_mods_{}', 'hit_mods_{}', 'shot_mods_{}',
-           'ws_{}', 'toughness_{}', 'strength_{}', 'ap_{}', 'save_{}', 'invuln_{}', 'fnp_{}',
-           'wounds_{}', 'shots_{}', 'damage_{}']
-    return [Output(x.format(tab_index), 'disabled') for x in ids]
-
-
-  def tab_name_callback(self, tab_index):
-    @self.app.callback(
-      Output('tab_{}'.format(tab_index), 'label'),
-      [Input('tab_name_{}'.format(tab_index), 'value')],
+    self.graph_callback_controller = GraphCallbackController(
+      self.app,
+      self.tab_count,
+      self.weapon_count
     )
-    def update_tab_name(value):
-        return value if len(value) > 2 else 'Profile'
 
-  def update_static_graph(self, graph_args):
-    title = graph_args.get(-1, {}).get('title')
-    if not graph_args:
-      return self.graph_layout.figure_template()
-    graph_data = []
-    for tab_index in [x for x in sorted(graph_args.keys()) if x != -1]:
-      data = compute(
-        **graph_args[tab_index],
-        existing_data=graph_args,
-        re_render=True,
-        tab_index=tab_index,
-      )
-      graph_data.append(data.get('graph_data'))
+    self.static_graph_callback_controller = StaticGraphCallbackController(
+      self.app,
+      self.tab_count,
+      self.weapon_count
+    )
 
-    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
-    return self.graph_layout.figure_template(graph_data, max_len, title)
+    self.inputs_callback_controller = InputsCallbackController(
+      self.app,
+      self.tab_count,
+      self.weapon_count
+    )
 
-  def update_graph(self, tab_data):
-    graph_data = tab_data[-1]['states']['damage_graph']['data']
-    output = {}
-    if graph_data == [{}] * self.tab_count:
-      changed_tabs = list(range(self.tab_count))
-    else:
-      changed_tabs = self.tabs_changed()
-    for tab_index in range(self.tab_count):
-      data = compute(
-        **tab_data[tab_index]['inputs'],
-        existing_data=graph_data,
-        re_render=tab_index in changed_tabs,
-        tab_index=tab_index,
-      )
-      graph_data[tab_index] = data.get('graph_data')
-      if data.get('mean') is not None:
-        output[f'avg_display_{tab_index}'] = 'Mean: {}'.format(round(data['mean'], 2))
-      else:
-        output[f'avg_display_{tab_index}'] = tab_data[tab_index]['states']['avg_display']
+    self.link_callback_controller = LinkCallbackController(
+      self.app,
+      self.tab_count,
+      self.weapon_count
+    )
 
-      if data.get('std') is not None:
-        output[f'std_display_{tab_index}'] = 'σ: {}'.format(round(data['std'], 2))
-      else:
-        output[f'std_display_{tab_index}'] = tab_data[tab_index]['states']['std_display']
+  def setup_callbacks(self):
+    self.url_callback_controller.setup_callbacks()
+    self.graph_callback_controller.setup_callbacks()
+    self.static_graph_callback_controller.setup_callbacks()
+    self.inputs_callback_controller.setup_callbacks()
+    self.link_callback_controller.setup_callbacks()
 
-    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
-    output['damage_graph'] = self.graph_layout.figure_template(graph_data, max_len)
-    return output
 
-  def tabs_changed(self):
-    ctx = dash.callback_context
-    if not ctx:
-      return list(range(TAB_COUNT))
-    tabs = []
-    for trigger in ctx.triggered:
-      match = re.match(r'.*_(\d+).*', trigger['prop_id'])
-      if match and 'tab_name' not in trigger['prop_id']:
-        tabs.append(int(match.groups()[0]))
-    return list(set(tabs))
+
+

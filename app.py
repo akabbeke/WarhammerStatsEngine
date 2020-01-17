@@ -8,9 +8,9 @@ from dash.dependencies import Input, Output, State
 
 from flask import Flask
 
-from src.app.layout import app_layout
+from src.app.layout import Layout
 from src.app.controller import CallbackController
-from src.constants import TAB_COUNT
+from src.constants import TAB_COUNT, WEAPON_COUNT
 
 external_stylesheets = [
   'https://bootswatch.com/4/lux/bootstrap.min.css',
@@ -23,8 +23,8 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.title = 'Stats Engine'
 app.config.suppress_callback_exceptions = True
-app.layout = app_layout(TAB_COUNT)
-CallbackController(app, TAB_COUNT).setup_callbacks()
+app.layout = Layout(tab_count=TAB_COUNT, weapon_count=WEAPON_COUNT).layout()
+CallbackController(app, TAB_COUNT, WEAPON_COUNT).setup_callbacks()
 
 server = app.server
 
