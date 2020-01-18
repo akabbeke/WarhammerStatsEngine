@@ -270,6 +270,11 @@ class InputsCallbackController(object):
   def _setup_input_tab_callback(self, tab_index):
     # self.disable_callback(tab_index)
     self._tabname_callback(tab_index)
+    self._setup_weaponname_callback(tab_index)
+
+  def _setup_weaponname_callback(self, tab_index):
+    for weapon_index in range(self.weapon_count):
+      self._weaponname_callback(tab_index, weapon_index)
 
   def _tabname_callback(self, tab_index):
     @self.app.callback(
@@ -278,6 +283,23 @@ class InputsCallbackController(object):
     )
     def update_tab_name(value):
         return value if len(value) > 2 else 'Profile'
+
+  def _weaponname_callback(self, tab_index, weapon_index):
+    @self.app.callback(
+      Output(f'weapontab_{tab_index}_{weapon_index}', 'label'),
+      [
+        Input(f'weaponname_{tab_index}_{weapon_index}', 'value'),
+        Input(f'weaponenabled_{tab_index}_{weapon_index}', 'value'),
+      ],
+    )
+    def update_tab_name(value, enabled):
+        value = value if len(value) > 2 else 'Weapon'
+        if enabled == 'enabled':
+          value = f'▪️ {value}'
+        else:
+          value = f'▫️ {value}'
+        return value
+
 
 
 class LinkCallbackController(object):

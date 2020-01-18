@@ -85,6 +85,11 @@ class ComputeController(object):
           mods.append(AddD6())
         elif mod_data == 'd3':
           mods.append(AddD3())
+        else:
+          mods.append(AddNToVolume(int(mod_data)))
+      elif mod_type == 'subvol':
+        mods.append(AddNToVolume(-1*int(mod_data)))
+
     return mods
 
   def compute(self, *args, **kwargs):

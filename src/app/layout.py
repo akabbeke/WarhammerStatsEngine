@@ -436,8 +436,9 @@ class WeaponTabLayout(object):
   def layout(self):
     return dbc.Tab(
       self._tab_content(),
+      id=f'weapontab_{self.tab_index}_{self.weapon_index}',
       label='Weapon {}'.format(self.weapon_index + 1),
-      style={'width': '100%'},
+      style={'width': '100%'}
     )
 
   def _tab_content(self):
@@ -669,9 +670,9 @@ class WeaponTabLayout(object):
       {'label': f'Add +D3', 'value': f'addvol_d3'},
     ]
     for i in range(1, 7):
-      options.append({'label': f'Add +{i}', 'value': f'add_{i}'})
+      options.append({'label': f'Add +{i}', 'value': f'addvol_{i}'})
     for i in range(1, 7):
-      options.append({'label': f'Sub -{i}', 'value': f'sub_{i}'})
+      options.append({'label': f'Sub -{i}', 'value': f'subvol_{i}'})
     return options
 
   def _hit_modifier_options(self):
@@ -748,9 +749,9 @@ class WeaponTabLayout(object):
       {'label': f'Half damage (rounding up)', 'value': f'halfdam'},
     ]
     for i in range(1, 7):
-      options.append({'label': f'Add +{i}', 'value': f'add_{i}'})
+      options.append({'label': f'Add +{i}', 'value': f'addvol_{i}'})
     for i in range(1, 7):
-      options.append({'label': f'Sub -{i}', 'value': f'sub_{i}'})
+      options.append({'label': f'Sub -{i}', 'value': f'subvol_{i}'})
     for i in range(2, 7):
       options.append({'label': f'Minimum {i} damage', 'value': f'minval_{i}'})
     return options
