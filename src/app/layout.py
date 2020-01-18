@@ -295,7 +295,6 @@ class InputTabLayout(object):
 
   def _tab_enable_inout(self):
     content = [
-      dbc.InputGroupAddon("Tab", addon_type="prepend"),
       dbc.Select(
         options=[
           {"label": "Enabled", "value": 'enabled'},
@@ -467,35 +466,16 @@ class WeaponTabLayout(object):
     return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
   def _weapon_name_row(self):
-    content = [
-      dbc.InputGroupAddon("Name", addon_type="prepend"),
-      dbc.Input(
-        type="text",
-        id=f'weaponname_{self.tab_index}_{self.weapon_index}',
-        value=f'Weapon {self.weapon_index+1}',
-        debounce=True,
-        minLength=2,
-        persistence=True,
-        persistence_type='session',
-        maxLength=60
-      ),
-    ]
-    return self._wrap_single_row(dbc.InputGroup(content, size="sm",))
-
-  def _attack_input_row(self):
-    content = [
-      *self._weapon_enable_input(),
-      *self._strength_input(),
-      *self._ap_input(),
-      *self._weapon_skill_input(),
-      *self._shots_input(),
-      *self._damage_input(),
-    ]
-
-    return self._wrap_single_row(dbc.InputGroup(content, size="sm",))
+    return dbc.Row(
+      [
+        dbc.Col(self._weapon_enable_input(), width=2),
+        dbc.Col(self._weapon_name_input()),
+      ],
+      className='mb-2',
+    )
 
   def _weapon_enable_input(self):
-    return [
+    return dbc.InputGroup([
       dbc.Select(
         options=[
           {'label': 'Enabled', 'value': 'enabled'},
@@ -507,7 +487,34 @@ class WeaponTabLayout(object):
         persistence_type='session',
         id=f'weaponenabled_{self.tab_index}_{self.weapon_index}',
       ),
+    ], size="sm")
+
+  def _weapon_name_input(self):
+    return dbc.InputGroup([
+      dbc.InputGroupAddon("Name", addon_type="prepend"),
+      dbc.Input(
+        type="text",
+        id=f'weaponname_{self.tab_index}_{self.weapon_index}',
+        value=f'Weapon {self.weapon_index+1}',
+        debounce=True,
+        minLength=2,
+        persistence=True,
+        persistence_type='session',
+        maxLength=60
+      ),
+    ], size="sm")
+
+  def _attack_input_row(self):
+    content = [
+      *self._strength_input(),
+      *self._ap_input(),
+      *self._weapon_skill_input(),
+      *self._shots_input(),
+      *self._damage_input(),
     ]
+
+    return self._wrap_single_row(dbc.InputGroup(content, size="sm",))
+
 
   def _weapon_skill_input(self):
     return [
