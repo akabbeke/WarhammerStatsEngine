@@ -711,13 +711,15 @@ class WeaponTabLayout(object):
       options.append({'label': f'Sub -{i}', 'value': f'sub_{i}'})
     # for i in range(2, 7):
     #   options.append({'label': f'Only wound on {i}+', 'value': f'lower_{i}'})
-    for i in range(1, 7):
-      for j in range(2, 7):
-        options.append({'label': f'+{i} MW on a {j}+', 'value': f'addon_{i}_MW_{j}_mod'})
-    for i in range(1, 7):
-      for j in range(2, 7):
-        values = ', '.join([str(x) for x in range(j, 7)])
-        options.append({'label': f'+{i} MW on a {values}', 'value': f'addon_{i}_MW_{j}'})
+    for x in ['MW', 'wound']:
+      for i in range(1, 7):
+        for j in range(2, 7):
+          options.append({'label': f'+{i} {x} on a {j}+', 'value': f'addon_{i}_{x}_{j}_mod'})
+    for x in ['MW', 'wound']:
+      for i in range(1, 7):
+        for j in range(2, 7):
+          values = ', '.join([str(x) for x in range(j, 7)])
+          options.append({'label': f'+{i} {x} on a {values}', 'value': f'addon_{i}_{x}_{j}'})
     return options
 
   def _save_modifier_options(self):

@@ -81,6 +81,12 @@ class AttackSequence(object):
   def _get_extra_shot(self):
     return self._mods.get_extra_shot()
 
+  def _get_mod_extra_wound(self):
+    return self._mods.get_mod_extra_wound()
+
+  def _get_extra_wound(self):
+    return self._mods.get_extra_wound()
+
   def _get_hit_mod_mortal_wounds(self):
     return self._mods.get_mod_mortal_wounds('hit')
 
@@ -147,10 +153,25 @@ class AttackSequence(object):
     for dice, event_prob in enumerate(dist.values):
       dice_dists = self._mods.modify_wound_dice([PMF.dn(6)] * dice, thresh, mod_thresh)
       wound_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      exp_dist = self._calc_exp_wound_dist(dice_dists)
       mortal_dist = self._calc_mortal_wound_dist(dice_dists)
       self._mortal_dists.append((mortal_dist * event_prob).rectify_zero())
-      dists.append(wound_dist * event_prob)
+      dists.append(PMF.convolve_many([wound_dist, exp_dist]) * event_prob)
     return PMF.flatten(dists)
+
+  def _calc_exp_wound_dist(self, dice_dists):
+    # Total hack for the thresh mod
+    thresh_mod = self._mods.modify_wound_thresh(6) - 6
+
+    # Handle extra wounds
+    hits_col = PMFCollection.add_many([
+      self._get_mod_extra_wound().thresh_mod(thresh_mod),
+      self._get_extra_wound(),
+    ])
+    if hits_col:
+      return PMF.convolve_many([hits_col.mul_pmf(x) for x in dice_dists])
+    else:
+      return PMF.static(0)
 
   def _calc_mortal_wound_dist(self, dice_dists):
     # Handle mortal_wounds

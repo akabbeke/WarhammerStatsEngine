@@ -40,6 +40,12 @@ class Modifier(object):
   def extra_shot(self):
     return None
 
+  def mod_extra_wound(self):
+    return None
+
+  def extra_wound(self):
+    return None
+
   def mod_mortal_wound(self):
     return None
 
@@ -81,6 +87,16 @@ class ModExtraShot(ExplodingDice):
 
 class ExtraShot(ExplodingDice):
   def extra_shot(self):
+    return self._pmf_collection()
+
+
+class ModExtraWound(ExplodingDice):
+  def mod_extra_wound(self):
+    return self._pmf_collection()
+
+
+class ExtraWound(ExplodingDice):
+  def extra_wound(self):
     return self._pmf_collection()
 
 
@@ -392,6 +408,18 @@ class ModifierCollection(object):
     Generate extra shots on a static value
     """
     return self.sum_generators(self._hit_mods(), 'extra_shot')
+
+  def get_mod_extra_wound(self):
+    """
+    Generate extra wounds on a modfiable value
+    """
+    return self.sum_generators(self._wound_mods(), 'mod_extra_wound')
+
+  def get_extra_wound(self):
+    """
+    Generate extra wounds on a static value
+    """
+    return self.sum_generators(self._wound_mods(), 'extra_wound')
 
   def get_mod_mortal_wounds(self, mods_name):
     """

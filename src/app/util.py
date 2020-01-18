@@ -6,7 +6,7 @@ from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3
+  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound
 
 
 class ComputeController(object):
@@ -55,6 +55,8 @@ class ComputeController(object):
             mods.append(ModExtraHit(int(thresh), int(value)))
           elif addon == 'shot':
             mods.append(ModExtraShot(int(thresh), int(value)))
+          elif addon == 'wound':
+            mods.append(ModExtraWound(int(thresh), int(value)))
         else:
           if addon == 'mw':
             mods.append(GenerateMortalWound(int(thresh), int(value)))
@@ -62,6 +64,8 @@ class ComputeController(object):
             mods.append(ExtraHit(int(thresh), int(value)))
           elif addon == 'shot':
             mods.append(ExtraShot(int(thresh), int(value)))
+          elif addon == 'wound':
+            mods.append(ExtraWound(int(thresh), int(value)))
       elif mod_type == 'haywire':
         mods.append(Haywire(5, 1))
       elif mod_type == 'ignoreap':
