@@ -158,7 +158,14 @@ class GraphLayout(object):
       figure=self.figure_template(),
       config={
         'scrollZoom': False,
-        'displayModeBar': False,
+        'toImageButtonOptions': {
+          'format': 'jpeg',
+          'filename': 'warhammer_plot',
+          'height': 1080,
+          'width': 1920,
+          'scale': 1
+        },
+        # 'displayModeBar': False,
       },
 
     )
@@ -171,13 +178,20 @@ class GraphLayout(object):
       figure=self.figure_template(),
       config={
         'scrollZoom': False,
+        'toImageButtonOptions': {
+          'format': 'jpeg',
+          'filename': 'warhammer_plot',
+          'height': 1080,
+          'width': 1920,
+          'scale': 1
+        },
         # 'displayModeBar': False,
       },
 
     )
     return content
 
-  def figure_template(self, data=None, max_len=10, title=None):
+  def figure_template(self, data=None, max_len=10, title=None, static=False):
     return {
       'data': data or [{}] * self.tab_count,
       'layout': {
@@ -215,8 +229,6 @@ class GraphLayout(object):
           'pad': 4,
         },
         'autosize': True,
-        'plot_bgcolor': 'rgba(0,0,0,0)',
-        'paper_bgcolor': 'rgba(0,0,0,0)',
       },
     }
 
@@ -234,7 +246,6 @@ class InputLayout(object):
     tabs.append(
       dbc.Tab(
         dbc.CardBody(dcc.Markdown(FOOTER_CONTENT)),
-
         label='Info Tab',
         style={'width': '100%'},
       )
