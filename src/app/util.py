@@ -147,8 +147,9 @@ class ComputeController(object):
 
 
 class URLMinify(object):
-  def __init__(self, tab_count):
+  def __init__(self, tab_count, weapon_count):
     self.tab_count = tab_count
+    self.weapon_count = weapon_count
     self.mapping = [
       *self.data_row(),
       *self.target_row(),
@@ -198,35 +199,41 @@ class URLMinify(object):
   def attack_row(self):
     row = []
     for i in range(self.tab_count):
-      row += self.attack_row_input(i)
+      for j in range(self.weapon_count):
+        row += self.attack_row_input(i, j)
     return row
 
-  def attack_row_input(self, tab_index):
+  def attack_row_input(self, tab_index, weapon_index):
     return [
-      [f'ws_{tab_index}', f'ws_{tab_index}'],
-      [f'strength_{tab_index}', f's_{tab_index}'],
-      [f'ap_{tab_index}', f'ap_{tab_index}'],
-      [f'shots_{tab_index}', f'sh_{tab_index}'],
-      [f'damage_{tab_index}', f'dm_{tab_index}'],
+      [f'ws_{tab_index}_{weapon_index}', f'ws_{tab_index}_{weapon_index}'],
+      [f'strength_{tab_index}_{weapon_index}', f's_{tab_index}_{weapon_index}'],
+      [f'ap_{tab_index}_{weapon_index}', f'ap_{tab_index}_{weapon_index}'],
+      [f'shots_{tab_index}_{weapon_index}', f'sh_{tab_index}_{weapon_index}'],
+      [f'damage_{tab_index}_{weapon_index}', f'dm_{tab_index}_{weapon_index}'],
     ]
 
   def modify_row(self):
     row = []
     for i in range(self.tab_count):
-      row += self.modify_input(i)
+      for j in range(self.weapon_count):
+        row += self.modify_input(i, j)
     return row
 
-  def modify_input(self, tab_index):
+  def modify_input(self, tab_index, weapon_index):
     return [
-      [f'shotmods_{tab_index}', f'shm_{tab_index}'],
-      [f'hitmods_{tab_index}', f'hm_{tab_index}'],
-      [f'woundmods_{tab_index}', f'wm_{tab_index}'],
-      [f'savemods_{tab_index}', f'svm_{tab_index}'],
-      [f'damagemods_{tab_index}', f'dmm_{tab_index}'],
+      [f'shotmods_{tab_index}_{weapon_index}', f'shm_{tab_index}_{weapon_index}'],
+      [f'hitmods_{tab_index}_{weapon_index}', f'hm_{tab_index}_{weapon_index}'],
+      [f'woundmods_{tab_index}_{weapon_index}', f'wm_{tab_index}_{weapon_index}'],
+      [f'savemods_{tab_index}_{weapon_index}', f'svm_{tab_index}_{weapon_index}'],
+      [f'damagemods_{tab_index}_{weapon_index}', f'dmm_{tab_index}_{weapon_index}'],
     ]
 
 
 class InputGenerator(object):
+  def __init__(self, tab_count, weapon_count):
+    self.tab_count = tab_count
+    self.weapon_count = weapon_count
+
   def gen_tab_inputs(self, tab_index, weapon_count):
     return {
       **self.data_row_input(tab_index),
@@ -275,8 +282,8 @@ class InputGenerator(object):
       f'damagemods_{tab_index}_{weapon_index}': 'value',
     }
 
-  def graph_inputs(self, tab_count, weapon_count):
+  def graph_inputs(self):
     inputs = {'title': 'value'}
-    for i in range(tab_count):
-      inputs.update(self.gen_tab_inputs(i, weapon_count))
+    for i in range(self.tab_count):
+      inputs.update(self.gen_tab_inputs(i, self.weapon_count))
     return inputs

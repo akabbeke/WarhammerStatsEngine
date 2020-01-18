@@ -37,7 +37,7 @@ I hope you find this useful!
 class Layout(object):
   def __init__(self, tab_count=0, weapon_count=0):
     self.tab_count = tab_count
-    self.weapon_count = 4
+    self.weapon_count = weapon_count
 
   def layout(self):
     return html.Div([
@@ -92,7 +92,7 @@ class Layout(object):
     return html.Div(
       [
         self.static_navbar(),
-        html.Div(id='page-2-content',style={'display': 'none'}),
+        html.Div(id='static_graph_debug', style={'display': 'none'}),
         dcc.RadioItems(
           id='page-2-radios',
           options=[{'label': i, 'value': i} for i in ['Orange', 'Blue', 'Red']],
@@ -274,9 +274,9 @@ class InputTabLayout(object):
   def _data_input_row(self):
     return dbc.Row(
       [
-        dbc.Col(self._tab_enable_inout(), width=3),
+        dbc.Col(self._tab_enable_inout(), width=2),
         dbc.Col(self._tab_name_input()),
-        dbc.Col(html.P("Average", id=f'avgdisplay_{self.tab_index}'), width=1),
+        dbc.Col(html.P("Average", id=f'avgdisplay_{self.tab_index}'), width=2),
         dbc.Col(html.P("σ", id=f'stddisplay_{self.tab_index}'), width=1),
       ],
       className='mb-2',

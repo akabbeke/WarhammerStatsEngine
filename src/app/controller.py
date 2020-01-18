@@ -86,7 +86,7 @@ class URLCallbackController(object):
     self.app = app
     self.tab_count = tab_count
     self.weapon_count = weapon_count
-    self.layout_generator = Layout(self.tab_count)
+    self.layout_generator = Layout(self.tab_count, self.weapon_count)
 
   def setup_callbacks(self):
     mapper = CallbackMapper(outputs={'page_content': 'children'}, inputs={'url': 'pathname'})
@@ -105,16 +105,14 @@ class GraphCallbackController(object):
     self.app = app
     self.tab_count = tab_count
     self.weapon_count = weapon_count
-    self.input_generator = InputGenerator()
+    self.input_generator = InputGenerator(self.tab_count, self.weapon_count)
     self.graph_layout_generator = GraphLayout()
     self.compute_controller = ComputeController()
 
   def setup_callbacks(self):
-    inputs = self.input_generator.graph_inputs(self.tab_count, self.weapon_count)
-    inputs.update({'url': 'href'})
     mapper = CallbackMapper(
       outputs=self._graph_updates(),
-      inputs=self.input_generator.graph_inputs(self.tab_count, self.weapon_count),
+      inputs=self.input_generator.graph_inputs(),
       states=self._graph_updates(),
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
@@ -195,30 +193,53 @@ class StaticGraphCallbackController(object):
     self.weapon_count = weapon_count
     self.graph_layout_generator = GraphLayout()
     self.compute_controller = ComputeController()
-    self.url_minify = URLMinify(self.tab_count)
+    self.url_minify = URLMinify(self.tab_count, self.weapon_count)
 
   def setup_callbacks(self):
     mapper = CallbackMapper(
-      outputs={'page-2-content': 'children', 'static_damage_graph': 'figure'},
+      outputs={'static_graph_debug': 'children', 'static_damage_graph': 'figure'},
       inputs={'url': 'href', 'page-2-radios': 'value'},
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def static_graph_callback(*args):
       tab_data = mapper.input_to_kwargs(args)
-      url_args = self.parse_url_params(tab_data['inputs']['url'])
-      graph_args = self.parse_static_graph_args(url_args)
+      url_args = self._parse_url_params(tab_data['inputs']['url'])
+      graph_args = self._parse_static_graph_args(url_args)
       output = {
-        'page-2-content': str(graph_args),
+        'static_graph_debug': str(graph_args),
         'static_damage_graph': self.update_static_graph(graph_args),
         }
       return mapper.dict_to_output(output)
 
-  def parse_url_params(self, url):
+  def _parse_url_params(self, url):
     parse_result = urlparse(url)
     params = parse_qsl(parse_result.query)
     state = dict(params)
     max_map = self.url_minify.to_max()
     return {max_map.get(x, x):y for x,y in state.items()}
+
+  def _parse_static_graph_args(self, inputs):
+    parsed_inputs = recurse_default()
+    for raw_input_name, value in inputs.items():
+      match = re.match(r'(?P<input_name>[^_]+)_(?P<tab>\d+)(_(?P<weapon>\d+))?', raw_input_name)
+      if match:
+        input_name = match.groupdict().get('input_name')
+        tab = match.groupdict().get('tab')
+        weapon = match.groupdict().get('weapon')
+        if input_name in ['shotmods', 'hitmods','woundmods', 'savemods', 'damagemods']:
+          value = value.split(',')
+        if weapon:
+          parsed_inputs[int(tab)]['weapons'][int(weapon)]['inputs'][input_name] = value
+        else:
+          parsed_inputs[int(tab)]['inputs'][input_name] = value
+      else:
+        parsed_inputs[-1]['inputs'][raw_input_name] = value
+    return self.default_to_regular(parsed_inputs)
+
+  def default_to_regular(self, d):
+    if isinstance(d, defaultdict):
+      d = {k: self.default_to_regular(v) for k, v in d.items()}
+    return d
 
   def update_static_graph(self, graph_args):
     title = graph_args.get(-1, {}).get('title')
@@ -226,35 +247,25 @@ class StaticGraphCallbackController(object):
       return self.graph_layout_generator.figure_template()
     graph_data = []
     for tab_index in [x for x in sorted(graph_args.keys()) if x != -1]:
-      data = self.compute_controller.compute(
-        **graph_args[tab_index],
-        existing_data=graph_args,
-        re_render=True,
-        tab_index=tab_index,
-      )
-      graph_data.append(data.get('graph_data'))
+      tab_pmfs = []
+      tab_data = graph_args[tab_index]
+      if tab_data.get('weapons'):
+        for weapon_data in tab_data['weapons'].values():
+          data = self.compute_controller.compute(**tab_data['inputs'], **weapon_data['inputs'])
+          tab_pmfs.append(data)
+      tab_pmf = PMF.convolve_many(tab_pmfs)
+      values = tab_pmf.cumulative().trim_tail().values
+      if len(values) > 1:
+        tab_data = {
+          'x': [i for i, x in enumerate(values)],
+          'y': [100*x for i, x in enumerate(values)],
+          'name': tab_data['inputs'].get('tabname'),
+        }
+      else:
+        tab_data = {}
+      graph_data.append(tab_data)
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 20)
     return self.graph_layout_generator.figure_template(graph_data, max_len, title)
-
-  def parse_static_graph_args(self, graph_args):
-    parsed_args = {}
-    for key, value in graph_args.items():
-      match = re.match(r'(?P<sub_key>.+)_(?P<tab_index>\d+)', key)
-      if match:
-        sub_key = match.groupdict().get('sub_key')
-        tab_index = int(match.groupdict().get('tab_index'))
-        if sub_key in ['shot_mods', 'hit_mods','wound_mods', 'save_mods', 'damage_mods']:
-          value = value.split(',')
-        if tab_index in parsed_args:
-          parsed_args[tab_index][sub_key] = value
-        else:
-          parsed_args[tab_index] = {sub_key: value}
-      else:
-        if -1 in parsed_args:
-          parsed_args[-1][key] = value
-        else:
-          parsed_args[-1] = {key: value}
-    return parsed_args
 
 
 class InputsCallbackController(object):
@@ -279,10 +290,18 @@ class InputsCallbackController(object):
   def _tabname_callback(self, tab_index):
     @self.app.callback(
       Output(f'tab_{tab_index}', 'label'),
-      [Input(f'tabname_{tab_index}', 'value')],
+      [
+        Input(f'tabname_{tab_index}', 'value'),
+        Input(f'enabled_{tab_index}', 'value'),
+      ],
     )
-    def update_tab_name(value):
-        return value if len(value) > 2 else 'Profile'
+    def update_tab_name(value, enabled):
+        value = value if len(value) > 2 else 'Profile'
+        if enabled == 'enabled':
+          value = f'▪️ {value}'
+        else:
+          value = f'▫️ {value}'
+        return value
 
   def _weaponname_callback(self, tab_index, weapon_index):
     @self.app.callback(
@@ -301,19 +320,18 @@ class InputsCallbackController(object):
         return value
 
 
-
 class LinkCallbackController(object):
   def __init__(self, app, tab_count, weapon_count):
     self.app = app
     self.tab_count = tab_count
     self.weapon_count = weapon_count
-    self.input_generator = InputGenerator()
-    self.url_minify = URLMinify(self.tab_count)
+    self.input_generator = InputGenerator(self.tab_count, self.weapon_count)
+    self.url_minify = URLMinify(self.tab_count, self.weapon_count)
 
   def setup_callbacks(self):
     mapper = CallbackMapper(
       outputs={'permalink': 'href'},
-      inputs=self.input_generator.graph_inputs(self.tab_count, self.weapon_count),
+      inputs=self.input_generator.graph_inputs(),
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def static_graph_callback(*args):
@@ -321,17 +339,21 @@ class LinkCallbackController(object):
       result_dict = {'permalink': self.convert_args_to_url(tab_data)}
       return mapper.dict_to_output(result_dict)
 
-  def convert_args_to_url(self, tab_data):
+  def convert_args_to_url(self, input_data):
     url_args = {}
-    for tab_index in tab_data:
-      tab_data[tab_index]['inputs']
-      if tab_data[tab_index]['inputs'].get('enabled'):
-        for key, value in tab_data[tab_index]['inputs'].items():
-          if key in ['shot_mods', 'hit_mods','wound_mods', 'save_mods', 'damage_mods']:
-            url_args[f'{key}_{tab_index}'] = ','.join(value or [])
-          else:
-            url_args[f'{key}_{tab_index}'] = value
-    url_args.update(tab_data[-1]['inputs'])
+    for tab_index, tab_data in input_data.items():
+      if tab_data['inputs'].get('enabled') == 'enabled':
+        for key, value in tab_data['inputs'].items():
+          url_args[f'{key}_{tab_index}'] = value
+        for weapon_index, weapon_data in tab_data['weapons'].items():
+          if weapon_data['inputs'].get('weaponenabled') == 'enabled':
+            for key, value in weapon_data['inputs'].items():
+              if key in ['shotmods', 'hitmods','woundmods', 'savemods', 'damagemods']:
+                url_args[f'{key}_{tab_index}_{weapon_index}'] = ','.join(value or [])
+              else:
+                url_args[f'{key}_{tab_index}_{weapon_index}'] = value
+
+    url_args.update(input_data[-1]['inputs'])
     min_map = self.url_minify.to_min()
     url_args = {min_map.get(x, x):y for x,y in url_args.items()}
     state = urlencode(url_args)
