@@ -288,7 +288,7 @@ class InputTabLayout(object):
         dbc.Col(self._tab_enable_inout(), width=2),
         dbc.Col(self._tab_name_input()),
         dbc.Col(html.P("Average", id=f'avgdisplay_{self.tab_index}'), width=2),
-        dbc.Col(html.P("σ", id=f'stddisplay_{self.tab_index}'), width=1),
+        dbc.Col(html.P("σ", id=f'stddisplay_{self.tab_index}'), width=2),
       ],
       className='mb-2',
     )
