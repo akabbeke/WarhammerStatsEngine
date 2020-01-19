@@ -69,9 +69,7 @@ class PMF(object):
     """
     Re-roll all values below a specific value
     """
-
     rr_mask = [0.0 if i < value else x for i, x in enumerate(self.values)]
-
     for i, x in enumerate(self.values):
       if i < value:
         for j, y in enumerate(self.values):
@@ -127,17 +125,12 @@ class PMF(object):
     return PMF([0.0] * min_val + [sum(self.values[:min_val+1])] + self.values[min_val+1:])
 
   def mean(self):
-    total = 0
-    for i, value in enumerate(self.values):
-      total += i * value
-    return total
+    return sum([x*p for x, p in enumerate(self.values)])
 
   def std(self):
     mean = self.mean()
-    total = 0
-    for i, value in enumerate(self.values):
-      total += i**2 * value
-    return (total - mean**2)**(0.5)
+    exp_mean = sum([(x**2)*p for x, p in enumerate(self.values)])
+    return (exp_mean - mean**2)**(0.5)
 
 
   @classmethod

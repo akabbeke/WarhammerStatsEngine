@@ -145,7 +145,7 @@ class GraphCallbackController(object):
         output[f'avgdisplay_{tab_index}'] = tab_data[tab_index]['states']['avgdisplay']
         output[f'stddisplay_{tab_index}'] = tab_data[tab_index]['states']['stddisplay']
 
-    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 15)
+    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
     output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len)
     return output
 
@@ -264,7 +264,7 @@ class StaticGraphCallbackController(object):
       else:
         tab_data = {}
       graph_data.append(tab_data)
-    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 15)
+    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
     return self.graph_layout_generator.figure_template(graph_data, max_len, title)
 
 

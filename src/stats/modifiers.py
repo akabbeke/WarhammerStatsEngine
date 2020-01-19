@@ -145,7 +145,7 @@ class ReRollOneDiceVolume(Modifier):
   def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
     if not dists:
       return dists
-    dists[0] = dists[0].re_roll_less_than(dists[0].expected_value())
+    dists[0] = dists[0].re_roll_less_than(dists[0].mean())
     return dists
 
 class ReRollAll(Modifier):
@@ -157,7 +157,7 @@ class ReRollAll(Modifier):
 class ReRollLessThanExpectedValue(Modifier):
   priority = 98
   def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_less_than(x.expected_value()) for x in dists]
+    return [x.re_roll_less_than(x.mean()) for x in dists]
 
 
 class Melta(Modifier):
