@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.stats.pmf import PMF
+from engine.stats.pmf import PMF
 
 def main():
   pmfs = [PMF.dn(6), PMF.dn(6)]

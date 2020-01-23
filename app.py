@@ -8,9 +8,9 @@ from dash.dependencies import Input, Output, State
 
 from flask import Flask
 
-from src.app.layout import Layout
-from src.app.controller import CallbackController
-from src.constants import TAB_COUNT, WEAPON_COUNT
+from engine.app.layout import Layout
+from engine.app.controller import CallbackController
+from engine.constants import TAB_COUNT, WEAPON_COUNT
 
 external_stylesheets = [
   'https://bootswatch.com/4/lux/bootstrap.min.css',
