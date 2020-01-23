@@ -121,7 +121,6 @@ class PMF(object):
     return PMF(new_dist)
 
   def min(self, min_val):
-    values = self.expand_to(min_val).values
     return PMF([0.0] * min_val + [sum(self.values[:min_val+1])] + self.values[min_val+1:])
 
   def mean(self):

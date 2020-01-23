@@ -174,7 +174,7 @@ class GraphLayout(object):
   def static_layout(self):
     content = dcc.Graph(
       id='static_damage_graph',
-      style={'height':'75vh'},
+      style={'height':'85vh'},
       figure=self.figure_template(),
       config={
         'scrollZoom': False,
