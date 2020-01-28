@@ -51,20 +51,20 @@ class ComputeController(object):
         if modable:
           if addon == 'mw':
             mods.append(ModGenerateMortalWound(int(thresh), int(value)))
-          elif addon == 'hit':
+          elif addon == 'hits':
             mods.append(ModExtraHit(int(thresh), int(value)))
-          elif addon == 'shot':
+          elif addon == 'shots':
             mods.append(ModExtraShot(int(thresh), int(value)))
-          elif addon == 'wound':
+          elif addon == 'wounds':
             mods.append(ModExtraWound(int(thresh), int(value)))
         else:
           if addon == 'mw':
             mods.append(GenerateMortalWound(int(thresh), int(value)))
-          elif addon == 'hit':
+          elif addon == 'hits':
             mods.append(ExtraHit(int(thresh), int(value)))
-          elif addon == 'shot':
+          elif addon == 'shots':
             mods.append(ExtraShot(int(thresh), int(value)))
-          elif addon == 'wound':
+          elif addon == 'wounds':
             mods.append(ExtraWound(int(thresh), int(value)))
       elif mod_type == 'haywire':
         mods.append(Haywire(5, 1))

@@ -131,7 +131,6 @@ class PMF(object):
     exp_mean = sum([(x**2)*p for x, p in enumerate(self.values)])
     return (exp_mean - mean**2)**(0.5)
 
-
   @classmethod
   def dn(cls, n):
     return PMF([0.0] + [1/n] * n)
@@ -237,8 +236,8 @@ class PMFCollection(object):
     """
     new_pmfs = []
     for i, value in enumerate(pmf.values):
-      new_pmfs.append((self.get(i, PMF.static(0)) * value).rectify_zero())
-    return PMF.convolve_many(new_pmfs)
+      new_pmfs.append(self.get(i, PMF.static(0)) * value)
+    return PMF.flatten(new_pmfs)
 
   @classmethod
   def add_many(cls, collection_list):

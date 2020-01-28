@@ -704,11 +704,11 @@ class WeaponTabLayout(object):
       options.append({'label': f'Add +{i}', 'value': f'add_{i}'})
     for i in range(1, 7):
       options.append({'label': f'Sub -{i}', 'value': f'sub_{i}'})
-    for x in ['MW', 'hit', 'shot']:
+    for x in ['MW', 'hits', 'shots']:
       for i in range(1, 7):
         for j in range(2, 7):
           options.append({'label': f'+{i} {x} on a {j}+', 'value': f'addon_{i}_{x}_{j}_mod'})
-    for x in ['MW', 'hit', 'shot']:
+    for x in ['MW', 'hits', 'shots']:
       for i in range(1, 7):
         for j in range(2, 7):
           values = ', '.join([str(x) for x in range(j, 7)])
@@ -729,11 +729,11 @@ class WeaponTabLayout(object):
       options.append({'label': f'Sub -{i}', 'value': f'sub_{i}'})
     # for i in range(2, 7):
     #   options.append({'label': f'Only wound on {i}+', 'value': f'lower_{i}'})
-    for x in ['MW', 'wound']:
+    for x in ['MW', 'wounds']:
       for i in range(1, 7):
         for j in range(2, 7):
           options.append({'label': f'+{i} {x} on a {j}+', 'value': f'addon_{i}_{x}_{j}_mod'})
-    for x in ['MW', 'wound']:
+    for x in ['MW', 'wounds']:
       for i in range(1, 7):
         for j in range(2, 7):
           values = ', '.join([str(x) for x in range(j, 7)])
