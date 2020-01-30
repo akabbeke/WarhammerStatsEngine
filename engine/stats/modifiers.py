@@ -10,11 +10,11 @@ class Modifier(object):
   def __init__(self, *args, **kwargs):
     pass
 
-  def modify_dice(self, dists, thresh=None,  mod_thresh=None):
-    return dists
+  def modify_dice(self, col, thresh=None,  mod_thresh=None):
+    return col
 
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return dists
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    return col
 
   def modify_threshold(self, thresh):
     return thresh
@@ -57,8 +57,8 @@ class MinimumValue(Modifier):
   def __init__(self, min_val):
     self.min_val = min_val
 
-  def modify_dice(self, dists, thresh=None,  mod_thresh=None):
-    return [x.min(self.min_val) for x in dists]
+  def modify_dice(self, col, thresh=None,  mod_thresh=None):
+    return col.map(lambda x: x.min(self.min_val))
 
 
 class ExplodingDice(Modifier):
@@ -118,51 +118,56 @@ class Haywire(ExplodingDice):
 
 class ReRollOnes(Modifier):
   priority = 1
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_value(1) for x in dists]
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    return col.map(lambda x: x.re_roll_value(1))
 
 
 class ReRollFailed(Modifier):
   priority = 99
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_less_than(min(thresh, mod_thresh)) for x in dists]
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    rr_thresh = min(thresh, mod_thresh)
+    return col.map(lambda x: x.re_roll_less_than(rr_thresh))
+
 
 class ReRollOneDice(Modifier):
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    if not dists:
-      return dists
-    dists[0] = dists[0].re_roll_less_than(thresh)
-    return dists
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    pmfs = col.pmfs
+    if not pmfs:
+      return col
+    pmfs[0] = pmfs[0].re_roll_less_than(thresh)
+    return PMFCollection(pmfs)
 
 class ModReRollOneDice(Modifier):
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    if not dists:
-      return dists
-    dists[0] = dists[0].re_roll_less_than(mod_thresh)
-    return dists
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    pmfs = col.pmfs
+    if not pmfs:
+      return col
+    pmfs[0] = pmfs[0].re_roll_less_than(mod_thresh)
+    return PMFCollection(pmfs)
 
 class ReRollOneDiceVolume(Modifier):
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    if not dists:
-      return dists
-    dists[0] = dists[0].re_roll_less_than(dists[0].mean())
-    return dists
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    pmfs = col.pmfs
+    if not pmfs:
+      return col
+    pmfs[0] = pmfs[0].re_roll_less_than(pmfs[0].mean())
+    return PMFCollection(pmfs)
 
 class ReRollAll(Modifier):
   priority = 100
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_less_than(mod_thresh) for x in dists]
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    return col.map(lambda x: x.re_roll_less_than(mod_thresh))
 
 
 class ReRollLessThanExpectedValue(Modifier):
   priority = 98
-  def modify_re_roll(self, dists, thresh=None, mod_thresh=None):
-    return [x.re_roll_less_than(x.mean()) for x in dists]
+  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+    return col.map(lambda x: x.re_roll_less_than(x.mean()))
 
 
 class Melta(Modifier):
-  def modify_dice(self, dists, thresh=None, mod_thresh=None):
-    return [x.melta() for x in dists]
+  def modify_dice(self, col, thresh=None, mod_thresh=None):
+    return col.map(lambda x: x.melta())
 
 
 class AddNTo(Modifier):
@@ -192,18 +197,16 @@ class AddNToInvuln(AddNTo):
 
 
 class AddNToVolume(AddNTo):
-  def modify_dice(self, dists, thresh=None, mod_thresh=None):
-    return [x.roll(self.n) for x in dists]
+  def modify_dice(self, col, thresh=None, mod_thresh=None):
+    return col.map(lambda x: x.roll(self.n))
 
 class AddD6(AddNTo):
-  def modify_dice(self, dists, thresh=None, mod_thresh=None):
-    dists.append(PMF.dn(6))
-    return dists
+  def modify_dice(self, col, thresh=None, mod_thresh=None):
+    return PMFCollection(col.pmfs+[PMF.dn(6)])
 
 class AddD3(AddNTo):
-  def modify_dice(self, dists, thresh=None, mod_thresh=None):
-    dists.append(PMF.dn(3))
-    return dists
+  def modify_dice(self, col, thresh=None, mod_thresh=None):
+    return PMFCollection(col.pmfs+[PMF.dn(3)])
 
 class SetToN(Modifier):
   def __init__(self, value=0, *args, **kwargs):
@@ -244,8 +247,8 @@ class IgnoreInvuln(Modifier):
 
 
 class HalfDamage(Modifier):
-  def modify_dice(self, dists, thresh=None, mod_thresh=None):
-    return [x.div_min_one(2) for x in dists]
+  def modify_dice(self, col, thresh=None, mod_thresh=None):
+    return col.map(lambda x: x.div_min_one(2))
 
 
 class ModifierCollection(object):
@@ -293,15 +296,15 @@ class ModifierCollection(object):
   def _get_mods(self, mods_name):
     return self._data.get(mods_name, [])
 
-  def _mod_dice(self, dists, mods, thresh=None, mod_thresh=None):
+  def _mod_dice(self, col, mods, thresh=None, mod_thresh=None):
     """
     Apply dice modifications. Rerolls happen before modifiers.
     """
     for mod in mods:
-      dists = mod.modify_re_roll(dists, thresh, mod_thresh)
+      col = mod.modify_re_roll(col, thresh, mod_thresh)
     for mod in mods:
-      dists = mod.modify_dice(dists, thresh, mod_thresh)
-    return dists
+      col = mod.modify_dice(col, thresh, mod_thresh)
+    return col
 
   def modify_shot_dice(self, dists):
     """
@@ -315,7 +318,7 @@ class ModifierCollection(object):
     are a +1 to the threshold. Similarly +1 to hits are -1 to the threshold.
     """
     if thresh == 1:
-      # Handle the case where the weapon is auto hit. No to hit modifiers apply
+      # Handle the case where the weapon is auto hit. No to hit modifiers map
       return thresh
     for mod in self._hit_mods():
       thresh = mod.modify_threshold(thresh)
@@ -365,7 +368,7 @@ class ModifierCollection(object):
     Modify the fnp threshold. I think some death guard units can do this?
     """
     for mod in self._fnp_mods():
-      thresh = mod.modify_threshold(thresh)
+      thresh = mod.modify_save(thresh)
     return max(thresh, 2) # 1's alwasys fail
 
   def modify_fnp_dice(self, dists, thresh, mod_thresh):

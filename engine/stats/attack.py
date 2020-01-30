@@ -1,5 +1,11 @@
 from .pmf import PMF, PMFCollection
 
+class AttackTrace(object):
+  def __init__(self, dist, mods):
+    self.dist = dist
+    self.mods = mods
+    self.downstream = []
+
 
 class AttackSequence(object):
   """
@@ -21,6 +27,7 @@ class AttackSequence(object):
     mortal_dists = []
 
     shot_dist = self.shots.calc_dist()
+
     hit_dist, mortal_dist = self.hits.calc_dist(shot_dist)
     mortal_dists.append(mortal_dist)
 
@@ -57,7 +64,7 @@ class AttackSegment(object):
     ])
 
     if dist_col:
-      return PMF.convolve_many([dist_col.mul_pmf(x) for x in dice_dists])
+      return dist_col.mul_col(dice_dists).convolve()
     else:
       return PMF.static(0)
 
@@ -68,12 +75,12 @@ class AttackSegment(object):
     return PMFCollection.empty()
 
   def _calc_mortal_dist(self, dice_dists):
-    mortal_col = PMFCollection.add_many([
+    dist_col = PMFCollection.add_many([
       self._mod_mortal_dist().thresh_mod(self.thresh_mod),
       self._mortal_dist(),
     ])
-    if mortal_col:
-      return PMF.convolve_many([mortal_col.mul_pmf(x) for x in dice_dists])
+    if dist_col:
+      return dist_col.mul_col(dice_dists).convolve()
     else:
       return PMF.static(0)
 
@@ -89,8 +96,8 @@ class AttackShots(AttackSegment):
   Generate the PMF for the number of shots
   """
   def calc_dist(self):
-    shots = self.attack.mods.modify_shot_dice(self.attack.weapon.shots)
-    return PMF.convolve_many(shots)
+    shots_dists = self.attack.mods.modify_shot_dice(self.attack.weapon.shots)
+    return shots_dists.convolve()
 
 
 class AttackHits(AttackSegment):
@@ -105,12 +112,12 @@ class AttackHits(AttackSegment):
     mod_thresh = self.attack.mods.modify_hit_thresh(self.attack.attacker.ws)
     for dice, event_prob in enumerate(dist.values):
       dice_dists = self.attack.mods.modify_hit_dice(
-        [PMF.dn(6)] * dice,
+        PMFCollection.mdn(dice, 6),
         thresh,
         mod_thresh
       )
 
-      hit_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      hit_dist = dice_dists.convert_binomial(mod_thresh).convolve()
       exp_dist = self._calc_exp_dist(dice_dists) if can_recurse else PMF([1])
       exp_shot_dist, exp_mrt_dist = self._calc_exp_shot_dist(dice_dists)
       mrt_dist = self._calc_mortal_dist(dice_dists)
@@ -126,13 +133,12 @@ class AttackHits(AttackSegment):
 
   def _calc_exp_shot_dist(self, dice_dists):
     # Handle extra shots
-    shots_col = PMFCollection.add_many([
+    dist_col = PMFCollection.add_many([
       self._get_mod_extra_shot().thresh_mod(self.thresh_mod),
       self._get_extra_shot(),
     ])
-    if shots_col:
-      shot_dist = PMF.convolve_many([shots_col.mul_pmf(x) for x in dice_dists])
-      return self.calc_dist(shot_dist, can_recurse=False)
+    if dist_col:
+      return self.calc_dist(dist_col.mul_col(dice_dists).convolve(), can_recurse=False)
     else:
       return PMF.static(0), PMF.static(0)
 
@@ -171,17 +177,18 @@ class AttackWounds(AttackSegment):
     mod_thresh = self.attack.mods.modify_wound_thresh(thresh)
     for dice, event_prob in enumerate(dist.values):
       dice_dists = self.attack.mods.modify_wound_dice(
-        [PMF.dn(6)] * dice,
+        PMFCollection.mdn(dice, 6),
         thresh,
         mod_thresh
       )
-      wnd_dist = PMF.convolve_many([x.convert_binomial(mod_thresh) for x in dice_dists])
+      wnd_dist = dice_dists.convert_binomial(mod_thresh).convolve()
       exp_dist = self._calc_exp_dist(dice_dists)
       mrt_dist = self._calc_mortal_dist(dice_dists)
 
       wnd_dists.append(wnd_dist * event_prob)
       exp_dists.append(exp_dist * event_prob)
       mrt_dists.append(mrt_dist * event_prob)
+
     return PMF.convolve_many([PMF.flatten(wnd_dists), PMF.flatten(exp_dists)]), PMF.flatten(mrt_dists)
 
   def _calc_wound_thresh(self, strength, toughness):
@@ -226,12 +233,12 @@ class AttackPens(AttackSegment):
     dists = []
     for dice, event_prob in enumerate(dist.values):
       dice_dists = self.attack.mods.modify_pen_dice(
-        [PMF.dn(6)] * dice,
+        PMFCollection.mdn(dice, 6),
         mod_thresh,
         mod_thresh
       )
-      binom_dists = [x.convert_binomial_less_than(mod_thresh) for x in dice_dists]
-      dists.append(PMF.convolve_many(binom_dists) * event_prob)
+      pen_dists = dice_dists.convert_binomial(mod_thresh, less_than=True).convolve()
+      dists.append(pen_dists * event_prob)
     return PMF.flatten(dists)
 
 
@@ -247,10 +254,9 @@ class AttackDamage(AttackSegment):
     return PMF.flatten(damge_dists)
 
   def _calc_individual_damage_dist(self):
-    dice_dist = self.attack.weapon.damage
-    mod_dist = self.attack.mods.modify_damage_dice(dice_dist)
-    damage_dist = PMF.convolve_many(mod_dist)
-    fnp_dist = self._calc_fnp_dist(damage_dist)
+    dice_dists = self.attack.weapon.damage
+    mod_dists = self.attack.mods.modify_damage_dice(dice_dists)
+    fnp_dist = self._calc_fnp_dist(mod_dists.convolve())
     return fnp_dist.ceiling(self.attack.target.wounds)
 
   def _calc_fnp_dist(self, dist):
@@ -258,12 +264,12 @@ class AttackDamage(AttackSegment):
     mod_thresh = self.attack.mods.modify_fnp_thresh(self.attack.target.fnp)
     for dice, event_prob in enumerate(dist.values):
       dice_dists = self.attack.mods.modify_fnp_dice(
-        [PMF.dn(6)] * dice,
+        PMFCollection.mdn(dice, 6),
         self.attack.target.fnp,
         mod_thresh,
       )
-      binom_dists = [x.convert_binomial_less_than(mod_thresh) for x in dice_dists]
-      dists.append(PMF.convolve_many(binom_dists) * event_prob)
+      binom_dists = dice_dists.convert_binomial(mod_thresh, less_than=True).convolve()
+      dists.append(binom_dists * event_prob)
     return PMF.flatten(dists)
 
 

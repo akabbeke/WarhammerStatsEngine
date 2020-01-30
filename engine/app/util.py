@@ -1,6 +1,6 @@
 import re
 from ..stats.attack import AttackSequence
-from ..stats.pmf import PMF
+from ..stats.pmf import PMF, PMFCollection
 from ..stats.weapons import Weapon
 from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
@@ -76,6 +76,10 @@ class ComputeController(object):
         mods.append(AddNToSave(int(mod_data)))
       elif mod_type == 'savesub':
         mods.append(AddNToSave(-1*int(mod_data)))
+      elif mod_type == 'fnpadd':
+        mods.append(AddNToSave(int(mod_data)))
+      elif mod_type == 'fnpsub':
+        mods.append(AddNToSave(-1*int(mod_data)))
       elif mod_type == 'invadd':
         mods.append(AddNToInvuln(int(mod_data)))
       elif mod_type == 'invsub':
@@ -93,7 +97,7 @@ class ComputeController(object):
           mods.append(AddNToVolume(int(mod_data)))
       elif mod_type == 'subvol':
         mods.append(AddNToVolume(-1*int(mod_data)))
-
+    print(mods)
     return mods
 
   def compute(self, *args, **kwargs):
@@ -111,6 +115,7 @@ class ComputeController(object):
     hitmods = kwargs.get('hitmods')
     woundmods = kwargs.get('woundmods')
     savemods = kwargs.get('savemods')
+    fnpmods = kwargs.get('fnpmods')
     damagemods = kwargs.get('damagemods')
 
     modifiers = ModifierCollection()
@@ -118,6 +123,7 @@ class ComputeController(object):
     modifiers.add_mods('hit', self.parse_mods(hitmods))
     modifiers.add_mods('wound', self.parse_mods(woundmods))
     modifiers.add_mods('pen', self.parse_mods(savemods))
+    modifiers.add_mods('fnp', self.parse_mods(fnpmods))
     modifiers.add_mods('damage', self.parse_mods(damagemods))
 
     target = Unit(
@@ -140,14 +146,14 @@ class ComputeController(object):
 
   def parse_rsn(self, value):
     try:
-      return [PMF.static(int(value or 1))]
+      return PMFCollection([PMF.static(int(value or 1))])
     except ValueError:
       match = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value.lower())
       if match:
         number, faces = re.match(r'(?P<number>\d+)?d(?P<faces>\d+)', value.lower()).groups()
-        return [PMF.dn(int(faces))] * (int(number) if number else 1)
+        return PMFCollection.mdn(int(number) if number else 1, int(faces))
       else:
-        return []
+        return PMFCollection.empty()
 
 
 class URLMinify(object):
@@ -229,6 +235,7 @@ class URLMinify(object):
       [f'hitmods_{tab_index}_{weapon_index}', f'hm_{tab_index}_{weapon_index}'],
       [f'woundmods_{tab_index}_{weapon_index}', f'wm_{tab_index}_{weapon_index}'],
       [f'savemods_{tab_index}_{weapon_index}', f'svm_{tab_index}_{weapon_index}'],
+      [f'fnpmods_{tab_index}_{weapon_index}', f'svm_{tab_index}_{weapon_index}'],
       [f'damagemods_{tab_index}_{weapon_index}', f'dmm_{tab_index}_{weapon_index}'],
     ]
 
@@ -283,6 +290,7 @@ class InputGenerator(object):
       f'hitmods_{tab_index}_{weapon_index}': 'value',
       f'woundmods_{tab_index}_{weapon_index}': 'value',
       f'savemods_{tab_index}_{weapon_index}': 'value',
+      f'fnpmods_{tab_index}_{weapon_index}': 'value',
       f'damagemods_{tab_index}_{weapon_index}': 'value',
     }
 

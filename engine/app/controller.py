@@ -226,7 +226,7 @@ class StaticGraphCallbackController(object):
         input_name = match.groupdict().get('input_name')
         tab = match.groupdict().get('tab')
         weapon = match.groupdict().get('weapon')
-        if input_name in ['shotmods', 'hitmods','woundmods', 'savemods', 'damagemods']:
+        if input_name in ['shotmods', 'hitmods','woundmods', 'savemods', 'fnpmods', 'damagemods']:
           value = value.split(',')
         if weapon:
           parsed_inputs[int(tab)]['weapons'][int(weapon)]['inputs'][input_name] = value
@@ -348,7 +348,7 @@ class LinkCallbackController(object):
         for weapon_index, weapon_data in tab_data['weapons'].items():
           if weapon_data['inputs'].get('weaponenabled') == 'enabled':
             for key, value in weapon_data['inputs'].items():
-              if key in ['shotmods', 'hitmods','woundmods', 'savemods', 'damagemods']:
+              if key in ['shotmods', 'hitmods','woundmods', 'savemods', 'fnpmods', 'damagemods']:
                 url_args[f'{key}_{tab_index}_{weapon_index}'] = ','.join(value or [])
               else:
                 url_args[f'{key}_{tab_index}_{weapon_index}'] = value

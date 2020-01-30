@@ -230,6 +230,9 @@ class PMFCollection(object):
     elif thresh_mod < 0:
       return PMFCollection((self.pmfs + self.pmfs[-1:] * (-1 * thresh_mod))[-1*len(self.pmfs):])
 
+  def mul_col(self, col):
+    return PMFCollection([self.mul_pmf(pmf) for pmf in col.pmfs])
+
   def mul_pmf(self, pmf):
     """
     Multiply the collection with a pmf and return a confolution of the results
@@ -238,6 +241,18 @@ class PMFCollection(object):
     for i, value in enumerate(pmf.values):
       new_pmfs.append(self.get(i, PMF.static(0)) * value)
     return PMF.flatten(new_pmfs)
+
+  def convolve(self):
+    return PMF.convolve_many(self.pmfs)
+
+  def convert_binomial(self, thresh, less_than=False):
+    if less_than:
+      return self.map(lambda x: x.convert_binomial_less_than(thresh))
+    else:
+      return self.map(lambda x: x.convert_binomial(thresh))
+
+  def map(self, func):
+    return PMFCollection([func(x) for x in self.pmfs])
 
   @classmethod
   def add_many(cls, collection_list):
@@ -249,4 +264,9 @@ class PMFCollection(object):
   @classmethod
   def empty(cls):
     return PMFCollection([])
+
+  @classmethod
+  def mdn(cls, m, n):
+    return PMFCollection([PMF.dn(n)] * m)
+
 

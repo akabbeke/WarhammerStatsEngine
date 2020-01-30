@@ -663,6 +663,16 @@ class WeaponTabLayout(object):
       persistence_type='session',
       value=[],
     )
+    fnp_modifier = dcc.Dropdown(
+      options=self._fnp_modifier_options(),
+      multi=True,
+      placeholder='Modify FNP rolls',
+      optionHeight=20,
+      id=f'fnpmods_{self.tab_index}_{self.weapon_index}',
+      persistence=True,
+      persistence_type='session',
+      value=[],
+    )
     damage_modifier = dcc.Dropdown(
       options=self._damage_modifier_options(),
       multi=True,
@@ -674,8 +684,8 @@ class WeaponTabLayout(object):
       value=[],
     )
     return [
-      dbc.Row([dbc.Col(shot_modifier), dbc.Col(hit_modifier)], className="mb-2 "),
-      dbc.Row([dbc.Col(wound_modifier), dbc.Col(save_modifier), dbc.Col(damage_modifier)]),
+      dbc.Row([dbc.Col(shot_modifier), dbc.Col(hit_modifier), dbc.Col(wound_modifier)], className="mb-2 "),
+      dbc.Row([dbc.Col(save_modifier), dbc.Col(fnp_modifier), dbc.Col(damage_modifier)]),
     ]
 
   def _shot_modifier_options(self):
@@ -758,6 +768,19 @@ class WeaponTabLayout(object):
       options.append({'label': f'Sub -{i} to invuln', 'value': f'invsub_{i}'})
     for i in range(1, 7):
       options.append({'label': f'Ignore AP -{i} and lower', 'value': f'ignoreap_{i}'})
+    return options
+
+  def _fnp_modifier_options(self):
+    options = [
+      {'label': f'Reroll all dice', 'value': f'reroll_all'},
+      {'label': f'Reroll failed dice', 'value': f'reroll_failed'},
+      {'label': f'Reroll one dice', 'value': f'reroll_one_dice'},
+      {'label': f'Reroll ones', 'value': f'reroll_ones'},
+    ]
+    for i in range(1, 7):
+      options.append({'label': f'Add +{i} to FNP', 'value': f'fnpadd_{i}'})
+    for i in range(1, 7):
+      options.append({'label': f'Sub -{i} to FNP', 'value': f'fnpsub_{i}'})
     return options
 
   def _damage_modifier_options(self):
