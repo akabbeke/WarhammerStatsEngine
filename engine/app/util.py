@@ -215,6 +215,7 @@ class URLMinify(object):
 
   def attack_row_input(self, tab_index, weapon_index):
     return [
+      [f'weaponenabled_{tab_index}_{weapon_index}', f'we_{tab_index}_{weapon_index}'],
       [f'ws_{tab_index}_{weapon_index}', f'ws_{tab_index}_{weapon_index}'],
       [f'strength_{tab_index}_{weapon_index}', f's_{tab_index}_{weapon_index}'],
       [f'ap_{tab_index}_{weapon_index}', f'ap_{tab_index}_{weapon_index}'],

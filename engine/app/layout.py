@@ -118,7 +118,8 @@ class Layout(object):
           dbc.NavLink(
             "permalink to this graph",
             id='permalink',
-            href="https://github.com/akabbeke/WarhammerStatsEngine"
+            href="https://github.com/akabbeke/WarhammerStatsEngine",
+            external_link=True,
           )
         ),
       ],
@@ -361,7 +362,7 @@ class InputTabLayout(object):
       dbc.Select(
         id=f'save_{self.tab_index}',
         options=[{'label': f'{i}+', 'value': i} for i in range(2,8)],
-        value=4,
+        value=3,
         persistence=True,
         persistence_type='session',
       ),
@@ -409,7 +410,7 @@ class InputTabLayout(object):
       dbc.Select(
         id=f'wounds_{self.tab_index}',
         options=[{'label': f'{i}', 'value': i} for i in range(1,25)],
-        value=7,
+        value=2,
         persistence=True,
         persistence_type='session',
       ),
