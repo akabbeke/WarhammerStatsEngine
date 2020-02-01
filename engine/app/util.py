@@ -97,7 +97,6 @@ class ComputeController(object):
           mods.append(AddNToVolume(int(mod_data)))
       elif mod_type == 'subvol':
         mods.append(AddNToVolume(-1*int(mod_data)))
-    print(mods)
     return mods
 
   def compute(self, *args, **kwargs):
