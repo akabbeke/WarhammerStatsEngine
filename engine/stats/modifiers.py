@@ -80,7 +80,7 @@ class ExtraHit(ExplodingDice):
     return self._pmf_collection()
 
 
-class ModExtraShot(ExplodingDice):
+class ModExtraAttack(ExplodingDice):
   def mod_extra_shot(self):
     return self._pmf_collection()
 

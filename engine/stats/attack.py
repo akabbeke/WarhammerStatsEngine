@@ -111,6 +111,8 @@ class AttackHits(AttackSegment):
     thresh = self.attack.attacker.ws
     mod_thresh = self.attack.mods.modify_hit_thresh(self.attack.attacker.ws)
     for dice, event_prob in enumerate(dist.values):
+      if event_prob == 0:
+        continue
       dice_dists = self.attack.mods.modify_hit_dice(
         PMFCollection.mdn(dice, 6),
         thresh,
@@ -178,6 +180,8 @@ class AttackWounds(AttackSegment):
     )
     mod_thresh = self.attack.mods.modify_wound_thresh(thresh)
     for dice, event_prob in enumerate(dist.values):
+      if event_prob == 0:
+        continue
       dice_dists = self.attack.mods.modify_wound_dice(
         PMFCollection.mdn(dice, 6),
         thresh,
@@ -234,6 +238,8 @@ class AttackPens(AttackSegment):
 
     dists = []
     for dice, event_prob in enumerate(dist.values):
+      if event_prob == 0:
+        continue
       dice_dists = self.attack.mods.modify_pen_dice(
         PMFCollection.mdn(dice, 6),
         mod_thresh,
@@ -252,6 +258,8 @@ class AttackDamage(AttackSegment):
     individual_dist = self._calc_individual_damage_dist()
     damge_dists = []
     for dice, event_prob in enumerate(dist.values):
+      if event_prob == 0:
+        continue
       damge_dists.append(PMF.convolve_many([individual_dist] * dice) * event_prob)
     return PMF.flatten(damge_dists)
 
@@ -265,6 +273,8 @@ class AttackDamage(AttackSegment):
     dists = []
     mod_thresh = self.attack.mods.modify_fnp_thresh(self.attack.target.fnp)
     for dice, event_prob in enumerate(dist.values):
+      if event_prob == 0:
+        continue
       dice_dists = self.attack.mods.modify_fnp_dice(
         PMFCollection.mdn(dice, 6),
         self.attack.target.fnp,

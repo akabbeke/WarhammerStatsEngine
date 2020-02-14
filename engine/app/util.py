@@ -4,7 +4,7 @@ from ..stats.pmf import PMF, PMFCollection
 from ..stats.weapons import Weapon
 from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
-  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraShot, \
+  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
   ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound
 
@@ -54,7 +54,7 @@ class ComputeController(object):
           elif addon == 'hits':
             mods.append(ModExtraHit(int(thresh), int(value)))
           elif addon == 'shots':
-            mods.append(ModExtraShot(int(thresh), int(value)))
+            mods.append(ModExtraAttack(int(thresh), int(value)))
           elif addon == 'wounds':
             mods.append(ModExtraWound(int(thresh), int(value)))
         else:
