@@ -1,5 +1,5 @@
 import os
-is_prod = os.environ.get('IS_HEROKU', None)
+is_prod = os.environ.get('IS_HEROKU', None) == 'True'
 GA_TRACKING_ID = os.environ.get('GA_TRACKING_ID', None)
 if is_prod:
   TAB_COUNT = 6

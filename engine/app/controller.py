@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-
+import hashlib
 
 import dash
 import dash_daq as daq
@@ -25,14 +25,16 @@ from ..stats.pmf import PMF
 def recurse_default():
   return defaultdict(recurse_default)
 
-def track_event(category, action, label=None, value=0):
+def track_event(category, action, label='None', value=1):
   if not GA_TRACKING_ID:
     return
+
+  user_id = hashlib.md5(request.remote_addr.encode()).hexdigest()
 
   data = {
     'v': '1',  # API Version.
     'tid': GA_TRACKING_ID,  # Tracking ID / Property ID.
-    'cid': str(request.remote_addr),
+    'uid': user_id,
     't': 'event',  # Event hit type.
     'ec': category,  # Event category.
     'ea': action,  # Event action.
@@ -147,7 +149,7 @@ class GraphCallbackController(object):
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def graph_callback(*args):
-      track_event('callback', 'update_graph')
+      track_event('callback', 'update graph')
       tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count, self.weapon_count)
       result_dict = self._update_graph(tab_data)
       return mapper.dict_to_output(result_dict)
