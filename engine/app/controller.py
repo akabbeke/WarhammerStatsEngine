@@ -1,22 +1,52 @@
 from collections import defaultdict
 
+
+
 import dash
 import dash_daq as daq
 import re
+import requests
 import dash_core_components as dcc
 import dash_html_components as html
+
 from urllib.parse import urlparse, parse_qsl, urlencode
+
+from flask import request
 from dash.dependencies import Input, Output, State
 
 from .layout import GraphLayout, Layout
 
 from .util import ComputeController, URLMinify, InputGenerator
 
-from ..constants import TAB_COUNT
+from ..constants import TAB_COUNT, GA_TRACKING_ID
 from ..stats.pmf import PMF
+
 
 def recurse_default():
   return defaultdict(recurse_default)
+
+def track_event(category, action, label=None, value=0):
+  if not GA_TRACKING_ID:
+    return
+
+  data = {
+    'v': '1',  # API Version.
+    'tid': GA_TRACKING_ID,  # Tracking ID / Property ID.
+    'cid': str(request.remote_addr),
+    't': 'event',  # Event hit type.
+    'ec': category,  # Event category.
+    'ea': action,  # Event action.
+    'el': label,  # Event label.
+    'ev': value,  # Event value, must be an integer
+  }
+
+  try:
+    requests.post(
+      'https://www.google-analytics.com/collect',
+      data=data,
+    )
+  except:
+    pass
 
 class CallbackMapper(object):
   def __init__(self, outputs=None, inputs=None, states=None):
@@ -117,6 +147,7 @@ class GraphCallbackController(object):
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def graph_callback(*args):
+      track_event('callback', 'update_graph')
       tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count, self.weapon_count)
       result_dict = self._update_graph(tab_data)
       return mapper.dict_to_output(result_dict)

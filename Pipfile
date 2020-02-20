@@ -16,6 +16,7 @@ flask = "*"
 gunicorn = "*"
 dash-daq = "*"
 dash-bootstrap-components = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"
