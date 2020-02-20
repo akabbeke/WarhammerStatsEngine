@@ -19,7 +19,15 @@ external_stylesheets = [
   'https://bootswatch.com/_vendor/bootstrap/dist/js/bootstrap.min.js',
 ]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+external_scripts=[
+  'https://cdn.jsdelivr.net/gh/akabbeke/WarhammerStatsEngine/gtag.js'
+]
+
+app = dash.Dash(
+  __name__,
+  external_stylesheets=external_stylesheets,
+  external_scripts=external_scripts,
+)
 
 app.title = 'Stats Engine'
 app.config.suppress_callback_exceptions = True
