@@ -25,16 +25,33 @@ from ..stats.pmf import PMF
 def recurse_default():
   return defaultdict(recurse_default)
 
-def track_event(category, action, label='None', value=1):
-  if not GA_TRACKING_ID:
-    return
 
-  user_id = hashlib.md5(request.remote_addr.encode()).hexdigest()
+def get_cid():
+  try:
+    _, _, left, right = request.cookies.get('_ga').split('.')
+    return f'{left}.{right}'
+  except:
+    pass
+
+def get_gid():
+  try:
+    _, _, left, right = request.cookies.get('_gid').split('.')
+    return f'{left}.{right}'
+  except:
+    pass
+
+
+def track_event(category, action, label=None, value=0):
+  cid = get_cid()
+  gid = get_gid()
+
+  if not cid:
+    cid = hashlib.md5(request.remote_addr.encode()).hexdigest()
 
   data = {
     'v': '1',  # API Version.
-    'tid': GA_TRACKING_ID,  # Tracking ID / Property ID.
-    'uid': user_id,
+    'tid': 'UA-158827538-1',  # Tracking ID / Property ID.
+    'cid': cid,
     't': 'event',  # Event hit type.
     'ec': category,  # Event category.
     'ea': action,  # Event action.
@@ -42,13 +59,20 @@ def track_event(category, action, label='None', value=1):
     'ev': value,  # Event value, must be an integer
   }
 
-  try:
-    requests.post(
-      'https://www.google-analytics.com/collect',
-      data=data,
-    )
-  except:
-    pass
+  if gid:
+    data['_gid'] = gid
+
+  response = requests.post(
+    'https://www.google-analytics.com/collect',
+    headers={ "user-agent": "client" },
+    data=data,
+  )
+
+  # If the request fails, this will raise a RequestException. Depending
+  # on your application's needs, this may be a non-error and can be caught
+  # by the caller.
+  response.raise_for_status()
+
 
 class CallbackMapper(object):
   def __init__(self, outputs=None, inputs=None, states=None):
@@ -149,7 +173,11 @@ class GraphCallbackController(object):
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def graph_callback(*args):
-      track_event('callback', 'update graph')
+      track_event(
+        category='Render',
+        action='Interactive',
+        label=self._prop_change(),
+      )
       tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count, self.weapon_count)
       result_dict = self._update_graph(tab_data)
       return mapper.dict_to_output(result_dict)
@@ -207,6 +235,12 @@ class GraphCallbackController(object):
       'std': tab_pmf.std(),
     }
 
+  def _prop_change(self):
+    ctx = dash.callback_context
+    if not ctx:
+      return None
+    return ctx.triggered[0]['prop_id']
+
   def _tabs_changed(self):
     ctx = dash.callback_context
     if not ctx:
@@ -235,6 +269,10 @@ class StaticGraphCallbackController(object):
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def static_graph_callback(*args):
+      track_event(
+        category='Render',
+        action='Static',
+      )
       tab_data = mapper.input_to_kwargs(args)
       url_args = self._parse_url_params(tab_data['inputs']['url'])
       graph_args = self._parse_static_graph_args(url_args)
@@ -329,12 +367,12 @@ class InputsCallbackController(object):
       ],
     )
     def update_tab_name(value, enabled):
-        value = value if len(value) > 2 else 'Profile'
-        if enabled == 'enabled':
-          value = f'▪️ {value}'
-        else:
-          value = f'▫️ {value}'
-        return value
+      value = value if len(value) > 2 else 'Profile'
+      if enabled == 'enabled':
+        value = f'▪️ {value}'
+      else:
+        value = f'▫️ {value}'
+      return value
 
   def _weaponname_callback(self, tab_index, weapon_index):
     @self.app.callback(
@@ -345,12 +383,12 @@ class InputsCallbackController(object):
       ],
     )
     def update_tab_name(value, enabled):
-        value = value if len(value) > 2 else 'Weapon'
-        if enabled == 'enabled':
-          value = f'▪️ {value}'
-        else:
-          value = f'▫️ {value}'
-        return value
+      value = value if len(value) > 2 else 'Weapon'
+      if enabled == 'enabled':
+        value = f'▪️ {value}'
+      else:
+        value = f'▫️ {value}'
+      return value
 
 
 class LinkCallbackController(object):
