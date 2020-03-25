@@ -10,10 +10,10 @@ class Modifier(object):
   def __init__(self, *args, **kwargs):
     pass
 
-  def modify_dice(self, col, thresh=None,  mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return col
 
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+  def modify_re_roll(self, col, **kwargs):
     return col
 
   def modify_threshold(self, thresh):
@@ -57,7 +57,7 @@ class MinimumValue(Modifier):
   def __init__(self, min_val):
     self.min_val = min_val
 
-  def modify_dice(self, col, thresh=None,  mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return col.map(lambda x: x.min(self.min_val))
 
 
@@ -118,35 +118,35 @@ class Haywire(ExplodingDice):
 
 class ReRollOnes(Modifier):
   priority = 1
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+  def modify_re_roll(self, col, **kwargs):
     return col.map(lambda x: x.re_roll_value(1))
 
 
 class ReRollFailed(Modifier):
   priority = 99
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
-    rr_thresh = min(thresh, mod_thresh)
+  def modify_re_roll(self, col, **kwargs):
+    rr_thresh = min(kwargs.get('thresh'), kwargs.get('mod_thresh'))
     return col.map(lambda x: x.re_roll_less_than(rr_thresh))
 
 
 class ReRollOneDice(Modifier):
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+  def modify_re_roll(self, col, **kwargs):
     pmfs = col.pmfs
     if not pmfs:
       return col
-    pmfs[0] = pmfs[0].re_roll_less_than(thresh)
+    pmfs[0] = pmfs[0].re_roll_less_than(kwargs.get('thresh'))
     return PMFCollection(pmfs)
 
 class ModReRollOneDice(Modifier):
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+  def modify_re_roll(self, col, **kwargs):
     pmfs = col.pmfs
     if not pmfs:
       return col
-    pmfs[0] = pmfs[0].re_roll_less_than(mod_thresh)
+    pmfs[0] = pmfs[0].re_roll_less_than(kwargs.get('mod_thresh'))
     return PMFCollection(pmfs)
 
 class ReRollOneDiceVolume(Modifier):
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+  def modify_re_roll(self, col, **kwargs):
     pmfs = col.pmfs
     if not pmfs:
       return col
@@ -155,18 +155,18 @@ class ReRollOneDiceVolume(Modifier):
 
 class ReRollAll(Modifier):
   priority = 100
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
-    return col.map(lambda x: x.re_roll_less_than(mod_thresh))
+  def modify_re_roll(self, col, **kwargs):
+    return col.map(lambda x: x.re_roll_less_than(kwargs.get('mod_thresh')))
 
 
 class ReRollLessThanExpectedValue(Modifier):
   priority = 98
-  def modify_re_roll(self, col, thresh=None, mod_thresh=None):
+  def modify_re_roll(self, col, **kwargs):
     return col.map(lambda x: x.re_roll_less_than(x.mean()))
 
 
 class Melta(Modifier):
-  def modify_dice(self, col, thresh=None, mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return col.map(lambda x: x.melta())
 
 
@@ -197,16 +197,19 @@ class AddNToInvuln(AddNTo):
 
 
 class AddNToVolume(AddNTo):
-  def modify_dice(self, col, thresh=None, mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return col.map(lambda x: x.roll(self.n))
 
+
 class AddD6(AddNTo):
-  def modify_dice(self, col, thresh=None, mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return PMFCollection(col.pmfs+[PMF.dn(6)])
 
+
 class AddD3(AddNTo):
-  def modify_dice(self, col, thresh=None, mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return PMFCollection(col.pmfs+[PMF.dn(3)])
+
 
 class SetToN(Modifier):
   def __init__(self, value=0, *args, **kwargs):
@@ -247,8 +250,16 @@ class IgnoreInvuln(Modifier):
 
 
 class HalfDamage(Modifier):
-  def modify_dice(self, col, thresh=None, mod_thresh=None):
+  def modify_dice(self, col, **kwargs):
     return col.map(lambda x: x.div_min_one(2))
+
+class SmashaGun(Modifier):
+  priority = -9999
+  def modify_dice(self, col, **kwargs):
+    conv = PMF.convolve_many([PMF.dn(6), PMF.dn(6)])
+    bino = conv.convert_binomial(kwargs.get('toughness'))
+    fran = PMF([bino[0]] + [0]*5 + [bino[1]])
+    return PMFCollection([fran]*len(col.pmfs))
 
 
 class ModifierCollection(object):
@@ -296,14 +307,16 @@ class ModifierCollection(object):
   def _get_mods(self, mods_name):
     return self._data.get(mods_name, [])
 
-  def _mod_dice(self, col, mods, thresh=None, mod_thresh=None):
+  def _mod_dice(self, *args, **kwargs):
     """
     Apply dice modifications. Rerolls happen before modifiers.
     """
+    col = args[0]
+    mods = args[1]
     for mod in mods:
-      col = mod.modify_re_roll(col, thresh, mod_thresh)
+      col = mod.modify_re_roll(col, **kwargs)
     for mod in mods:
-      col = mod.modify_dice(col, thresh, mod_thresh)
+      col = mod.modify_dice(col, **kwargs)
     return col
 
   def modify_shot_dice(self, dists):
@@ -328,7 +341,7 @@ class ModifierCollection(object):
     """
     Modify the PMF of hit dice. Ususally for re-rolls.
     """
-    return self._mod_dice(dists, self._hit_mods(), thresh, mod_thresh)
+    return self._mod_dice(dists, self._hit_mods(), thresh=thresh, mod_thresh=mod_thresh)
 
   def modify_wound_thresh(self, thresh):
     """
@@ -339,11 +352,11 @@ class ModifierCollection(object):
       thresh = mod.modify_threshold(thresh)
     return max(2, thresh) # 1's always fail
 
-  def modify_wound_dice(self, dists, thresh, mod_thresh):
+  def modify_wound_dice(self, dists, thresh, mod_thresh, **kwargs):
     """
     Modify the PMF of hit dice. Ususally for re-rolls.
     """
-    return self._mod_dice(dists, self._wound_mods(), thresh, mod_thresh)
+    return self._mod_dice(dists, self._wound_mods(), thresh=thresh, mod_thresh=mod_thresh, **kwargs)
 
   def modify_pen_thresh(self, save, ap, invuln):
     """
@@ -361,7 +374,7 @@ class ModifierCollection(object):
     """
     Modify the PMF of the pen dice. Ususally for re-rolls.
     """
-    return self._mod_dice(dists, self._pen_mods(), thresh, mod_thresh)
+    return self._mod_dice(dists, self._pen_mods(), thresh=thresh, mod_thresh=mod_thresh)
 
   def modify_fnp_thresh(self, thresh):
     """
@@ -375,7 +388,7 @@ class ModifierCollection(object):
     """
     Modify the PMF of the FNP dice. Ususally for re-rolls.
     """
-    return self._mod_dice(dists, self._fnp_mods(), thresh, mod_thresh)
+    return self._mod_dice(dists, self._fnp_mods(), thresh=thresh, mod_thresh=mod_thresh)
 
   def modify_damage_dice(self, dists):
     """

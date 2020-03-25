@@ -733,6 +733,7 @@ class WeaponTabLayout(object):
       {'label': f'Reroll one dice', 'value': f'reroll_one_dice'},
       {'label': f'Reroll ones', 'value': f'reroll_ones'},
       {'label': f'Haywire', 'value': f'haywire'},
+      {'label': f'Roll 2D6 and exceed toughness', 'value': f'smashagun'},
     ]
     for i in range(1, 7):
       options.append({'label': f'Add +{i}', 'value': f'add_{i}'})

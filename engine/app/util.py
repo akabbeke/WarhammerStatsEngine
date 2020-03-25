@@ -6,7 +6,7 @@ from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound
+  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, SmashaGun
 
 
 class ComputeController(object):
@@ -68,6 +68,8 @@ class ComputeController(object):
             mods.append(ExtraWound(int(thresh), int(value)))
       elif mod_type == 'haywire':
         mods.append(Haywire(5, 1))
+      elif mod_type == 'smashagun':
+        mods.append(SmashaGun())
       elif mod_type == 'ignoreap':
         mods.append(IgnoreAP(int(mod_data)))
       elif mod_type == 'ignoreinv':

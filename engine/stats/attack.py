@@ -185,7 +185,8 @@ class AttackWounds(AttackSegment):
       dice_dists = self.attack.mods.modify_wound_dice(
         PMFCollection.mdn(dice, 6),
         thresh,
-        mod_thresh
+        mod_thresh,
+        toughness=self.attack.target.toughness,
       )
       wnd_dist = dice_dists.convert_binomial(mod_thresh).convolve()
       exp_dist = self._calc_exp_dist(dice_dists)

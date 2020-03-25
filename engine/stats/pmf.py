@@ -21,6 +21,14 @@ class PMF(object):
   def __rmul__(self, other):
     return self.__mul__(other)
 
+  def __getitem__(self, key):
+    if not isinstance(key, int):
+      raise ValueError()
+    if key < 0 or key >= len(self):
+      return 0
+    else:
+      return self.values[key]
+
   def ceiling(self, value):
     """
     Sum the probability of all values >= the ceiling value
