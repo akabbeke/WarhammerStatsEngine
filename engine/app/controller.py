@@ -46,7 +46,7 @@ def track_event(category, action, label=None, value=0):
   gid = get_gid()
 
   if not cid:
-    cid = hashlib.md5(request.remote_addr.encode()).hexdigest()
+    return
 
   data = {
     'v': '1',  # API Version.
