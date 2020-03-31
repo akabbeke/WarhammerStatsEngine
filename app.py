@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from flask import Flask
 
 from engine.app.layout import Layout
-from engine.app.controller import CallbackController
+from engine.app.controllers import CallbackController
 from engine.constants import TAB_COUNT, WEAPON_COUNT
 
 external_stylesheets = [

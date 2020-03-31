@@ -6,7 +6,6 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 
-
 FOOTER_CONTENT = '''
 This is still very much a work in progress, and there are probably still some bugs.
 I'm [/u/Uily](https://www.reddit.com/user/uily) on Reddit, so please let me know if
@@ -33,205 +32,6 @@ example two "+1 hit on 6+" will yield +2 hits on a 6+.
 There are no **ads** funding this, so please don't be a dick. Otherwise,
 I hope you find this useful!
 '''
-
-class Layout(object):
-  def __init__(self, tab_count=0, weapon_count=0):
-    self.tab_count = tab_count
-    self.weapon_count = weapon_count
-
-  def layout(self):
-    return html.Div([
-      dcc.Location(id='url'),
-      html.Div(id='page_content')
-    ])
-
-  def base_layout(self):
-    return html.Div(
-      [
-        self.navbar(),
-        dbc.Select(),
-        self.base_title(),
-        dbc.Row(
-          dbc.Col(
-            GraphLayout(self.tab_count).layout(),
-            className='portlet-container portlet-dropzone',
-          ),
-          style={'align-items': 'center'},
-          className='flex-fill fill d-flex justify-content-start',
-        ),
-        dbc.Row(
-          [
-            dbc.Col(
-              InputLayout(self.tab_count, self.weapon_count).layout(),
-            ),
-          ]
-        ),
-      ],
-      className='container-fluid d-flex flex-column',
-    )
-
-  def base_title(self):
-    content = dbc.InputGroup(
-      [
-        dbc.InputGroupAddon("Title", addon_type="prepend"),
-        dbc.Input(
-          type="text",
-          id='title',
-          value='',
-          debounce=True,
-          minLength=2,
-          persistence=True,
-          persistence_type='session',
-          maxLength=140,
-        ),
-      ],
-    )
-    return dbc.CardBody(dbc.Row([dbc.Col(content)], className="mb-2 ",))
-
-  def static_layout(self):
-    return html.Div(
-      [
-        self.static_navbar(),
-        html.Div(id='static_graph_debug', style={'display': 'none'}),
-        dcc.RadioItems(
-          id='page-2-radios',
-          options=[{'label': i, 'value': i} for i in ['Orange', 'Blue', 'Red']],
-          value='Orange',
-          style={'display': 'none'}
-        ),
-        dbc.Row(
-          dbc.Col(
-            GraphLayout(self.tab_count).static_layout(),
-            className='portlet-container portlet-dropzone',
-          ),
-          style={'align-items': 'center'},
-          className='flex-fill fill d-flex justify-content-start',
-        ),
-      ],
-      className='container-fluid d-flex flex-column',
-    )
-
-  def navbar(self):
-    return dbc.NavbarSimple(
-      children=[
-        dbc.NavItem(
-          dbc.NavLink(
-            "permalink to this graph",
-            id='permalink',
-            href="https://github.com/akabbeke/WarhammerStatsEngine",
-            external_link=True,
-          )
-        ),
-      ],
-      brand="Warhammer-Stats-Engine",
-      brand_href="/",
-      color="primary",
-      dark=True,
-    )
-
-  def static_navbar(self):
-    return dbc.NavbarSimple(
-      children=[
-        dbc.NavItem(
-          dbc.NavLink(
-            "Create your own graph",
-            id='permalink',
-            href="/"
-          )
-        ),
-      ],
-      brand="Warhammer-Stats-Engine",
-      brand_href="/",
-      color="primary",
-      dark=True,
-    )
-
-app_color = {"graph_bg": "#082255", "graph_line": "#a3a7b0"}
-
-class GraphLayout(object):
-  def __init__(self, tab_count=0):
-    self.tab_count = tab_count
-
-  def layout(self):
-    content = dcc.Graph(
-      id='damage_graph',
-      style={'height':'60vh'},
-      figure=self.figure_template(),
-      config={
-        'scrollZoom': False,
-        'toImageButtonOptions': {
-          'format': 'jpeg',
-          'filename': 'warhammer_plot',
-          'height': 1080,
-          'width': 1920,
-          'scale': 1
-        },
-        # 'displayModeBar': False,
-      },
-
-    )
-    return content
-
-  def static_layout(self):
-    content = dcc.Graph(
-      id='static_damage_graph',
-      style={'height':'85vh'},
-      figure=self.figure_template(),
-      config={
-        'scrollZoom': False,
-        'toImageButtonOptions': {
-          'format': 'jpeg',
-          'filename': 'warhammer_plot',
-          'height': 1080,
-          'width': 1920,
-          'scale': 1
-        },
-        # 'displayModeBar': False,
-      },
-
-    )
-    return content
-
-  def figure_template(self, data=None, max_len=10, title=None, static=False):
-    return {
-      'data': data or [{}] * self.tab_count,
-      'layout': {
-        'title': title,
-        'showlegend': True,
-        'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1, x=0.5),
-        # 'template': 'plotly_dark',
-        'xaxis': {
-            'title': 'Minimum Wounds Dealt to Target',
-            'type': 'linear',
-            'range': [0, max_len],
-            'tickmode': 'linear',
-            'tick0': 0,
-            'dtick': 1,
-            "gridcolor": app_color["graph_line"],
-            "color": app_color["graph_line"],
-            'fixedrange': True,
-        },
-        'yaxis': {
-            'title': 'Probability of Minimum Wounds Dealt',
-            'type': 'linear',
-            'range': [0, 100],
-            'tickmode': 'linear',
-            'tick0': 0,
-            'dtick': 10,
-            "gridcolor": app_color["graph_line"],
-            "color": app_color["graph_line"],
-            'fixedrange': True,
-        },
-        'margin':{
-          'l': 70,
-          'r': 70,
-          'b': 50,
-          't': 50,
-          'pad': 4,
-        },
-        'autosize': True,
-      },
-    }
 
 
 class InputLayout(object):
@@ -329,7 +129,11 @@ class InputTabLayout(object):
   def _target_input_row(self):
     content = dbc.InputGroup(
       [
-        dbc.InputGroupAddon("Target", addon_type="prepend"),
+        dbc.InputGroupAddon(
+            dbc.Button("GEQ", id=f'geq_button_{self.tab_index}'),
+            addon_type="prepend",
+        ),
+        # dbc.InputGroupAddon("Target", addon_type="prepend"),
         *self._toughness_input(),
         *self._save_input(),
         *self._invuln_input(),
@@ -799,3 +603,5 @@ class WeaponTabLayout(object):
     for i in range(2, 7):
       options.append({'label': f'Minimum {i} damage', 'value': f'minval_{i}'})
     return options
+
+
