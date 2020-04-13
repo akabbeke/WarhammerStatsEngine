@@ -129,11 +129,11 @@ class InputTabLayout(object):
   def _target_input_row(self):
     content = dbc.InputGroup(
       [
-        dbc.InputGroupAddon(
-            dbc.Button("GEQ", id=f'geq_button_{self.tab_index}'),
-            addon_type="prepend",
-        ),
-        # dbc.InputGroupAddon("Target", addon_type="prepend"),
+        # dbc.InputGroupAddon(
+        #     dbc.Button("GEQ", id=f'geq_button_{self.tab_index}'),
+        #     addon_type="prepend",
+        # ),
+        dbc.InputGroupAddon("Target", addon_type="prepend"),
         *self._toughness_input(),
         *self._save_input(),
         *self._invuln_input(),
