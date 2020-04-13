@@ -12,8 +12,8 @@ class GraphLayout(object):
   def layout(self):
     content = dcc.Graph(
       id='damage_graph',
-      style={'height':'60vh'},
-      figure=self.figure_template(),
+      style={'height':'50vh'},
+      figure=self.figure_template(top=10),
       config={
         'scrollZoom': False,
         'toImageButtonOptions': {
@@ -67,7 +67,7 @@ class GraphLayout(object):
     )
     return content
 
-  def figure_template(self, data=None, max_len=10, title=None, static=False):
+  def figure_template(self, data=None, max_len=10, title=None, static=False, top=50):
     return {
       'data': data or [{}] * self.tab_count,
       'layout': {
@@ -101,7 +101,7 @@ class GraphLayout(object):
           'l': 70,
           'r': 70,
           'b': 50,
-          't': 50,
+          't': top,
           'pad': 4,
         },
         'autosize': True,

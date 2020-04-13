@@ -19,14 +19,14 @@ You can also download an image of the graph by clicking the camera icon
 while hovering over the graph.
 
 ##### Updates:
-* Removed the +/- 2 and 3 modifiers and instead you can now add +/-1 multiple times.
-* Added the 'exploding dice' mechanic for hit rolls. You can stack them so for
-example two "+1 hit on 6+" will yield +2 hits on a 6+.
-* Added mortal wound generation for hit and wound rolls
-* Added Haywire
+* Added prests for the target.
+* Changed the theme again. I had some feedback that the old theme was hard to navigate on mobile.
+
 
 ##### Todo:
-* Figure out feed-forward abilities like rend
+* Figure out feed-forward abilities like rend (I legit think this may be impossible with how I have built the app.
+Currently it assumes all dice rolls are independent however adding the feed-forward abilities changes that. If anyone out there knows how
+it can be done I would be more than happy to implement it.)
 * ???
 
 There are no **ads** funding this, so please don't be a dick. Otherwise,

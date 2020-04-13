@@ -72,7 +72,7 @@ class GraphController(object):
         output[f'stddisplay_{tab_index}'] = tab_data[tab_index]['states']['stddisplay']
 
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
-    output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len)
+    output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len, top=10)
     return output
 
   def _tab_graph_data(self, tab_index, data):
