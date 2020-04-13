@@ -47,7 +47,7 @@ class InputLayout(object):
     tabs.append(
       dbc.Tab(
         dbc.CardBody(dcc.Markdown(FOOTER_CONTENT)),
-        label='Info Tab',
+        label='Info',
         style={'width': '100%'},
       )
     )
@@ -127,12 +127,26 @@ class InputTabLayout(object):
     return dbc.InputGroup(content, size="sm")
 
   def _target_input_row(self):
+    presets = dbc.DropdownMenu(
+      [
+        dbc.DropdownMenuItem("Guardsmen", id=f'guardsman_{self.tab_index}'),
+        dbc.DropdownMenuItem("Ork Boyz", id=f'ork_boy_{self.tab_index}'),
+        dbc.DropdownMenuItem("Shield Drone", id=f'shield_drone_{self.tab_index}'),
+        dbc.DropdownMenuItem("Tactical Marine", id=f'tactical_marine_{self.tab_index}'),
+        dbc.DropdownMenuItem("Intercessor", id=f'intercessor_{self.tab_index}'),
+        dbc.DropdownMenuItem("Terminator", id=f'terminator_{self.tab_index}'),
+        dbc.DropdownMenuItem("Crisis Suit", id=f'crisis_suit_{self.tab_index}'),
+        dbc.DropdownMenuItem("Custode", id=f'custode_{self.tab_index}'),
+        dbc.DropdownMenuItem("Rhino", id=f'rhino_{self.tab_index}'),
+        dbc.DropdownMenuItem("Leman Russ", id=f'leman_russ_{self.tab_index}'),
+        dbc.DropdownMenuItem("Knight", id=f'knight_{self.tab_index}'),
+      ],
+      label="Presets",
+      bs_size='sm',
+      color="secondary",
+    )
     content = dbc.InputGroup(
       [
-        # dbc.InputGroupAddon(
-        #     dbc.Button("GEQ", id=f'geq_button_{self.tab_index}'),
-        #     addon_type="prepend",
-        # ),
         dbc.InputGroupAddon("Target", addon_type="prepend"),
         *self._toughness_input(),
         *self._save_input(),
@@ -142,7 +156,7 @@ class InputTabLayout(object):
       ],
       size="sm",
     )
-    return dbc.Row([dbc.Col(content)], className="mb-2 ",)
+    return dbc.Row([dbc.Col(presets, width=1), dbc.Col(content)], className="mb-2 ",)
 
   def _toughness_input(self):
     return [

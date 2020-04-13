@@ -13,10 +13,7 @@ from engine.app.controllers import CallbackController
 from engine.constants import TAB_COUNT, WEAPON_COUNT
 
 external_stylesheets = [
-  'https://bootswatch.com/4/lux/bootstrap.min.css',
-  'https://bootswatch.com/_vendor/jquery/dist/jquery.min.js',
-  'https://bootswatch.com/_vendor/popper.js/dist/umd/popper.min.js',
-  'https://bootswatch.com/_vendor/bootstrap/dist/js/bootstrap.min.js',
+  dbc.themes.COSMO,
 ]
 
 external_scripts=[

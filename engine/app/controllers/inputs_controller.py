@@ -7,6 +7,7 @@ import dash_html_components as html
 from urllib.parse import urlparse, parse_qsl, urlencode
 
 from flask import request
+from dash import callback_context
 from dash.dependencies import Input, Output, State
 
 from ..layout import GraphLayout, Layout
@@ -29,12 +30,64 @@ class InputsController(object):
 
   def _setup_input_tab_callback(self, tab_index):
     # self.disable_callback(tab_index)
+    self._setup_preset_callback(tab_index)
     self._tabname_callback(tab_index)
     self._setup_weaponname_callback(tab_index)
 
   def _setup_weaponname_callback(self, tab_index):
     for weapon_index in range(self.weapon_count):
       self._weaponname_callback(tab_index, weapon_index)
+
+  def _setup_preset_callback(self, tab_index):
+    @self.app.callback(
+      output=[
+        Output(f'toughness_{tab_index}', 'value'),
+        Output(f'save_{tab_index}', 'value'),
+        Output(f'invuln_{tab_index}', 'value'),
+        Output(f'fnp_{tab_index}', 'value'),
+        Output(f'wounds_{tab_index}', 'value'),
+      ],
+      inputs=[
+        Input(f'guardsman_{tab_index}', 'n_clicks'),
+        Input(f'ork_boy_{tab_index}', 'n_clicks'),
+        Input(f'shield_drone_{tab_index}', 'n_clicks'),
+        Input(f'tactical_marine_{tab_index}', 'n_clicks'),
+        Input(f'intercessor_{tab_index}', 'n_clicks'),
+        Input(f'terminator_{tab_index}', 'n_clicks'),
+        Input(f'crisis_suit_{tab_index}', 'n_clicks'),
+        Input(f'custode_{tab_index}', 'n_clicks'),
+        Input(f'rhino_{tab_index}', 'n_clicks'),
+        Input(f'leman_russ_{tab_index}', 'n_clicks'),
+        Input(f'knight_{tab_index}', 'n_clicks'),
+      ],
+    )
+    def _(*args):
+      # [toughness, +, ++, +++, wounds]
+      if not callback_context:
+        return [3,5,7,7,1]
+      trigger = callback_context.triggered[0]['prop_id']
+      if 'guardsman' in trigger:
+        return [3,5,7,7,1]
+      elif 'ork_boy' in trigger:
+        return [4,6,7,7,1]
+      elif 'shield_drone' in trigger:
+        return [4,4,4,5,1]
+      elif 'tactical_marine' in trigger:
+        return [4,3,7,7,1]
+      elif 'intercessor' in trigger:
+        return [4,3,7,7,2]
+      elif 'terminator' in trigger:
+        return [4,3,4,7,2]
+      elif 'crisis_suit' in trigger:
+        return [5,3,7,7,3]
+      elif 'custode' in trigger:
+        return [5,2,3,7,3]
+      elif 'rhino' in trigger:
+        return [7,3,7,7,10]
+      elif 'leman_russ' in trigger:
+        return [8,3,7,7,12]
+      elif 'knight' in trigger:
+        return [8,3,5,7,24]
 
   def _tabname_callback(self, tab_index):
     @self.app.callback(
