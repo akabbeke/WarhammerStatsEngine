@@ -105,7 +105,7 @@ class Layout(object):
       children=[
         dbc.NavItem(
           dbc.NavLink(
-            "permalink to this graph",
+            "Permalink to this graph",
             id='permalink',
             href="https://github.com/akabbeke/WarhammerStatsEngine",
             external_link=True,

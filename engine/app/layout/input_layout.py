@@ -86,7 +86,7 @@ class InputTabLayout(object):
   def _data_input_row(self):
     return dbc.Row(
       [
-        dbc.Col(self._tab_enable_inout(), width=2),
+        dbc.Col(self._tab_enable_input(), width=2),
         dbc.Col(self._tab_name_input()),
         dbc.Col(html.P("Average", id=f'avgdisplay_{self.tab_index}'), width=2),
         dbc.Col(html.P("σ", id=f'stddisplay_{self.tab_index}'), width=2),
@@ -94,7 +94,7 @@ class InputTabLayout(object):
       className='mb-2',
     )
 
-  def _tab_enable_inout(self):
+  def _tab_enable_input(self):
     content = [
       dbc.Select(
         options=[
@@ -144,9 +144,11 @@ class InputTabLayout(object):
       label="Presets",
       bs_size='sm',
       color="secondary",
+      addon_type='prepend'
     )
     content = dbc.InputGroup(
       [
+        presets,
         dbc.InputGroupAddon("Target", addon_type="prepend"),
         *self._toughness_input(),
         *self._save_input(),
@@ -156,7 +158,7 @@ class InputTabLayout(object):
       ],
       size="sm",
     )
-    return dbc.Row([dbc.Col(presets, width=1), dbc.Col(content)], className="mb-2 ",)
+    return dbc.Row([dbc.Col(content)], className="mb-2 ",)
 
   def _toughness_input(self):
     return [
