@@ -42,7 +42,6 @@ class Layout(object):
           ]
         ),
       ],
-      className='container-fluid d-flex flex-column',
     )
 
   def base_title(self):
@@ -83,7 +82,6 @@ class Layout(object):
           className='flex-fill fill d-flex justify-content-start',
         ),
       ],
-      className='container-fluid d-flex flex-column',
     )
 
   def embed_layout(self):
@@ -105,14 +103,22 @@ class Layout(object):
       children=[
         dbc.NavItem(
           dbc.NavLink(
-            "Permalink to this graph",
-            id='permalink',
+            'GitHub',
+            id='github_link',
             href="https://github.com/akabbeke/WarhammerStatsEngine",
             external_link=True,
           )
         ),
+        dbc.NavItem(
+          dbc.NavLink(
+            "Permalink this graph",
+            id='permalink',
+            href='/',
+            external_link=True,
+          )
+        ),
       ],
-      brand="Warhammer-Stats-Engine",
+      brand="Warhammer Stats Engine",
       brand_href="/",
       color="primary",
       dark=True,
@@ -129,7 +135,7 @@ class Layout(object):
           )
         ),
       ],
-      brand="Warhammer-Stats-Engine",
+      brand="Warhammer Stats Engine",
       brand_href="/",
       color="primary",
       dark=True,

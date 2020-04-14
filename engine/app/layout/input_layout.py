@@ -340,7 +340,7 @@ class WeaponTabLayout(object):
   def _weapon_skill_input(self):
     return [
       dbc.InputGroupAddon(
-        'WS',
+        'BS',
         id=f'ws_addon_{self.tab_index}_{self.weapon_index}',
         addon_type='prepend'
       ),

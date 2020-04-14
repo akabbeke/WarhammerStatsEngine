@@ -29,7 +29,6 @@ class InputsController(object):
       self._setup_input_tab_callback(tab_index)
 
   def _setup_input_tab_callback(self, tab_index):
-    # self.disable_callback(tab_index)
     self._setup_preset_callback(tab_index)
     self._tabname_callback(tab_index)
     self._setup_weaponname_callback(tab_index)
