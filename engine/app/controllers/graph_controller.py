@@ -92,7 +92,6 @@ class GraphController(object):
     return output
 
   def _tab_enabled(self, graph_data):
-    print(graph_data)
     data = {}
     for i in range(self.tab_count):
       tab_enabled = graph_data[i]['inputs']['enabled'] == 'enabled'
