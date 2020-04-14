@@ -14,10 +14,17 @@ from engine.constants import TAB_COUNT, WEAPON_COUNT
 
 external_stylesheets = [
   dbc.themes.COSMO,
+  {
+    'href': 'https://use.fontawesome.com/releases/v5.8.1/css/all.css',
+    'rel': 'stylesheet',
+    'integrity': 'sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf',
+    'crossorigin': 'anonymous'
+  },
 ]
 
 external_scripts=[
   'https://cdn.jsdelivr.net/gh/akabbeke/WarhammerStatsEngine/gtag.js'
+  'https://kit.fontawesome.com/6ded1a5b89.js',
 ]
 
 app = dash.Dash(

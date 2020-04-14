@@ -51,8 +51,11 @@ class GraphController(object):
     return {
       **{'damage_graph': 'figure'},
 
-      **{f'avgdisplay_{i}': 'children' for i in range(self.tab_count)},
-      **{f'stddisplay_{i}': 'children' for i in range(self.tab_count)},
+      **{f'avgdisplay_{i}': 'value' for i in range(self.tab_count)},
+      **{f'stddisplay_{i}': 'value' for i in range(self.tab_count)},
+
+      **{f'wepavgdisplay_{i}_{j}': 'value' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      **{f'wepstddisplay_{i}_{j}': 'value' for i in range(self.tab_count) for j in range(self.weapon_count)},
 
       # **{f'weaponname_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
       # **{f'strength_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
@@ -70,6 +73,7 @@ class GraphController(object):
     }
 
   def _update_graph(self, tab_data):
+    # TODO: refactor this whole mess
     graph_data = tab_data[-1]['states']['damage_graph']['data']
     output = {}
     if graph_data == [{}] * self.tab_count:
@@ -80,11 +84,28 @@ class GraphController(object):
       if tab_index in changed_tabs:
         tab_graph_data = self._tab_graph_data(tab_index, tab_data[tab_index])
         graph_data[tab_index] = tab_graph_data['graph_data']
-        output[f'avgdisplay_{tab_index}'] = 'Mean: {}'.format(round(tab_graph_data['mean'], 2))
-        output[f'stddisplay_{tab_index}'] = 'σ: {}'.format(round(tab_graph_data['std'], 2))
+        if tab_data[tab_index]['inputs'].get('enabled') == 'enabled':
+          output[f'avgdisplay_{tab_index}'] = '{}'.format(round(tab_graph_data['mean'], 2))
+          output[f'stddisplay_{tab_index}'] = '{}'.format(round(tab_graph_data['std'], 2))
+          for weapon_index in range(self.weapon_count):
+            wep_mean = tab_graph_data['weapon_data'][weapon_index]['mean']
+            wep_std = tab_graph_data['weapon_data'][weapon_index]['std']
+            output[f'wepavgdisplay_{tab_index}_{weapon_index}'] = '{}'.format(round(wep_mean, 2)) if wep_mean > -1 else 'Weapon disabled'
+            output[f'wepstddisplay_{tab_index}_{weapon_index}'] = '{}'.format(round(wep_std, 2)) if wep_std > -1 else 'Weapon disabled'
+        else:
+          output[f'avgdisplay_{tab_index}'] = 'Tab disabled'
+          output[f'stddisplay_{tab_index}'] = 'Tab disabled'
+          for weapon_index in range(self.weapon_count):
+            output[f'wepavgdisplay_{tab_index}_{weapon_index}'] = 'Tab disabled'
+            output[f'wepstddisplay_{tab_index}_{weapon_index}'] = 'Tab disabled'
       else:
+
         output[f'avgdisplay_{tab_index}'] = tab_data[tab_index]['states']['avgdisplay']
         output[f'stddisplay_{tab_index}'] = tab_data[tab_index]['states']['stddisplay']
+        for weapon_index in range(self.weapon_count):
+          wep_state = tab_data[tab_index]['weapons'][weapon_index]['states']
+          output[f'wepavgdisplay_{tab_index}_{weapon_index}'] = wep_state['wepavgdisplay']
+          output[f'wepstddisplay_{tab_index}_{weapon_index}'] = wep_state['wepstddisplay']
 
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
     output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len, top=10)
@@ -118,11 +139,23 @@ class GraphController(object):
     tab_pmfs = []
     tab_data = data['inputs']
     tab_enabled = tab_data.get('enabled') == 'enabled'
+    weapon_mean = {}
     for weapon_index in range(self.weapon_count):
       weapon_data = data['weapons'][weapon_index]['inputs']
       weapon_enabled = weapon_data.get('weaponenabled') == 'enabled'
       if tab_enabled and weapon_enabled:
-        tab_pmfs.append(self.compute_controller.compute(**tab_data, **weapon_data))
+        weapon_pmf = self.compute_controller.compute(**tab_data, **weapon_data)
+        tab_pmfs.append(weapon_pmf)
+        weapon_mean[weapon_index] = {
+          'mean': weapon_pmf.mean(),
+          'std': weapon_pmf.std(),
+        }
+      else:
+        weapon_mean[weapon_index] = {
+          'mean': -1,
+          'std': -1,
+        }
+
     tab_pmf = PMF.convolve_many(tab_pmfs)
     values = tab_pmf.cumulative().trim_tail().values
     if len(values) > 1:
@@ -137,6 +170,7 @@ class GraphController(object):
       'graph_data': graph_data,
       'mean': tab_pmf.mean(),
       'std': tab_pmf.std(),
+      'weapon_data': weapon_mean,
     }
 
   def _prop_change(self):

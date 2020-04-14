@@ -88,10 +88,38 @@ class InputTabLayout(object):
       [
         dbc.Col(self._tab_enable_input(), width=2),
         dbc.Col(self._tab_name_input()),
-        dbc.Col(html.P("Average", id=f'avgdisplay_{self.tab_index}'), width=2),
-        dbc.Col(html.P("σ", id=f'stddisplay_{self.tab_index}'), width=2),
+        dbc.Col(self._average_output(), width=2),
+        dbc.Col(self._standard_dev_output(), width=2),
       ],
       className='mb-2',
+    )
+
+  def _average_output(self):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("Mean", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'avgdisplay_{self.tab_index}',
+          value=f'Average',
+          disabled=True
+        ),
+      ],
+      size="sm",
+    )
+
+  def _standard_dev_output(self):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("σ", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'stddisplay_{self.tab_index}',
+          value=f'Average',
+          disabled=True
+        ),
+      ],
+      size="sm",
     )
 
   def _tab_enable_input(self):
@@ -112,7 +140,7 @@ class InputTabLayout(object):
 
   def _tab_name_input(self):
     content = [
-      dbc.InputGroupAddon("Name", addon_type="prepend"),
+      dbc.InputGroupAddon("Profile Name", addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'tabname_{self.tab_index}',
@@ -291,8 +319,38 @@ class WeaponTabLayout(object):
       [
         dbc.Col(self._weapon_enable_input(), width=2),
         dbc.Col(self._weapon_name_input()),
+        dbc.Col(self._average_output(), width=2),
+        dbc.Col(self._standard_dev_output(), width=2),
       ],
       className='mb-2',
+    )
+
+  def _average_output(self):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("Mean", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'wepavgdisplay_{self.tab_index}_{self.weapon_index}',
+          value=f'Average',
+          disabled=True
+        ),
+      ],
+      size="sm",
+    )
+
+  def _standard_dev_output(self):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("σ", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'wepstddisplay_{self.tab_index}_{self.weapon_index}',
+          value=f'Average',
+          disabled=True
+        ),
+      ],
+      size="sm",
     )
 
   def _weapon_enable_input(self):
@@ -312,7 +370,7 @@ class WeaponTabLayout(object):
 
   def _weapon_name_input(self):
     return dbc.InputGroup([
-      dbc.InputGroupAddon("Name", addon_type="prepend"),
+      dbc.InputGroupAddon("Weapon Name", addon_type="prepend"),
       dbc.Input(
         type="text",
         id=f'weaponname_{self.tab_index}_{self.weapon_index}',
