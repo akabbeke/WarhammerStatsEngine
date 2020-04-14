@@ -54,19 +54,19 @@ class GraphController(object):
       **{f'avgdisplay_{i}': 'children' for i in range(self.tab_count)},
       **{f'stddisplay_{i}': 'children' for i in range(self.tab_count)},
 
-      **{f'weaponname_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'strength_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'ap_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'ws_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'shots_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'damage_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'weaponname_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'strength_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'ap_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'ws_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'shots_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'damage_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
 
-      **{f'shotmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'hitmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'woundmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'savemods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'fnpmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      **{f'damagemods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'shotmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'hitmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'woundmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'savemods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'fnpmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
+      # **{f'damagemods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
     }
 
   def _update_graph(self, tab_data):
@@ -88,7 +88,7 @@ class GraphController(object):
 
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
     output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len, top=10)
-    output.update(self._tab_enabled(tab_data))
+    # output.update(self._tab_enabled(tab_data))
     return output
 
   def _tab_enabled(self, graph_data):
