@@ -4,8 +4,9 @@ import numpy as np
 from engine.stats.pmf import PMF
 
 def main():
-  pmfs = [PMF.dn(6), PMF.dn(6)]
-  print(PMF.convolve_many(pmfs).values)
+
+  print(PMF.dn(3).std(), PMF.dn(3).mean())
+  print(PMF.static(3).std(), PMF.static(3).mean())
 
 
 

@@ -28,7 +28,11 @@ class StaticController(object):
 
   def setup_callbacks(self):
     mapper = CallbackMapper(
-      outputs={'static_graph_debug': 'children', 'static_damage_graph': 'figure'},
+      outputs={
+        'static_graph_debug': 'children',
+        'static_damage_graph': 'figure',
+        **self.avg_updates(),
+      },
       inputs={'url': 'href', 'page-2-radios': 'value'},
     )
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
@@ -40,11 +44,31 @@ class StaticController(object):
       tab_data = mapper.input_to_kwargs(args)
       url_args = self._parse_url_params(tab_data['inputs']['url'])
       graph_args = self._parse_static_graph_args(url_args)
+      static_damage_graph, tab_metrics = self.update_static_graph(graph_args)
       output = {
         'static_graph_debug': str(graph_args),
-        'static_damage_graph': self.update_static_graph(graph_args),
-        }
+        'static_damage_graph': static_damage_graph,
+        **self._update_avg(tab_metrics)
+      }
       return mapper.dict_to_output(output)
+
+  def _update_avg(self, tab_metrics):
+    updates = {}
+    for i in range(self.tab_count):
+      updates[f'stattabname_{i}'] = tab_metrics.get(i, {}).get('tab_name', 'n/a')
+      updates[f'statavgdisplay_{i}'] = tab_metrics.get(i, {}).get('tab_means', 'n/a')
+      updates[f'statstddisplay_{i}'] = tab_metrics.get(i, {}).get('tab_stds', 'n/a')
+    print(updates)
+    return updates
+
+  def avg_updates(self):
+    updates = {}
+    for i in range(self.tab_count):
+      updates[f'stattabname_{i}'] = 'value'
+      updates[f'statavgdisplay_{i}'] = 'value'
+      updates[f'statstddisplay_{i}'] = 'value'
+    return updates
+
 
   def _parse_url_params(self, url):
     parse_result = urlparse(url)
@@ -81,6 +105,7 @@ class StaticController(object):
     if not graph_args:
       return self.graph_layout_generator.figure_template()
     graph_data = []
+    tab_metrics = {}
     for tab_index in [x for x in sorted(graph_args.keys()) if x != -1]:
       tab_pmfs = []
       tab_data = graph_args[tab_index]
@@ -91,13 +116,20 @@ class StaticController(object):
       tab_pmf = PMF.convolve_many(tab_pmfs)
       values = tab_pmf.cumulative().trim_tail().values
       if len(values) > 1:
-        tab_data = {
+        tab_graph_data = {
           'x': [i for i, x in enumerate(values)],
           'y': [100*x for i, x in enumerate(values)],
           'name': tab_data['inputs'].get('tabname'),
         }
+        tab_name = tab_data['inputs'].get('tabname')
       else:
+        tab_name = 'n/a'
         tab_data = {}
-      graph_data.append(tab_data)
+      graph_data.append(tab_graph_data)
+      tab_metrics[tab_index] = {
+        'tab_name': tab_name,
+        'tab_means': tab_pmf.mean(),
+        'tab_stds': tab_pmf.std(),
+      }
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
-    return self.graph_layout_generator.figure_template(graph_data, max_len, title)
+    return self.graph_layout_generator.figure_template(graph_data, max_len, title), tab_metrics

@@ -75,12 +75,16 @@ class Layout(object):
         ),
         dbc.Row(
           dbc.Col(
-            GraphLayout(self.tab_count).static_layout(),
+            [
+              GraphLayout(self.tab_count).static_layout(),
+              *self._data_area(),
+            ],
             className='portlet-container portlet-dropzone',
           ),
           style={'align-items': 'center'},
           className='flex-fill fill d-flex justify-content-start',
         ),
+
       ],
     )
 
@@ -96,6 +100,61 @@ class Layout(object):
         ),
       ],
       className='container-fluid d-flex flex-column',
+    )
+
+  def _data_area(self):
+    return [self._data_row(i) for i in range(self.tab_count)]
+
+  def _data_row(self, tab_index):
+    return dbc.Row(
+      [
+        dbc.Col(self._tab_name_output(tab_index)),
+        dbc.Col(self._average_output(tab_index), width=2),
+        dbc.Col(self._standard_dev_output(tab_index), width=2),
+      ],
+      className='mb-2',
+    )
+
+  def _tab_name_output(self, tab_index):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("Name", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'stattabname_{tab_index}',
+          value=f'n/a',
+          disabled=True
+        ),
+      ],
+      size="sm",
+    )
+
+  def _average_output(self, tab_index):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("Mean", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'statavgdisplay_{tab_index}',
+          value=f'n/a',
+          disabled=True
+        ),
+      ],
+      size="sm",
+    )
+
+  def _standard_dev_output(self, tab_index):
+    return dbc.InputGroup(
+      [
+        dbc.InputGroupAddon("σ", addon_type="prepend"),
+        dbc.Input(
+          type="text",
+          id=f'statstddisplay_{tab_index}',
+          value=f'n/a',
+          disabled=True
+        ),
+      ],
+      size="sm",
     )
 
   def navbar(self):
