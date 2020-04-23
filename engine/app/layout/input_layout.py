@@ -669,6 +669,8 @@ class WeaponTabLayout(object):
       {'label': f'Reroll ones', 'value': f'reroll_ones'},
       {'label': f'Roll two dice choose highest', 'value': f'reroll_melta'},
       {'label': f'Half damage (rounding up)', 'value': f'halfdam'},
+      {'label': f'Add +D6', 'value': f'addvol_d6'},
+      {'label': f'Add +D3', 'value': f'addvol_d3'},
     ]
     for i in range(1, 7):
       options.append({'label': f'Add +{i}', 'value': f'addvol_{i}'})
