@@ -68,9 +68,8 @@ class StaticController(GraphController):
     grouped_plot_data = self._group_plot_data(DEFAULT_GRAPH_PLOTS)
 
     for tab_id in range(self.tab_count):
-      if callback.tab_inputs[tab_id]:
+      if callback.tab_inputs.get(tab_id):
         new_data = self._tab_graph_data(tab_id, callback)
-        print(new_data['graphs'])
         grouped_plot_data[tab_id] = new_data['graphs']
         output.update(self._update_avg(
           tab_id,

@@ -158,7 +158,6 @@ class CallbackMap(object):
     parse_result = urlparse(url)
     params = parse_qsl(parse_result.query)
     state = dict(params)
-    print(state)
     max_map = self.url_minify.to_max()
     return {max_map.get(x, x): y for x,y in state.items()}
 

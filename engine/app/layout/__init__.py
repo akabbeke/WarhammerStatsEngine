@@ -191,7 +191,8 @@ class Layout(object):
           dbc.NavLink(
             "Create your own graph",
             id='permalink',
-            href="/"
+            href="/",
+            external_link=True,
           )
         ),
       ],

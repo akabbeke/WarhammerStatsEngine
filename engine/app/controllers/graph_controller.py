@@ -199,8 +199,6 @@ class GraphController(object):
 
     weapon_metadata = {}
 
-    print(callback.tab_inputs)
-
     tab_enabled = tab_inputs.get('enabled') == 'enabled'
 
     for weapon_id in range(self.weapon_count):
