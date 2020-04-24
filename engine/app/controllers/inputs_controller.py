@@ -55,6 +55,7 @@ class InputsController(object):
         Input(f'terminator_{tab_id}', 'n_clicks'),
         Input(f'crisis_suit_{tab_id}', 'n_clicks'),
         Input(f'custode_{tab_id}', 'n_clicks'),
+        Input(f'riptide_{tab_id}', 'n_clicks'),
         Input(f'rhino_{tab_id}', 'n_clicks'),
         Input(f'leman_russ_{tab_id}', 'n_clicks'),
         Input(f'knight_{tab_id}', 'n_clicks'),
@@ -81,12 +82,15 @@ class InputsController(object):
         return [5,3,7,7,3]
       elif 'custode' in trigger:
         return [5,2,3,7,3]
+      elif 'riptide' in trigger:
+        return [7,2,5,7,14]
       elif 'rhino' in trigger:
         return [7,3,7,7,10]
       elif 'leman_russ' in trigger:
         return [8,3,7,7,12]
       elif 'knight' in trigger:
         return [8,3,5,7,24]
+
 
   def _tabname_callback(self, tab_id):
     @self.app.callback(

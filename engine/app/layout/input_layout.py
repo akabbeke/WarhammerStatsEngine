@@ -169,6 +169,7 @@ class InputTabLayout(object):
         dbc.DropdownMenuItem("Terminator", id=f'terminator_{self.tab_id}'),
         dbc.DropdownMenuItem("Crisis Suit", id=f'crisis_suit_{self.tab_id}'),
         dbc.DropdownMenuItem("Custode", id=f'custode_{self.tab_id}'),
+        dbc.DropdownMenuItem("Riptide", id=f'riptide_{self.tab_id}'),
         dbc.DropdownMenuItem("Rhino", id=f'rhino_{self.tab_id}'),
         dbc.DropdownMenuItem("Leman Russ", id=f'leman_russ_{self.tab_id}'),
         dbc.DropdownMenuItem("Knight", id=f'knight_{self.tab_id}'),
