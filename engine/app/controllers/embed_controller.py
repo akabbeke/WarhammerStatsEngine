@@ -75,28 +75,57 @@ class EmbedController(object):
       d = {k: self.default_to_regular(v) for k, v in d.items()}
     return d
 
+  def get_tab_results(self, tab_data):
+    tab_results = []
+    if tab_data.get('weapons'):
+      for weapon_data in tab_data['weapons'].values():
+        results = self.compute_controller.compute(**tab_data['inputs'], **weapon_data['inputs'])
+        tab_results.append(results)
+    return tab_results
+
+  def get_damage_plot(self, tab_data, tab_results):
+    damage_pmfs = [x.damage_with_mortals for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': tab_data['inputs'].get('tabname'),
+      }
+    else:
+      return {}
+
+  def get_drone_plot(self, tab_data, tab_results):
+    damage_pmfs = [x.drone_wound for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': tab_data['inputs'].get('tabname') + ' DRONES',
+      }
+    else:
+      return {}
+
+
+  def get_tab_graphs(self, tab_data):
+    results = self.get_tab_results(tab_data)
+
+    return [
+      self.get_damage_plot(tab_data, results),
+      self.get_drone_plot(tab_data, results),
+    ]
+
+
   def update_static_graph(self, graph_args):
     title = graph_args.get(-1, {'inputs': {}})['inputs'].get('title')
     if not graph_args:
       return self.graph_layout_generator.figure_template()
     graph_data = []
-    for tab_index in [x for x in sorted(graph_args.keys()) if x != -1]:
-      tab_pmfs = []
-      tab_data = graph_args[tab_index]
-      if tab_data.get('weapons'):
-        for weapon_data in tab_data['weapons'].values():
-          data = self.compute_controller.compute(**tab_data['inputs'], **weapon_data['inputs'])
-          tab_pmfs.append(data)
-      tab_pmf = PMF.convolve_many(tab_pmfs)
-      values = tab_pmf.cumulative().trim_tail().values
-      if len(values) > 1:
-        tab_data = {
-          'x': [i for i, x in enumerate(values)],
-          'y': [100*x for i, x in enumerate(values)],
-          'name': tab_data['inputs'].get('tabname'),
-        }
-      else:
-        tab_data = {}
-      graph_data.append(tab_data)
+    for tab_id in [x for x in sorted(graph_args.keys()) if x != -1]:
+      graph_data += self.get_tab_graphs(graph_args[tab_id])
+
     max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
     return self.graph_layout_generator.figure_template(graph_data, max_len, title)

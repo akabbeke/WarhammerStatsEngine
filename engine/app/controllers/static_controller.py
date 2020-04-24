@@ -11,6 +11,9 @@ from dash.dependencies import Input, Output, State
 
 from ..layout import GraphLayout, Layout
 
+from ...constants import TAB_COLOURS
+
+
 from ..util import ComputeController, URLMinify, InputGenerator
 
 from ...stats.pmf import PMF
@@ -58,7 +61,6 @@ class StaticController(object):
       updates[f'stattabname_{i}'] = tab_metrics.get(i, {}).get('tab_name', 'n/a')
       updates[f'statavgdisplay_{i}'] = tab_metrics.get(i, {}).get('tab_means', 'n/a')
       updates[f'statstddisplay_{i}'] = tab_metrics.get(i, {}).get('tab_stds', 'n/a')
-    print(updates)
     return updates
 
   def avg_updates(self):
@@ -100,19 +102,61 @@ class StaticController(object):
       d = {k: self.default_to_regular(v) for k, v in d.items()}
     return d
 
+  def get_tab_results(self, tab_data):
+    tab_results = []
+    if tab_data.get('weapons'):
+      for weapon_data in tab_data['weapons'].values():
+        results = self.compute_controller.compute(**tab_data['inputs'], **weapon_data['inputs'])
+        tab_results.append(results)
+    return tab_results
+
+  def get_damage_plot(self, tab_data, tab_results, colour):
+    damage_pmfs = [x.damage_with_mortals for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': tab_data['inputs'].get('tabname'),
+        'line': {'color': colour},
+        'legendgroup': tab_data.get('tabname')
+      }
+    else:
+      return {}
+
+  def get_drone_plot(self, tab_data, tab_results, colour):
+    damage_pmfs = [x.drone_wound for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': 'Drone',
+        'line': {'dash': 'dash', 'color': colour},
+        'legendgroup': tab_data.get('tabname')
+      }
+    else:
+      return {}
+
   def update_static_graph(self, graph_args):
     title = graph_args.get(-1, {'inputs': {}})['inputs'].get('title')
     if not graph_args:
       return self.graph_layout_generator.figure_template()
     graph_data = []
     tab_metrics = {}
-    for tab_index in [x for x in sorted(graph_args.keys()) if x != -1]:
-      tab_pmfs = []
-      tab_data = graph_args[tab_index]
-      if tab_data.get('weapons'):
-        for weapon_data in tab_data['weapons'].values():
-          data = self.compute_controller.compute(**tab_data['inputs'], **weapon_data['inputs'])
-          tab_pmfs.append(data)
+    for tab_id in [x for x in sorted(graph_args.keys()) if x != -1]:
+      tab_data = graph_args[tab_id]
+      tab_results = self.get_tab_results(tab_data)
+
+      colour = TAB_COLOURS[tab_id]
+
+      [
+        self.get_damage_plot(tab_data, results, colour),
+        self.get_drone_plot(tab_data, results, colour),
+      ]
+
       tab_pmf = PMF.convolve_many(tab_pmfs)
       values = tab_pmf.cumulative().trim_tail().values
       if len(values) > 1:
@@ -126,7 +170,7 @@ class StaticController(object):
         tab_name = 'n/a'
         tab_data = {}
       graph_data.append(tab_graph_data)
-      tab_metrics[tab_index] = {
+      tab_metrics[tab_id] = {
         'tab_name': tab_name,
         'tab_means': tab_pmf.mean(),
         'tab_stds': tab_pmf.std(),

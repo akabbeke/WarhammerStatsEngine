@@ -38,17 +38,17 @@ class LinkController(object):
 
   def convert_args_to_url(self, input_data):
     url_args = {}
-    for tab_index, tab_data in input_data.items():
+    for tab_id, tab_data in input_data.items():
       if tab_data['inputs'].get('enabled') == 'enabled':
         for key, value in tab_data['inputs'].items():
-          url_args[f'{key}_{tab_index}'] = value
-        for weapon_index, weapon_data in tab_data['weapons'].items():
+          url_args[f'{key}_{tab_id}'] = value
+        for weapon_id, weapon_data in tab_data['weapons'].items():
           if weapon_data['inputs'].get('weaponenabled') == 'enabled':
             for key, value in weapon_data['inputs'].items():
               if key in ['shotmods', 'hitmods','woundmods', 'savemods', 'fnpmods', 'damagemods']:
-                url_args[f'{key}_{tab_index}_{weapon_index}'] = ','.join(value or [])
+                url_args[f'{key}_{tab_id}_{weapon_id}'] = ','.join(value or [])
               else:
-                url_args[f'{key}_{tab_index}_{weapon_index}'] = value
+                url_args[f'{key}_{tab_id}_{weapon_id}'] = value
 
     url_args.update(input_data[-1]['inputs'])
     min_map = self.url_minify.to_min()

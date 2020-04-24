@@ -25,39 +25,39 @@ class InputsController(object):
     self.weapon_count = weapon_count
 
   def setup_callbacks(self):
-    for tab_index in range(self.tab_count):
-      self._setup_input_tab_callback(tab_index)
+    for tab_id in range(self.tab_count):
+      self._setup_input_tab_callback(tab_id)
 
-  def _setup_input_tab_callback(self, tab_index):
-    self._setup_preset_callback(tab_index)
-    self._tabname_callback(tab_index)
-    self._setup_weaponname_callback(tab_index)
+  def _setup_input_tab_callback(self, tab_id):
+    self._setup_preset_callback(tab_id)
+    self._tabname_callback(tab_id)
+    self._setup_weaponname_callback(tab_id)
 
-  def _setup_weaponname_callback(self, tab_index):
-    for weapon_index in range(self.weapon_count):
-      self._weaponname_callback(tab_index, weapon_index)
+  def _setup_weaponname_callback(self, tab_id):
+    for weapon_id in range(self.weapon_count):
+      self._weaponname_callback(tab_id, weapon_id)
 
-  def _setup_preset_callback(self, tab_index):
+  def _setup_preset_callback(self, tab_id):
     @self.app.callback(
       output=[
-        Output(f'toughness_{tab_index}', 'value'),
-        Output(f'save_{tab_index}', 'value'),
-        Output(f'invuln_{tab_index}', 'value'),
-        Output(f'fnp_{tab_index}', 'value'),
-        Output(f'wounds_{tab_index}', 'value'),
+        Output(f'toughness_{tab_id}', 'value'),
+        Output(f'save_{tab_id}', 'value'),
+        Output(f'invuln_{tab_id}', 'value'),
+        Output(f'fnp_{tab_id}', 'value'),
+        Output(f'wounds_{tab_id}', 'value'),
       ],
       inputs=[
-        Input(f'guardsman_{tab_index}', 'n_clicks'),
-        Input(f'ork_boy_{tab_index}', 'n_clicks'),
-        Input(f'shield_drone_{tab_index}', 'n_clicks'),
-        Input(f'tactical_marine_{tab_index}', 'n_clicks'),
-        Input(f'intercessor_{tab_index}', 'n_clicks'),
-        Input(f'terminator_{tab_index}', 'n_clicks'),
-        Input(f'crisis_suit_{tab_index}', 'n_clicks'),
-        Input(f'custode_{tab_index}', 'n_clicks'),
-        Input(f'rhino_{tab_index}', 'n_clicks'),
-        Input(f'leman_russ_{tab_index}', 'n_clicks'),
-        Input(f'knight_{tab_index}', 'n_clicks'),
+        Input(f'guardsman_{tab_id}', 'n_clicks'),
+        Input(f'ork_boy_{tab_id}', 'n_clicks'),
+        Input(f'shield_drone_{tab_id}', 'n_clicks'),
+        Input(f'tactical_marine_{tab_id}', 'n_clicks'),
+        Input(f'intercessor_{tab_id}', 'n_clicks'),
+        Input(f'terminator_{tab_id}', 'n_clicks'),
+        Input(f'crisis_suit_{tab_id}', 'n_clicks'),
+        Input(f'custode_{tab_id}', 'n_clicks'),
+        Input(f'rhino_{tab_id}', 'n_clicks'),
+        Input(f'leman_russ_{tab_id}', 'n_clicks'),
+        Input(f'knight_{tab_id}', 'n_clicks'),
       ],
     )
     def _(*args):
@@ -88,12 +88,12 @@ class InputsController(object):
       elif 'knight' in trigger:
         return [8,3,5,7,24]
 
-  def _tabname_callback(self, tab_index):
+  def _tabname_callback(self, tab_id):
     @self.app.callback(
-      Output(f'tab_{tab_index}', 'label'),
+      Output(f'tab_{tab_id}', 'label'),
       [
-        Input(f'tabname_{tab_index}', 'value'),
-        Input(f'enabled_{tab_index}', 'value'),
+        Input(f'tabname_{tab_id}', 'value'),
+        Input(f'enabled_{tab_id}', 'value'),
       ],
     )
     def _(value, enabled):
@@ -104,12 +104,12 @@ class InputsController(object):
         value = f'▫️ {value}'
       return value
 
-  def _weaponname_callback(self, tab_index, weapon_index):
+  def _weaponname_callback(self, tab_id, weapon_id):
     @self.app.callback(
-      Output(f'weapontab_{tab_index}_{weapon_index}', 'label'),
+      Output(f'weapontab_{tab_id}_{weapon_id}', 'label'),
       [
-        Input(f'weaponname_{tab_index}_{weapon_index}', 'value'),
-        Input(f'weaponenabled_{tab_index}_{weapon_index}', 'value'),
+        Input(f'weaponname_{tab_id}_{weapon_id}', 'value'),
+        Input(f'weaponenabled_{tab_id}_{weapon_id}', 'value'),
       ],
     )
     def _(value, enabled):

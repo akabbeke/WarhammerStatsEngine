@@ -6,7 +6,7 @@ from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound
+  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, ShieldDrone, NormalDrone
 
 
 class ComputeController(object):
@@ -97,6 +97,10 @@ class ComputeController(object):
           mods.append(AddNToVolume(int(mod_data)))
       elif mod_type == 'subvol':
         mods.append(AddNToVolume(-1*int(mod_data)))
+      elif mod_type == 'shielddrone':
+        mods.append(ShieldDrone())
+      elif mod_type == 'normaldrone':
+        mods.append(NormalDrone())
     return mods
 
   def compute(self, *args, **kwargs):
@@ -184,10 +188,10 @@ class URLMinify(object):
       row += self.data_row_input(i)
     return row
 
-  def data_row_input(self, tab_index):
+  def data_row_input(self, tab_id):
     return [
-      [f'enabled_{tab_index}', f'e_{tab_index}'],
-      [f'tabname_{tab_index}', f'tn_{tab_index}'],
+      [f'enabled_{tab_id}', f'e_{tab_id}'],
+      [f'tabname_{tab_id}', f'tn_{tab_id}'],
     ]
 
   def target_row(self):
@@ -196,13 +200,13 @@ class URLMinify(object):
       row += self.target_row_input(i)
     return row
 
-  def target_row_input(self, tab_index):
+  def target_row_input(self, tab_id):
     return [
-      [f'toughness_{tab_index}', f't_{tab_index}'],
-      [f'save_{tab_index}', f'sv_{tab_index}'],
-      [f'invuln_{tab_index}', f'inv_{tab_index}'],
-      [f'fnp_{tab_index}', f'fn_{tab_index}'],
-      [f'wounds_{tab_index}', f'w_{tab_index}'],
+      [f'toughness_{tab_id}', f't_{tab_id}'],
+      [f'save_{tab_id}', f'sv_{tab_id}'],
+      [f'invuln_{tab_id}', f'inv_{tab_id}'],
+      [f'fnp_{tab_id}', f'fn_{tab_id}'],
+      [f'wounds_{tab_id}', f'w_{tab_id}'],
     ]
 
   def attack_row(self):
@@ -212,14 +216,14 @@ class URLMinify(object):
         row += self.attack_row_input(i, j)
     return row
 
-  def attack_row_input(self, tab_index, weapon_index):
+  def attack_row_input(self, tab_id, weapon_id):
     return [
-      [f'weaponenabled_{tab_index}_{weapon_index}', f'we_{tab_index}_{weapon_index}'],
-      [f'ws_{tab_index}_{weapon_index}', f'ws_{tab_index}_{weapon_index}'],
-      [f'strength_{tab_index}_{weapon_index}', f's_{tab_index}_{weapon_index}'],
-      [f'ap_{tab_index}_{weapon_index}', f'ap_{tab_index}_{weapon_index}'],
-      [f'shots_{tab_index}_{weapon_index}', f'sh_{tab_index}_{weapon_index}'],
-      [f'damage_{tab_index}_{weapon_index}', f'dm_{tab_index}_{weapon_index}'],
+      [f'weaponenabled_{tab_id}_{weapon_id}', f'we_{tab_id}_{weapon_id}'],
+      [f'ws_{tab_id}_{weapon_id}', f'ws_{tab_id}_{weapon_id}'],
+      [f'strength_{tab_id}_{weapon_id}', f's_{tab_id}_{weapon_id}'],
+      [f'ap_{tab_id}_{weapon_id}', f'ap_{tab_id}_{weapon_id}'],
+      [f'shots_{tab_id}_{weapon_id}', f'sh_{tab_id}_{weapon_id}'],
+      [f'damage_{tab_id}_{weapon_id}', f'dm_{tab_id}_{weapon_id}'],
     ]
 
   def modify_row(self):
@@ -229,14 +233,14 @@ class URLMinify(object):
         row += self.modify_input(i, j)
     return row
 
-  def modify_input(self, tab_index, weapon_index):
+  def modify_input(self, tab_id, weapon_id):
     return [
-      [f'shotmods_{tab_index}_{weapon_index}', f'shm_{tab_index}_{weapon_index}'],
-      [f'hitmods_{tab_index}_{weapon_index}', f'hm_{tab_index}_{weapon_index}'],
-      [f'woundmods_{tab_index}_{weapon_index}', f'wm_{tab_index}_{weapon_index}'],
-      [f'savemods_{tab_index}_{weapon_index}', f'svm_{tab_index}_{weapon_index}'],
-      [f'fnpmods_{tab_index}_{weapon_index}', f'svm_{tab_index}_{weapon_index}'],
-      [f'damagemods_{tab_index}_{weapon_index}', f'dmm_{tab_index}_{weapon_index}'],
+      [f'shotmods_{tab_id}_{weapon_id}', f'shm_{tab_id}_{weapon_id}'],
+      [f'hitmods_{tab_id}_{weapon_id}', f'hm_{tab_id}_{weapon_id}'],
+      [f'woundmods_{tab_id}_{weapon_id}', f'wm_{tab_id}_{weapon_id}'],
+      [f'savemods_{tab_id}_{weapon_id}', f'svm_{tab_id}_{weapon_id}'],
+      [f'fnpmods_{tab_id}_{weapon_id}', f'svm_{tab_id}_{weapon_id}'],
+      [f'damagemods_{tab_id}_{weapon_id}', f'dmm_{tab_id}_{weapon_id}'],
     ]
 
 
@@ -245,53 +249,53 @@ class InputGenerator(object):
     self.tab_count = tab_count
     self.weapon_count = weapon_count
 
-  def gen_tab_inputs(self, tab_index, weapon_count):
+  def gen_tab_inputs(self, tab_id, weapon_count):
     return {
-      **self.data_row_input(tab_index),
-      **self.target_row_input(tab_index),
-      **self.weapon_group_input(tab_index, weapon_count),
+      **self.data_row_input(tab_id),
+      **self.target_row_input(tab_id),
+      **self.weapon_group_input(tab_id, weapon_count),
     }
 
-  def data_row_input(self, tab_index):
+  def data_row_input(self, tab_id):
     return {
-      f'enabled_{tab_index}': 'value',
-      f'tabname_{tab_index}': 'value',
+      f'enabled_{tab_id}': 'value',
+      f'tabname_{tab_id}': 'value',
     }
 
-  def target_row_input(self, tab_index):
+  def target_row_input(self, tab_id):
     return {
-      f'toughness_{tab_index}': 'value',
-      f'save_{tab_index}': 'value',
-      f'invuln_{tab_index}': 'value',
-      f'fnp_{tab_index}': 'value',
-      f'wounds_{tab_index}': 'value',
+      f'toughness_{tab_id}': 'value',
+      f'save_{tab_id}': 'value',
+      f'invuln_{tab_id}': 'value',
+      f'fnp_{tab_id}': 'value',
+      f'wounds_{tab_id}': 'value',
     }
 
-  def weapon_group_input(self, tab_index, weapon_count):
+  def weapon_group_input(self, tab_id, weapon_count):
     output = {}
     for i in range(weapon_count):
-      output.update(self.attack_row_input(tab_index, i))
-      output.update(self.modify_input(tab_index, i))
+      output.update(self.attack_row_input(tab_id, i))
+      output.update(self.modify_input(tab_id, i))
     return output
 
-  def attack_row_input(self, tab_index, weapon_index):
+  def attack_row_input(self, tab_id, weapon_id):
     return {
-      f'weaponenabled_{tab_index}_{weapon_index}': 'value',
-      f'ws_{tab_index}_{weapon_index}': 'value',
-      f'strength_{tab_index}_{weapon_index}': 'value',
-      f'ap_{tab_index}_{weapon_index}': 'value',
-      f'shots_{tab_index}_{weapon_index}': 'value',
-      f'damage_{tab_index}_{weapon_index}': 'value',
+      f'weaponenabled_{tab_id}_{weapon_id}': 'value',
+      f'ws_{tab_id}_{weapon_id}': 'value',
+      f'strength_{tab_id}_{weapon_id}': 'value',
+      f'ap_{tab_id}_{weapon_id}': 'value',
+      f'shots_{tab_id}_{weapon_id}': 'value',
+      f'damage_{tab_id}_{weapon_id}': 'value',
     }
 
-  def modify_input(self, tab_index, weapon_index):
+  def modify_input(self, tab_id, weapon_id):
     return {
-      f'shotmods_{tab_index}_{weapon_index}': 'value',
-      f'hitmods_{tab_index}_{weapon_index}': 'value',
-      f'woundmods_{tab_index}_{weapon_index}': 'value',
-      f'savemods_{tab_index}_{weapon_index}': 'value',
-      f'fnpmods_{tab_index}_{weapon_index}': 'value',
-      f'damagemods_{tab_index}_{weapon_index}': 'value',
+      f'shotmods_{tab_id}_{weapon_id}': 'value',
+      f'hitmods_{tab_id}_{weapon_id}': 'value',
+      f'woundmods_{tab_id}_{weapon_id}': 'value',
+      f'savemods_{tab_id}_{weapon_id}': 'value',
+      f'fnpmods_{tab_id}_{weapon_id}': 'value',
+      f'damagemods_{tab_id}_{weapon_id}': 'value',
     }
 
   def graph_inputs(self):

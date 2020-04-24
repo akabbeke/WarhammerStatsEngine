@@ -52,6 +52,9 @@ class Modifier(object):
   def mortal_wound(self):
     return None
 
+  def modify_drones(self):
+    return False, 7, 7
+
 
 class MinimumValue(Modifier):
   def __init__(self, min_val):
@@ -251,6 +254,16 @@ class HalfDamage(Modifier):
     return col.map(lambda x: x.div_min_one(2))
 
 
+class ShieldDrone(Modifier):
+  def modify_drones(self):
+    return True, 2, 5
+
+
+class NormalDrone(Modifier):
+  def modify_drones(self):
+    return True, 2, 7
+
+
 class ModifierCollection(object):
   """
   Used to keep track of any modifiers to the attack
@@ -362,6 +375,22 @@ class ModifierCollection(object):
     Modify the PMF of the pen dice. Ususally for re-rolls.
     """
     return self._mod_dice(dists, self._pen_mods(), thresh, mod_thresh)
+
+  def modify_drone(self):
+    """
+    Return if the attack should be modified by saviour protocols
+    """
+    enabled = False
+    thresh = 7
+    fnp = 7
+    for mod in self._pen_mods():
+      e, t, f = mod.modify_drones()
+
+      enabled = enabled or e
+      thresh = thresh if thresh < t else t
+      fnp = fnp if fnp < f else f
+
+    return enabled, thresh, fnp
 
   def modify_fnp_thresh(self, thresh):
     """

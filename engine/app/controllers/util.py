@@ -25,6 +25,13 @@ from ...stats.pmf import PMF
 def recurse_default():
   return defaultdict(recurse_default)
 
+
+def chunks(lst, n):
+  """Yield successive n-sized chunks from lst."""
+  for i in range(0, len(lst), n):
+    yield lst[i:i + n]
+
+
 def get_cid():
   try:
     _, _, left, right = request.cookies.get('_ga').split('.')
@@ -72,6 +79,151 @@ def track_event(category, action, label=None, value=0):
   # on your application's needs, this may be a non-error and can be caught
   # by the caller.
   response.raise_for_status()
+
+class CallbackMap(object):
+  def __init__(self, raw_input, outputs_order, inputs_order, states_order):
+    self._raw_input = raw_input
+    self._outputs_order = outputs_order
+    self._inputs_order = inputs_order
+    self._states_order = states_order
+
+    self._inputs = None
+    self._tab_inputs = None
+    self._global_inputs = None
+
+    self._states = None
+    self._tab_states = None
+    self._global_states = None
+
+    self._outputs = {}
+
+  @property
+  def inputs(self):
+    if self._inputs is None:
+      self._inputs = self._parse_inputs()
+    return self._inputs
+
+  @property
+  def states(self):
+    if self._states is None:
+      self._states = self._parse_states()
+    return self._states
+
+  @property
+  def tab_inputs(self):
+    if self._tab_inputs is None:
+      self._tab_inputs, self._global_inputs = self._parse_tab_inputs()
+    return self._tab_inputs
+
+  @property
+  def tab_states(self):
+    if self._tab_states is None:
+      self._tab_states, self._global_states = self._parse_tab_states()
+    return self._tab_states
+
+  @property
+  def global_inputs(self):
+    if self._global_inputs is None:
+      self._tab_inputs, self._global_inputs = self._parse_tab_inputs()
+    return self._global_inputs
+
+  @property
+  def global_states(self):
+    if self._global_states is None:
+      self._tab_states, self._global_states = self._parse_tab_states()
+    return self._global_states
+
+  @property
+  def outputs(self):
+    return [self._outputs[k] for k in self._outputs_order]
+
+  def set_outputs(self, **kwargs):
+    self._outputs.update(kwargs)
+
+  def _parse_inputs(self):
+    input_dict = {}
+    for i, key in enumerate(self._inputs_order):
+      input_dict[key] = self._raw_input[i]
+    return input_dict
+
+  def _parse_states(self):
+    state_dict = {}
+    for j, key in enumerate(self._states_order):
+      state_dict[key] = self._raw_input[len(self._inputs_order) + j]
+    return state_dict
+
+  def _parse_tab_inputs(self):
+    return self._parse_tab_fields(self.inputs)
+
+  def _parse_tab_states(self):
+    return self._parse_tab_fields(self.states)
+
+  def default_to_regular(self, d):
+    if isinstance(d, defaultdict):
+        d = {k: self.default_to_regular(v) for k, v in d.items()}
+    return d
+
+  def _parse_tab_fields(self, fields=None):
+    tab_fields = recurse_default()
+    global_fields = recurse_default()
+    for raw_input_name, value in fields.items():
+      match = re.match(r'(?P<field_name>[^_]+)_(?P<tab_id>\d+)(_(?P<weapon_id>\d+))?', raw_input_name)
+      if match:
+        field_name = match.groupdict().get('field_name')
+        tab_id = match.groupdict().get('tab_id')
+        weapon_id = match.groupdict().get('weapon_id')
+        if weapon_id:
+          tab_fields[int(tab_id)]['weapons'][int(weapon_id)][field_name] = value
+        else:
+          tab_fields[int(tab_id)][field_name] = value
+      else:
+        global_fields[raw_input_name] = value
+    return self.default_to_regular(tab_fields), self.default_to_regular(global_fields)
+
+
+class mapped_callback(object):
+  def __init__(self, app, outputs=None, inputs=None, states=None, tab_count=1, weapon_count=1):
+    self._app = app
+
+    self._outputs = outputs or {}
+    self._outputs_order = sorted(self._outputs.keys())
+    self._inputs = inputs or {}
+    self._inputs_order = sorted(self._inputs.keys())
+    self._states = states or {}
+    self._states_order = sorted(self._states.keys())
+
+    self._tab_count = tab_count,
+    self._weapon_count = weapon_count,
+
+
+  @property
+  def outputs(self):
+    return [Output(k, self._outputs[k]) for k in self._outputs_order]
+
+  @property
+  def inputs(self):
+    return [Input(k, self._inputs[k]) for k in self._inputs_order]
+
+  @property
+  def states(self):
+    return [State(k, self._states[k]) for k in self._states_order]
+
+  def __call__(self, func):
+    @self._app.callback(self.outputs, self.inputs, self.states)
+    def callback(*args, **kwargs):
+      return self.unmap(func(self.map(*args)))
+    return callback
+
+  def map(self, *args):
+    return CallbackMap(
+      raw_input = args,
+      outputs_order = self._outputs_order,
+      inputs_order = self._inputs_order,
+      states_order = self._states_order,
+    )
+
+  def unmap(self, result):
+    return result.outputs
 
 
 class CallbackMapper(object):

@@ -105,23 +105,23 @@ class Layout(object):
   def _data_area(self):
     return [self._data_row(i) for i in range(self.tab_count)]
 
-  def _data_row(self, tab_index):
+  def _data_row(self, tab_id):
     return dbc.Row(
       [
-        dbc.Col(self._tab_name_output(tab_index)),
-        dbc.Col(self._average_output(tab_index), width=2),
-        dbc.Col(self._standard_dev_output(tab_index), width=2),
+        dbc.Col(self._tab_name_output(tab_id)),
+        dbc.Col(self._average_output(tab_id), width=2),
+        dbc.Col(self._standard_dev_output(tab_id), width=2),
       ],
       className='mb-2',
     )
 
-  def _tab_name_output(self, tab_index):
+  def _tab_name_output(self, tab_id):
     return dbc.InputGroup(
       [
         dbc.InputGroupAddon("Name", addon_type="prepend"),
         dbc.Input(
           type="text",
-          id=f'stattabname_{tab_index}',
+          id=f'stattabname_{tab_id}',
           value=f'n/a',
           disabled=True
         ),
@@ -129,13 +129,13 @@ class Layout(object):
       size="sm",
     )
 
-  def _average_output(self, tab_index):
+  def _average_output(self, tab_id):
     return dbc.InputGroup(
       [
         dbc.InputGroupAddon("Mean", addon_type="prepend"),
         dbc.Input(
           type="text",
-          id=f'statavgdisplay_{tab_index}',
+          id=f'statavgdisplay_{tab_id}',
           value=f'n/a',
           disabled=True
         ),
@@ -143,13 +143,13 @@ class Layout(object):
       size="sm",
     )
 
-  def _standard_dev_output(self, tab_index):
+  def _standard_dev_output(self, tab_id):
     return dbc.InputGroup(
       [
         dbc.InputGroupAddon("σ", addon_type="prepend"),
         dbc.Input(
           type="text",
-          id=f'statstddisplay_{tab_index}',
+          id=f'statstddisplay_{tab_id}',
           value=f'n/a',
           disabled=True
         ),
@@ -179,6 +179,7 @@ class Layout(object):
       ],
       brand="Warhammer Stats Engine",
       brand_href="/",
+      brand_external_link=True,
       color="primary",
       dark=True,
     )
@@ -196,6 +197,7 @@ class Layout(object):
       ],
       brand="Warhammer Stats Engine",
       brand_href="/",
+      brand_external_link=True,
       color="primary",
       dark=True,
     )

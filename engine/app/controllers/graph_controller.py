@@ -11,7 +11,7 @@ from urllib.parse import urlparse, parse_qsl, urlencode
 from flask import request
 from dash.dependencies import Input, Output, State
 
-from ...constants import TAB_COUNT, GA_TRACKING_ID
+from ...constants import TAB_COUNT, GA_TRACKING_ID, TAB_COLOURS
 
 from ..layout import GraphLayout, Layout
 
@@ -19,7 +19,9 @@ from ..util import ComputeController, URLMinify, InputGenerator
 
 from ...stats.pmf import PMF
 
-from .util import CallbackMapper, track_event, recurse_default
+from .util import CallbackMapper, mapped_callback, track_event, recurse_default, chunks
+
+
 
 class GraphController(object):
   def __init__(self, app, tab_count, weapon_count):
@@ -29,23 +31,22 @@ class GraphController(object):
     self.input_generator = InputGenerator(self.tab_count, self.weapon_count)
     self.graph_layout_generator = GraphLayout()
     self.compute_controller = ComputeController()
+    self._subplot_names = {0: 'damage', 1: 'drones'}
 
   def setup_callbacks(self):
-    mapper = CallbackMapper(
+    @mapped_callback(
+      app=self.app,
       outputs=self._graph_updates(),
       inputs=self.input_generator.graph_inputs(),
       states=self._graph_updates(),
     )
-    @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def _(*args):
       track_event(
         category='Render',
         action='Interactive',
         label=self._prop_change(),
       )
-      tab_data = mapper.input_to_kwargs_by_tab(args, self.tab_count, self.weapon_count)
-      result_dict = self._update_graph(tab_data)
-      return mapper.dict_to_output(result_dict)
+      return self._update_graph(*args)
 
   def _graph_updates(self):
     return {
@@ -56,121 +57,180 @@ class GraphController(object):
 
       **{f'wepavgdisplay_{i}_{j}': 'value' for i in range(self.tab_count) for j in range(self.weapon_count)},
       **{f'wepstddisplay_{i}_{j}': 'value' for i in range(self.tab_count) for j in range(self.weapon_count)},
-
-      # **{f'weaponname_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'strength_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'ap_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'ws_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'shots_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'damage_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-
-      # **{f'shotmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'hitmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'woundmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'savemods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'fnpmods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
-      # **{f'damagemods_{i}_{j}': 'disabled' for i in range(self.tab_count) for j in range(self.weapon_count)},
     }
 
-  def _update_graph(self, tab_data):
-    # TODO: refactor this whole mess
-    graph_data = tab_data[-1]['states']['damage_graph']['data']
+  def _group_plot_data(self, current_plot_data):
+    return {i: self._named_plot_data(x) for i, x in enumerate(chunks(current_plot_data, len(self._subplot_names)))}
+
+  def _named_plot_data(self, data):
+    return {self._subplot_names[i]: data[i] for i in range(len(self._subplot_names))}
+
+  def _flatten_plot_data(self, data):
+    flat = []
+    for i in range(self.tab_count):
+      flat += [data[i][self._subplot_names[j]] for j in range(len(self._subplot_names))]
+    return flat
+
+
+  def _update_graph(self, callback):
     output = {}
-    if graph_data == [{}] * self.tab_count:
-      changed_tabs = list(range(self.tab_count))
-    else:
-      changed_tabs = self._tabs_changed()
-    for tab_index in range(self.tab_count):
-      if tab_index in changed_tabs:
-        tab_graph_data = self._tab_graph_data(tab_index, tab_data[tab_index])
-        graph_data[tab_index] = tab_graph_data['graph_data']
-        if tab_data[tab_index]['inputs'].get('enabled') == 'enabled':
-          output[f'avgdisplay_{tab_index}'] = '{}'.format(round(tab_graph_data['mean'], 2))
-          output[f'stddisplay_{tab_index}'] = '{}'.format(round(tab_graph_data['std'], 2))
-          for weapon_index in range(self.weapon_count):
-            wep_mean = tab_graph_data['weapon_data'][weapon_index]['mean']
-            wep_std = tab_graph_data['weapon_data'][weapon_index]['std']
-            output[f'wepavgdisplay_{tab_index}_{weapon_index}'] = '{}'.format(round(wep_mean, 2)) if wep_mean > -1 else 'Weapon disabled'
-            output[f'wepstddisplay_{tab_index}_{weapon_index}'] = '{}'.format(round(wep_std, 2)) if wep_std > -1 else 'Weapon disabled'
-        else:
-          output[f'avgdisplay_{tab_index}'] = 'Tab disabled'
-          output[f'stddisplay_{tab_index}'] = 'Tab disabled'
-          for weapon_index in range(self.weapon_count):
-            output[f'wepavgdisplay_{tab_index}_{weapon_index}'] = 'Tab disabled'
-            output[f'wepstddisplay_{tab_index}_{weapon_index}'] = 'Tab disabled'
+    current_plot_data = callback.global_states['damage_graph']['data']
+
+    changed_tabs = self._tabs_changed(current_plot_data)
+
+    grouped_plot_data = self._group_plot_data(current_plot_data)
+
+    for tab_id in range(self.tab_count):
+      if tab_id in changed_tabs:
+        new_data = self._tab_graph_data(tab_id, callback)
+        grouped_plot_data[tab_id] = new_data['graphs']
+        output.update(self.tab_output(tab_id, new_data, callback))
       else:
+        output.update(self.cached_tab_output(tab_id, callback))
 
-        output[f'avgdisplay_{tab_index}'] = tab_data[tab_index]['states']['avgdisplay']
-        output[f'stddisplay_{tab_index}'] = tab_data[tab_index]['states']['stddisplay']
-        for weapon_index in range(self.weapon_count):
-          wep_state = tab_data[tab_index]['weapons'][weapon_index]['states']
-          output[f'wepavgdisplay_{tab_index}_{weapon_index}'] = wep_state['wepavgdisplay']
-          output[f'wepstddisplay_{tab_index}_{weapon_index}'] = wep_state['wepstddisplay']
+    for tab_id in range(self.tab_count):
+      pass
 
-    max_len = max(max([len(x.get('x', [])) for x in graph_data]), 0)
-    output['damage_graph'] = self.graph_layout_generator.figure_template(graph_data, max_len, top=10)
-    # output.update(self._tab_enabled(tab_data))
+    flattened_plot_data =self._flatten_plot_data(grouped_plot_data)
+
+    max_len = max(max([len(x.get('x', [])) for x in flattened_plot_data]), 0)
+    output['damage_graph'] = self.graph_layout_generator.figure_template(
+      flattened_plot_data,
+      max_len,
+      top=10
+    )
+    callback.set_outputs(**output)
+    return callback
+
+  def tab_output(self, tab_id, comp_data, callback):
+    tab_data = comp_data
+    if callback.tab_inputs[tab_id].get('enabled') == 'enabled':
+      return self.enabled_tab_output(tab_id, tab_data)
+    else:
+      return self.disabled_tab_output(tab_id)
+
+  def cached_tab_output(self, tab_id, callback):
+    output = {}
+    print(callback.tab_states[tab_id])
+    output[f'avgdisplay_{tab_id}'] = callback.tab_states[tab_id][f'avgdisplay']
+    output[f'stddisplay_{tab_id}'] = callback.tab_states[tab_id][f'stddisplay']
+    for weapon_id in range(self.weapon_count):
+      weapon_state = callback.tab_states[tab_id]['weapons'][weapon_id]
+      output[f'wepavgdisplay_{tab_id}_{weapon_id}'] = weapon_state[f'wepavgdisplay']
+      output[f'wepstddisplay_{tab_id}_{weapon_id}'] = weapon_state[f'wepstddisplay']
     return output
 
-  def _tab_enabled(self, graph_data):
-    data = {}
-    for i in range(self.tab_count):
-      tab_enabled = graph_data[i]['inputs']['enabled'] == 'enabled'
-      for j in range(self.weapon_count):
-        weapon_enabled = graph_data[i]['weapons'][j]['inputs']['weaponenabled'] == 'enabled'
-        input_disabled = not (tab_enabled and weapon_enabled)
-        data.update({
-          f'weaponname_{i}_{j}': input_disabled,
-          f'strength_{i}_{j}': input_disabled,
-          f'ap_{i}_{j}': input_disabled,
-          f'ws_{i}_{j}': input_disabled,
-          f'shots_{i}_{j}': input_disabled,
-          f'damage_{i}_{j}': input_disabled,
-          f'shotmods_{i}_{j}': input_disabled,
-          f'hitmods_{i}_{j}': input_disabled,
-          f'woundmods_{i}_{j}': input_disabled,
-          f'savemods_{i}_{j}': input_disabled,
-          f'fnpmods_{i}_{j}': input_disabled,
-          f'damagemods_{i}_{j}': input_disabled,
-        })
-    return data
+  def metadata_output(self, tab_id, enabled, mean=None, std=None):
+    return {
+      f'avgdisplay_{tab_id}': '{}'.format(round(mean, 2)) if enabled else 'Tab disabled',
+      f'stddisplay_{tab_id}': '{}'.format(round(std, 2)) if enabled else 'Tab disabled',
+    }
 
-  def _tab_graph_data(self, tab_index, data):
-    tab_pmfs = []
-    tab_data = data['inputs']
-    tab_enabled = tab_data.get('enabled') == 'enabled'
-    weapon_mean = {}
-    for weapon_index in range(self.weapon_count):
-      weapon_data = data['weapons'][weapon_index]['inputs']
-      weapon_enabled = weapon_data.get('weaponenabled') == 'enabled'
-      if tab_enabled and weapon_enabled:
-        weapon_pmf = self.compute_controller.compute(**tab_data, **weapon_data)
-        tab_pmfs.append(weapon_pmf)
-        weapon_mean[weapon_index] = {
-          'mean': weapon_pmf.mean(),
-          'std': weapon_pmf.std(),
+  def weapon_metadata_output(self, tab_id, weapon_id, enabled, wep_enabled, mean=None, std=None):
+    if enabled:
+      if wep_enabled:
+        return {
+          f'wepavgdisplay_{tab_id}_{weapon_id}': '{}'.format(round(mean, 2)),
+          f'wepstddisplay_{tab_id}_{weapon_id}': '{}'.format(round(std, 2)),
         }
       else:
-        weapon_mean[weapon_index] = {
+        return {
+          f'wepavgdisplay_{tab_id}_{weapon_id}': 'Weapon disabled',
+          f'wepstddisplay_{tab_id}_{weapon_id}': 'Weapon disabled',
+        }
+    else:
+      return {
+        f'wepavgdisplay_{tab_id}_{weapon_id}': 'Tab disabled',
+        f'wepstddisplay_{tab_id}_{weapon_id}': 'Tab disabled',
+      }
+
+  def enabled_tab_output(self, tab_id, tab_data):
+    output = {}
+    tab_metadata = tab_data['metadata']
+    output = self.metadata_output(tab_id, True, tab_metadata['mean'], tab_metadata['std'])
+    for weapon_id in range(self.weapon_count):
+      weapon_metadata = tab_data['metadata']['weapon_metadata'][tab_id]
+      output.update(self.weapon_metadata_output(
+        tab_id,
+        weapon_id,
+        True,
+        weapon_metadata['mean'] > -1,
+        mean=weapon_metadata['mean'],
+        std=weapon_metadata['std'],
+      ))
+    return output
+
+  def disabled_tab_output(self, tab_id):
+    output = self.metadata_output(tab_id, False, 0, 0)
+    for weapon_id in range(self.weapon_count):
+      output.update(self.weapon_metadata_output(tab_id, weapon_id, False, False, 0, 0))
+    return output
+
+  def get_damage_plot(self, tab_data, tab_results, colour):
+    damage_pmfs = [x.damage_with_mortals for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': tab_data.get('tabname'),
+        'line': {'color': colour},
+        'legendgroup': tab_data.get('tabname')
+      }
+    else:
+      return {}
+
+  def get_drone_plot(self, tab_data, tab_results, colour):
+    damage_pmfs = [x.drone_wound for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': 'Drone',
+        'line': {'dash': 'dash', 'color': colour},
+        'legendgroup': tab_data.get('tabname')
+      }
+    else:
+      return {}
+
+  def _tab_graph_data(self, tab_id, callback):
+    tab_results = []
+    tab_inputs = callback.tab_inputs[tab_id]
+
+    weapon_metadata = {}
+
+    tab_enabled = tab_inputs.get('enabled') == 'enabled'
+
+    for weapon_id in range(self.weapon_count):
+      weapon_inputs = tab_inputs['weapons'][weapon_id]
+      if tab_enabled and weapon_inputs.get('weaponenabled') == 'enabled':
+        results = self.compute_controller.compute(**tab_inputs, **weapon_inputs)
+        tab_results.append(results)
+        weapon_metadata[weapon_id] = {
+          'mean': results.damage_with_mortals.mean(),
+          'std': results.damage_with_mortals.std(),
+        }
+      else:
+        weapon_metadata[weapon_id] = {
           'mean': -1,
           'std': -1,
         }
 
-    tab_pmf = PMF.convolve_many(tab_pmfs)
-    values = tab_pmf.cumulative().trim_tail().values
-    if len(values) > 1:
-      graph_data = {
-        'x': [i for i, x in enumerate(values)],
-        'y': [100*x for i, x in enumerate(values)],
-        'name': tab_data.get('tabname'),
-      }
-    else:
-      graph_data = {}
+    tab_pmf = PMF.convolve_many([x.damage_with_mortals for x in tab_results])
+    colour = TAB_COLOURS[tab_id]
+
     return {
-      'graph_data': graph_data,
-      'mean': tab_pmf.mean(),
-      'std': tab_pmf.std(),
-      'weapon_data': weapon_mean,
+      'graphs': {
+        'damage': self.get_damage_plot(tab_inputs, tab_results, colour),
+        'drones': self.get_drone_plot(tab_inputs, tab_results, colour),
+      },
+      'metadata': {
+        'mean': tab_pmf.mean(),
+        'std': tab_pmf.std(),
+        'weapon_metadata': weapon_metadata,
+      },
     }
 
   def _prop_change(self):
@@ -179,7 +239,13 @@ class GraphController(object):
       return None
     return ctx.triggered[0]['prop_id']
 
-  def _tabs_changed(self):
+  def _tabs_changed(self, graph_data):
+    if graph_data == [{}]:
+      return list(range(self.tab_count))
+    else:
+      return self._get_tabs_changed()
+
+  def _get_tabs_changed(self):
     ctx = dash.callback_context
     if not ctx:
       return list(range(TAB_COUNT))

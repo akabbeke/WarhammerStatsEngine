@@ -1,6 +1,8 @@
 
 import dash_core_components as dcc
 
+from ...constants import TAB_COUNT, GA_TRACKING_ID, TAB_COLOURS, DEFUALT_GRAPH_PLOTS
+
 
 app_color = {"graph_bg": "#082255", "graph_line": "#a3a7b0"}
 
@@ -8,6 +10,7 @@ app_color = {"graph_bg": "#082255", "graph_line": "#a3a7b0"}
 class GraphLayout(object):
   def __init__(self, tab_count=0):
     self.tab_count = tab_count
+    self.graph_count = 2
 
   def layout(self):
     content = dcc.Graph(
@@ -69,7 +72,7 @@ class GraphLayout(object):
 
   def figure_template(self, data=None, max_len=10, title=None, static=False, top=50):
     return {
-      'data': data or [{}] * self.tab_count,
+      'data': data or DEFUALT_GRAPH_PLOTS,
       'layout': {
         'title': title,
         'showlegend': True,
