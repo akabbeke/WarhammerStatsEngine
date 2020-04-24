@@ -6,7 +6,8 @@ from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
   Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, ShieldDrone, NormalDrone
+  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, ShieldDrone, NormalDrone, \
+  Overheat
 
 
 class ComputeController(object):
@@ -101,6 +102,8 @@ class ComputeController(object):
         mods.append(ShieldDrone())
       elif mod_type == 'normaldrone':
         mods.append(NormalDrone())
+      elif mod_type == 'overheat':
+        mods.append(Overheat())
     return mods
 
   def compute(self, *args, **kwargs):

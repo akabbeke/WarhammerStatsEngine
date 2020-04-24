@@ -1,12 +1,12 @@
 import os
 is_prod = os.environ.get('IS_HEROKU', None) == 'True'
 GA_TRACKING_ID = os.environ.get('GA_TRACKING_ID', None)
-SUBPLOT_COUNT = 2
+SUBPLOT_COUNT = 3
 if is_prod:
   TAB_COUNT = 6
   WEAPON_COUNT = 4
 else:
-  TAB_COUNT = 2
+  TAB_COUNT = 3
   WEAPON_COUNT = 2
 
 TAB_COLOURS = [

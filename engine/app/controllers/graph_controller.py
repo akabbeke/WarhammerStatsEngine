@@ -31,7 +31,7 @@ class GraphController(object):
     self.input_generator = InputGenerator(self.tab_count, self.weapon_count)
     self.graph_layout_generator = GraphLayout()
     self.compute_controller = ComputeController()
-    self._subplot_names = {0: 'damage', 1: 'drones'}
+    self._subplot_names = {0: 'damage', 1: 'drones', 2: 'self'}
 
   def setup_callbacks(self):
     @mapped_callback(
@@ -147,7 +147,7 @@ class GraphController(object):
     tab_metadata = tab_data['metadata']
     output = self.metadata_output(tab_id, True, tab_metadata['mean'], tab_metadata['std'])
     for weapon_id in range(self.weapon_count):
-      weapon_metadata = tab_data['metadata']['weapon_metadata'][tab_id]
+      weapon_metadata = tab_data['metadata']['weapon_metadata'][weapon_id]
       output.update(self.weapon_metadata_output(
         tab_id,
         weapon_id,
@@ -193,6 +193,21 @@ class GraphController(object):
     else:
       return {}
 
+  def get_self_damage_plot(self, tab_data, tab_results, colour):
+    damage_pmfs = [x.self_wound for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+
+    if len(damage_values) > 1:
+      return {
+        'x': [i for i, x in enumerate(damage_values)],
+        'y': [100*x for i, x in enumerate(damage_values)],
+        'name': 'Self',
+        'line': {'dash': 'dot', 'color': colour},
+        'legendgroup': tab_data.get('tabname')
+      }
+    else:
+      return {}
+
   def _tab_graph_data(self, tab_id, callback):
     tab_results = []
     tab_inputs = callback.tab_inputs[tab_id]
@@ -223,6 +238,7 @@ class GraphController(object):
       'graphs': {
         'damage': self.get_damage_plot(tab_inputs, tab_results, colour),
         'drones': self.get_drone_plot(tab_inputs, tab_results, colour),
+        'self': self.get_self_damage_plot(tab_inputs, tab_results, colour),
       },
       'metadata': {
         'mean': tab_pmf.mean(),

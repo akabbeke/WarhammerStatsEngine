@@ -8,13 +8,14 @@ class AttackTrace(object):
 
 
 class AttackSequenceResults(object):
-  def __init__(self, shot_dist, hit_dist, wound_dist, pen_dist, damage_dist, drone_wound, mortal_dist):
+  def __init__(self, shot_dist, hit_dist, wound_dist, pen_dist, damage_dist, drone_wound, self_wound, mortal_dist):
     self.shot_dist = shot_dist
     self.hit_dist = hit_dist
     self.wound_dist = wound_dist
     self.pen_dist = pen_dist
     self.damage_dist = damage_dist
     self.drone_wound = drone_wound
+    self.self_wound = self_wound
     self.mortal_dist = mortal_dist
     self.damage_with_mortals = PMF.convolve_many([
       self.damage_dist,
@@ -44,7 +45,7 @@ class AttackSequence(object):
 
     shot_dist = self.shots.calc_dist()
 
-    hit_dist, mortal_dist = self.hits.calc_dist(shot_dist)
+    hit_dist, mortal_dist, self_dist = self.hits.calc_dist(shot_dist)
     mortal_dists.append(mortal_dist)
 
     wound_dist, mortal_dist = self.wounds.calc_dist(hit_dist)
@@ -62,6 +63,7 @@ class AttackSequence(object):
       pen_dist,
       damage_dist,
       drone_wound,
+      self_dist,
       PMF.convolve_many(mortal_dists),
     )
 
@@ -134,8 +136,10 @@ class AttackHits(AttackSegment):
     hit_dists = []
     exp_dists = []
     mrt_dists = []
+    self_dists = []
     thresh = self.attack.attacker.ws
     mod_thresh = self.attack.mods.modify_hit_thresh(self.attack.attacker.ws)
+    thresh_self_wounds = self.attack.mods.modify_self_wounds()
     for dice, event_prob in enumerate(dist.values):
       if event_prob == 0:
         continue
@@ -144,6 +148,10 @@ class AttackHits(AttackSegment):
         thresh,
         mod_thresh
       )
+      if thresh_self_wounds:
+        self_thresh = thresh_self_wounds + max(mod_thresh-thresh, 0)
+        self_dist = dice_dists.convert_binomial(self_thresh, less_than=True).convolve()
+        self_dists.append(self_dist * event_prob)
 
       hit_dist = dice_dists.convert_binomial(mod_thresh).convolve()
       exp_dist = self._calc_exp_dist(dice_dists) if can_recurse else PMF([1])
@@ -154,7 +162,11 @@ class AttackHits(AttackSegment):
       exp_dists.append(PMF.convolve_many([exp_dist, exp_shot_dist]) * event_prob)
       mrt_dists.append(PMF.convolve_many([mrt_dist, exp_mrt_dist]) * event_prob)
 
-    return PMF.convolve_many([PMF.flatten(hit_dists), PMF.flatten(exp_dists)]), PMF.flatten(mrt_dists)
+    return (
+      PMF.convolve_many([PMF.flatten(hit_dists), PMF.flatten(exp_dists)]),
+      PMF.flatten(mrt_dists),
+      PMF.static(0) if not self_dists else PMF.flatten(self_dists),
+    )
 
   def _get_thresh_mod(self):
     return self.attack.mods.modify_hit_thresh(6) - 6

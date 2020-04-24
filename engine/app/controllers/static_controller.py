@@ -66,7 +66,6 @@ class StaticController(GraphController):
     callback.update_from_url()
 
     grouped_plot_data = self._group_plot_data(DEFAULT_GRAPH_PLOTS)
-
     for tab_id in range(self.tab_count):
       if callback.tab_inputs.get(tab_id):
         new_data = self._tab_graph_data(tab_id, callback)
@@ -76,6 +75,13 @@ class StaticController(GraphController):
           callback.tab_inputs.get(tab_id, {}).get('tabname', 'n/a'),
           new_data['metadata']['mean'],
           new_data['metadata']['std'],
+        ))
+      else:
+        output.update(self._update_avg(
+          tab_id,
+          'n/a',
+          'n/a',
+          'n/a',
         ))
 
     flattened_plot_data =self._flatten_plot_data(grouped_plot_data)

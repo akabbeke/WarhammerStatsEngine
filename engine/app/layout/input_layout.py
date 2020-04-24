@@ -5,6 +5,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 
+from ...constants import TAB_COLOURS
+
 
 FOOTER_CONTENT = '''
 This is still very much a work in progress, and there are probably still some bugs.
@@ -19,11 +21,12 @@ You can also download an image of the graph by clicking the camera icon
 while hovering over the graph.
 
 ##### Updates:
-* Added prests for the target.
-* Changed the theme again. I had some feedback that the old theme was hard to navigate on mobile.
+* Added sub-plot for saviour protocols. Can be found under the save modifiers.
+* Added sub-plot fot damage infliced from gets hot. Can be found under hit modifiers.
 
 
 ##### Todo:
+* Figure out how to display the average values for sub-plots
 * Figure out feed-forward abilities like rend (I legit think this may be impossible with how I have built the app.
 Currently it assumes all dice rolls are independent however adding the feed-forward abilities changes that. If anyone out there knows how
 it can be done I would be more than happy to implement it.)
@@ -70,6 +73,7 @@ class InputTabLayout(object):
       id='tab_{}'.format(self.tab_id),
       label='Profile {}'.format(self.tab_id + 1),
       style={'width': '100%'},
+      label_style={"color": TAB_COLOURS[self.tab_id]}
     )
 
   def tab_content(self):
@@ -588,6 +592,7 @@ class WeaponTabLayout(object):
       {'label': f'Reroll failed dice', 'value': f'reroll_failed'},
       {'label': f'Reroll one dice', 'value': f'reroll_one_dice'},
       {'label': f'Reroll ones', 'value': f'reroll_ones'},
+      {'label': f'Suffer MW on a hit roll of 1', 'value': f'overheat'},
     ]
     for i in range(1, 7):
       options.append({'label': f'Add +{i}', 'value': f'add_{i}'})
@@ -636,8 +641,8 @@ class WeaponTabLayout(object):
       {'label': f'Reroll one dice', 'value': f'reroll_one_dice'},
       {'label': f'Reroll ones', 'value': f'reroll_ones'},
       {'label': f'Ignore invulnerable', 'value': f'ignoreinv'},
-      {'label': f'Drones', 'value': f'normaldrone'},
-      {'label': f'Drones (Shield)', 'value': f'shielddrone'},
+      {'label': f'Saviour Protocol', 'value': f'normaldrone'},
+      {'label': f'Saviour Protocol (Shield)', 'value': f'shielddrone'},
     ]
     for i in range(1, 7):
       options.append({'label': f'Add +{i} to save', 'value': f'saveadd_{i}'})

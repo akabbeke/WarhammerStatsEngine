@@ -55,6 +55,8 @@ class Modifier(object):
   def modify_drones(self):
     return False, 7, 7
 
+  def modify_self_wounds(self):
+    return 0
 
 class MinimumValue(Modifier):
   def __init__(self, min_val):
@@ -263,6 +265,10 @@ class NormalDrone(Modifier):
   def modify_drones(self):
     return True, 2, 7
 
+class Overheat(Modifier):
+  def modify_self_wounds(self):
+    return 2
+
 
 class ModifierCollection(object):
   """
@@ -391,6 +397,17 @@ class ModifierCollection(object):
       fnp = fnp if fnp < f else f
 
     return enabled, thresh, fnp
+
+  def modify_self_wounds(self):
+    """
+    Return threshold for self wound
+    """
+    thresh = 0
+    for mod in self._hit_mods():
+      mod_thresh = mod.modify_self_wounds()
+      thresh = thresh if thresh > mod_thresh else mod_thresh
+    return thresh
+
 
   def modify_fnp_thresh(self, thresh):
     """
