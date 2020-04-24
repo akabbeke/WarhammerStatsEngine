@@ -18,7 +18,7 @@ from ..layout import GraphLayout, Layout
 
 from ..util import ComputeController, URLMinify, InputGenerator
 
-from ...constants import TAB_COUNT, GA_TRACKING_ID
+from ...constants import TAB_COUNT, WEAPON_COUNT, GA_TRACKING_ID
 from ...stats.pmf import PMF
 
 
@@ -95,6 +95,8 @@ class CallbackMap(object):
     self._tab_states = None
     self._global_states = None
 
+    self._url_minify = None
+
     self._outputs = {}
 
   @property
@@ -136,6 +138,48 @@ class CallbackMap(object):
   @property
   def outputs(self):
     return [self._outputs[k] for k in self._outputs_order]
+
+  @property
+  def url_minify(self):
+    if self._url_minify is None:
+      self._url_minify = URLMinify(TAB_COUNT, WEAPON_COUNT)
+    return self._url_minify
+
+  def update_from_url(self):
+    url_args = self._parse_url_params()
+    self.tab_inputs
+    tab_fields, global_fields = self._parse_static_graph_args(url_args)
+    self._tab_inputs.update(tab_fields)
+    self.global_inputs.update(global_fields)
+
+
+  def _parse_url_params(self):
+    url = self.inputs['url']
+    parse_result = urlparse(url)
+    params = parse_qsl(parse_result.query)
+    state = dict(params)
+    print(state)
+    max_map = self.url_minify.to_max()
+    return {max_map.get(x, x): y for x,y in state.items()}
+
+  def _parse_static_graph_args(self, inputs):
+    global_fields = recurse_default()
+    tab_fields = recurse_default()
+    for raw_input_name, value in inputs.items():
+      match = re.match(r'(?P<field_name>[^_]+)_(?P<tab_id>\d+)(_(?P<weapon_id>\d+))?', raw_input_name)
+      if match:
+        field_name = match.groupdict().get('field_name')
+        tab_id = match.groupdict().get('tab_id')
+        weapon_id = match.groupdict().get('weapon_id')
+        if field_name in ['shotmods', 'hitmods','woundmods', 'savemods', 'fnpmods', 'damagemods']:
+          value = value.split(',')
+        if weapon_id:
+          tab_fields[int(tab_id)]['weapons'][int(weapon_id)][field_name] = value
+        else:
+          tab_fields[int(tab_id)][field_name] = value
+      else:
+        global_fields[raw_input_name] = value
+    return self.default_to_regular(tab_fields), self.default_to_regular(global_fields)
 
   def set_outputs(self, **kwargs):
     self._outputs.update(kwargs)

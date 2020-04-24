@@ -11,7 +11,7 @@ from urllib.parse import urlparse, parse_qsl, urlencode
 from flask import request
 from dash.dependencies import Input, Output, State
 
-from ...constants import TAB_COUNT, GA_TRACKING_ID, TAB_COLOURS
+from ...constants import TAB_COUNT, GA_TRACKING_ID, TAB_COLOURS, DEFAULT_GRAPH_PLOTS
 
 from ..layout import GraphLayout, Layout
 
@@ -71,7 +71,6 @@ class GraphController(object):
       flat += [data[i][self._subplot_names[j]] for j in range(len(self._subplot_names))]
     return flat
 
-
   def _update_graph(self, callback):
     output = {}
     current_plot_data = callback.global_states['damage_graph']['data']
@@ -111,7 +110,6 @@ class GraphController(object):
 
   def cached_tab_output(self, tab_id, callback):
     output = {}
-    print(callback.tab_states[tab_id])
     output[f'avgdisplay_{tab_id}'] = callback.tab_states[tab_id][f'avgdisplay']
     output[f'stddisplay_{tab_id}'] = callback.tab_states[tab_id][f'stddisplay']
     for weapon_id in range(self.weapon_count):
@@ -201,11 +199,13 @@ class GraphController(object):
 
     weapon_metadata = {}
 
+    print(callback.tab_inputs)
+
     tab_enabled = tab_inputs.get('enabled') == 'enabled'
 
     for weapon_id in range(self.weapon_count):
-      weapon_inputs = tab_inputs['weapons'][weapon_id]
-      if tab_enabled and weapon_inputs.get('weaponenabled') == 'enabled':
+      weapon_inputs = tab_inputs['weapons'].get(weapon_id)
+      if tab_enabled and weapon_inputs and weapon_inputs.get('weaponenabled') == 'enabled':
         results = self.compute_controller.compute(**tab_inputs, **weapon_inputs)
         tab_results.append(results)
         weapon_metadata[weapon_id] = {
@@ -240,7 +240,7 @@ class GraphController(object):
     return ctx.triggered[0]['prop_id']
 
   def _tabs_changed(self, graph_data):
-    if graph_data == [{}]:
+    if graph_data == DEFAULT_GRAPH_PLOTS:
       return list(range(self.tab_count))
     else:
       return self._get_tabs_changed()

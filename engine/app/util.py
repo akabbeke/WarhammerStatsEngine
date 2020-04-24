@@ -239,7 +239,7 @@ class URLMinify(object):
       [f'hitmods_{tab_id}_{weapon_id}', f'hm_{tab_id}_{weapon_id}'],
       [f'woundmods_{tab_id}_{weapon_id}', f'wm_{tab_id}_{weapon_id}'],
       [f'savemods_{tab_id}_{weapon_id}', f'svm_{tab_id}_{weapon_id}'],
-      [f'fnpmods_{tab_id}_{weapon_id}', f'svm_{tab_id}_{weapon_id}'],
+      [f'fnpmods_{tab_id}_{weapon_id}', f'fnpm_{tab_id}_{weapon_id}'],
       [f'damagemods_{tab_id}_{weapon_id}', f'dmm_{tab_id}_{weapon_id}'],
     ]
 
