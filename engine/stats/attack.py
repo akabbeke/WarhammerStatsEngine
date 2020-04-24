@@ -149,7 +149,7 @@ class AttackHits(AttackSegment):
         mod_thresh
       )
       if thresh_self_wounds:
-        self_thresh = thresh_self_wounds + max(mod_thresh-thresh, 0)
+        self_thresh = max(thresh_self_wounds+mod_thresh-thresh, 0)
         self_dist = dice_dists.convert_binomial(self_thresh, less_than=True).convolve()
         self_dists.append(self_dist * event_prob)
 
