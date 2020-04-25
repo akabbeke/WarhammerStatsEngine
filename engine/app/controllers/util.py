@@ -150,7 +150,7 @@ class CallbackMap(object):
     self.tab_inputs
     tab_fields, global_fields = self._parse_static_graph_args(url_args)
     self._tab_inputs.update(tab_fields)
-    self.global_inputs.update(global_fields)
+    self._global_inputs.update(global_fields)
 
 
   def _parse_url_params(self):

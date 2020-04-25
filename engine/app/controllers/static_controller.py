@@ -60,10 +60,8 @@ class StaticController(GraphController):
     # if not graph_args:
     #   return self.graph_layout_generator.figure_template()
     output = {}
-    metadata = {}
-    title = callback.global_inputs.get('title')
-
     callback.update_from_url()
+    title = callback.global_inputs.get('title')
 
     grouped_plot_data = self._group_plot_data(DEFAULT_GRAPH_PLOTS)
     for tab_id in range(self.tab_count):
@@ -91,7 +89,6 @@ class StaticController(GraphController):
       flattened_plot_data,
       max_len,
       title=title,
-      top=10
     )
     callback.set_outputs(**output)
     return callback
