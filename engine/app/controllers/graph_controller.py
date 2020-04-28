@@ -186,7 +186,7 @@ class GraphController(object):
       return {
         'x': [i for i, x in enumerate(damage_values)],
         'y': [100*x for i, x in enumerate(damage_values)],
-        'name': 'Drones',
+        'name': 'Drone DMG',
         'line': {'dash': 'dash', 'color': colour},
         'legendgroup': tab_data.get('tabname')
       }
@@ -201,7 +201,7 @@ class GraphController(object):
       return {
         'x': [i for i, x in enumerate(damage_values)],
         'y': [100*x for i, x in enumerate(damage_values)],
-        'name': 'Self',
+        'name': 'Self DMG',
         'line': {'dash': 'dot', 'color': colour},
         'legendgroup': tab_data.get('tabname')
       }

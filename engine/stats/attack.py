@@ -151,16 +151,18 @@ class AttackHits(AttackSegment):
       if thresh_self_wounds:
         self_thresh = max(thresh_self_wounds+mod_thresh-thresh, 0)
         self_dist = dice_dists.convert_binomial(self_thresh, less_than=True).convolve()
-        self_dists.append(self_dist * event_prob)
+      else:
+        self_dist = PMF.static(0)
 
       hit_dist = dice_dists.convert_binomial(mod_thresh).convolve()
       exp_dist = self._calc_exp_dist(dice_dists) if can_recurse else PMF([1])
-      exp_shot_dist, exp_mrt_dist = self._calc_exp_shot_dist(dice_dists, can_recurse)
+      exp_shot_dist, exp_mrt_dist, exp_self_dist = self._calc_exp_shot_dist(dice_dists, can_recurse)
       mrt_dist = self._calc_mortal_dist(dice_dists)
 
       hit_dists.append(hit_dist * event_prob)
       exp_dists.append(PMF.convolve_many([exp_dist, exp_shot_dist]) * event_prob)
       mrt_dists.append(PMF.convolve_many([mrt_dist, exp_mrt_dist]) * event_prob)
+      self_dists.append(PMF.convolve_many([self_dist, exp_self_dist]) * event_prob)
 
     return (
       PMF.convolve_many([PMF.flatten(hit_dists), PMF.flatten(exp_dists)]),
@@ -174,7 +176,7 @@ class AttackHits(AttackSegment):
   def _calc_exp_shot_dist(self, dice_dists, can_recurse=True):
     # Handle extra shots
     if not can_recurse:
-      return PMF.static(0), PMF.static(0)
+      return PMF.static(0), PMF.static(0), PMF.static(0)
     dist_col = PMFCollection.add_many([
       self._get_mod_extra_shot().thresh_mod(self.thresh_mod),
       self._get_extra_shot(),
@@ -182,7 +184,7 @@ class AttackHits(AttackSegment):
     if dist_col:
       return self.calc_dist(dist_col.mul_col(dice_dists).convolve(), can_recurse=False)
     else:
-      return PMF.static(0), PMF.static(0)
+      return PMF.static(0), PMF.static(0), PMF.static(0)
 
   def _mod_extra_dist(self):
     return self.attack.mods.get_mod_extra_hit()
