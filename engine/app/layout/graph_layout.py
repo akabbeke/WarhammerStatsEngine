@@ -79,7 +79,7 @@ class GraphLayout(object):
         'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1, x=0.5),
         # 'template': 'plotly_dark',
         'xaxis': {
-            'title': 'Minimum Wounds Dealt Per-Point',
+            'title': 'Minimum Wounds Dealt',
             'type': 'linear',
             'range': [0, max_len],
             'tickmode': 'linear',
