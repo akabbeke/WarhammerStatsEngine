@@ -37,8 +37,7 @@ class GraphLayout(object):
     tab_inputs = callback.tab_inputs[tab_id]
     ''''damagemods': ['addvol_d6'], 'fnpmods': ['fnpadd_2'], 'hitmods': ['reroll_ones'], 'savemods': ['normaldrone'], 'shotmods': ['reroll_ones'], 'shots': '2d6', 'strength': '4', 'weaponenabled': 'enabled', 'woundmods': ['add_2']'''
     weapon_rows = []
-    print(tab_inputs)
-    for k, weapon in tab_inputs['weapons'].items():
+    for _, weapon in tab_inputs['weapons'].items():
       weapon_rows.append(
         self._weapon_output(
           weapon['strength'],
