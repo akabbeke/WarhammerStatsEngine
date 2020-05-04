@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 import re
+import math
 
 import dash
 import dash_core_components as dcc
@@ -78,9 +79,10 @@ class GraphController(object):
     changed_tabs = self._tabs_changed(current_plot_data)
 
     grouped_plot_data = self._group_plot_data(current_plot_data)
-
+    points_enabled = False
     for tab_id in range(self.tab_count):
       if tab_id in changed_tabs:
+        points_enabled = (callback.tab_inputs[tab_id].get('points') > 1) or points_enabled
         new_data = self._tab_graph_data(tab_id, callback)
         grouped_plot_data[tab_id] = new_data['graphs']
         output.update(self.tab_output(tab_id, new_data, callback))
@@ -91,12 +93,13 @@ class GraphController(object):
       pass
 
     flattened_plot_data =self._flatten_plot_data(grouped_plot_data)
-
-    max_len = max(max([len(x.get('x', [])) for x in flattened_plot_data]), 0)
+    max_value = max([x.get('x')[-1] for x in flattened_plot_data if len(x.get('x', [])) > 1])
+    dtick = min(10**math.floor(math.log(max_value, 10))/2, 1)
     output['damage_graph'] = self.graph_layout_generator.figure_template(
       flattened_plot_data,
-      max_len,
-      top=10
+      max_value,
+      top=10,
+      dtick=dtick if points_enabled else None
     )
     callback.set_outputs(**output)
     return callback
@@ -167,9 +170,10 @@ class GraphController(object):
   def get_damage_plot(self, tab_data, tab_results, colour):
     damage_pmfs = [x.damage_with_mortals for x in tab_results]
     damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    pts = int(tab_data.get('points', 1))
     if len(damage_values) > 1:
       return {
-        'x': [i for i, x in enumerate(damage_values)],
+        'x': [i/pts for i, x in enumerate(damage_values)],
         'y': [100*x for i, x in enumerate(damage_values)],
         'name': tab_data.get('tabname'),
         'line': {'color': colour},
@@ -181,10 +185,10 @@ class GraphController(object):
   def get_drone_plot(self, tab_data, tab_results, colour):
     damage_pmfs = [x.drone_wound for x in tab_results]
     damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
-
+    pts = int(tab_data.get('points', 1))
     if len(damage_values) > 1:
       return {
-        'x': [i for i, x in enumerate(damage_values)],
+        'x': [i/pts for i, x in enumerate(damage_values)],
         'y': [100*x for i, x in enumerate(damage_values)],
         'name': 'Drone DMG',
         'line': {'dash': 'dash', 'color': colour},
@@ -196,10 +200,10 @@ class GraphController(object):
   def get_self_damage_plot(self, tab_data, tab_results, colour):
     damage_pmfs = [x.self_wound for x in tab_results]
     damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
-
+    pts = int(tab_data.get('points', 1))
     if len(damage_values) > 1:
       return {
-        'x': [i for i, x in enumerate(damage_values)],
+        'x': [i/pts for i, x in enumerate(damage_values)],
         'y': [100*x for i, x in enumerate(damage_values)],
         'name': 'Self DMG',
         'line': {'dash': 'dot', 'color': colour},

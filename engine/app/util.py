@@ -210,6 +210,7 @@ class URLMinify(object):
       [f'invuln_{tab_id}', f'inv_{tab_id}'],
       [f'fnp_{tab_id}', f'fn_{tab_id}'],
       [f'wounds_{tab_id}', f'w_{tab_id}'],
+      [f'points_{tab_id}', f'pts_{tab_id}'],
     ]
 
   def attack_row(self):
@@ -263,6 +264,7 @@ class InputGenerator(object):
     return {
       f'enabled_{tab_id}': 'value',
       f'tabname_{tab_id}': 'value',
+      f'points_{tab_id}': 'value',
     }
 
   def target_row_input(self, tab_id):

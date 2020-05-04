@@ -92,11 +92,27 @@ class InputTabLayout(object):
       [
         dbc.Col(self._tab_enable_input(), width=2),
         dbc.Col(self._tab_name_input()),
+        dbc.Col(self._points_input(), width=2),
         dbc.Col(self._average_output(), width=2),
         dbc.Col(self._standard_dev_output(), width=2),
       ],
       className='mb-2',
     )
+
+  def _points_input(self):
+    content = [
+      dbc.InputGroupAddon("Points", addon_type="prepend"),
+      dbc.Input(
+        type="number",
+        id=f'points_{self.tab_id}',
+        value=1,
+        debounce=True,
+        min=1,
+        persistence=True,
+        persistence_type='session',
+      ),
+    ]
+    return dbc.InputGroup(content, size="sm")
 
   def _average_output(self):
     return dbc.InputGroup(

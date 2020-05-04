@@ -1,6 +1,8 @@
 from collections import defaultdict
 
 import re
+import math
+
 import dash_core_components as dcc
 import dash_html_components as html
 
@@ -57,8 +59,6 @@ class StaticController(GraphController):
 
 
   def update_static_graph(self, callback):
-    # if not graph_args:
-    #   return self.graph_layout_generator.figure_template()
     output = {}
     callback.update_from_url()
     title = callback.global_inputs.get('title')
@@ -83,12 +83,14 @@ class StaticController(GraphController):
         ))
 
     flattened_plot_data =self._flatten_plot_data(grouped_plot_data)
-    max_len = max(max([len(x.get('x', [])) for x in flattened_plot_data]), 0)
     output['static_graph_debug'] = ''
+    max_value = max([x.get('x')[-1] for x in flattened_plot_data if len(x.get('x', [])) > 1])
+    dtick = min(10**math.floor(math.log(max_value, 10))/2, 1)
     output['static_damage_graph'] = self.graph_layout_generator.figure_template(
       flattened_plot_data,
-      max_len,
+      max_value,
       title=title,
+      dtick=dtick,
     )
     callback.set_outputs(**output)
     return callback

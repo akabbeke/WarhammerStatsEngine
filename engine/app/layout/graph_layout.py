@@ -70,7 +70,7 @@ class GraphLayout(object):
     )
     return content
 
-  def figure_template(self, data=None, max_len=10, title=None, static=False, top=50):
+  def figure_template(self, data=None, max_len=10, dtick=None, title=None, static=False, top=50):
     return {
       'data': data or DEFAULT_GRAPH_PLOTS,
       'layout': {
@@ -79,14 +79,14 @@ class GraphLayout(object):
         'legend': dict(orientation='h',yanchor='top',xanchor='center',y=1, x=0.5),
         # 'template': 'plotly_dark',
         'xaxis': {
-            'title': 'Minimum Wounds Dealt to Target',
+            'title': 'Minimum Wounds Dealt Per-Point',
             'type': 'linear',
             'range': [0, max_len],
             'tickmode': 'linear',
             'tick0': 0,
-            'dtick': 1,
-            "gridcolor": app_color["graph_line"],
-            "color": app_color["graph_line"],
+            'dtick': dtick,
+            # "gridcolor": app_color["graph_line"],
+            # "color": app_color["graph_line"],
             'fixedrange': True,
         },
         'yaxis': {
@@ -96,8 +96,8 @@ class GraphLayout(object):
             'tickmode': 'linear',
             'tick0': 0,
             'dtick': 10,
-            "gridcolor": app_color["graph_line"],
-            "color": app_color["graph_line"],
+            # "gridcolor": app_color["graph_line"],
+            # "color": app_color["graph_line"],
             'fixedrange': True,
         },
         'margin':{
