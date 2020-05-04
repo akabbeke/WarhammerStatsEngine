@@ -52,9 +52,7 @@ class StaticController(GraphController):
   def avg_updates(self):
     updates = {}
     for i in range(self.tab_count):
-      updates[f'stattabname_{i}'] = 'value'
-      updates[f'statavgdisplay_{i}'] = 'value'
-      updates[f'statstddisplay_{i}'] = 'value'
+      updates[f'statsrow_{i}'] = 'children'
     return updates
 
 
@@ -74,13 +72,14 @@ class StaticController(GraphController):
           new_data['metadata']['mean'],
           new_data['metadata']['std'],
         ))
-      else:
-        output.update(self._update_avg(
+        output[f'statsrow_{tab_id}'] = self.graph_layout_generator._tab_info(
           tab_id,
-          'n/a',
-          'n/a',
-          'n/a',
-        ))
+          callback,
+          new_data['metadata']['mean'],
+          new_data['metadata']['std'],
+        )
+      else:
+        output[f'statsrow_{tab_id}'] = []
 
     flattened_plot_data =self._flatten_plot_data(grouped_plot_data)
     output['static_graph_debug'] = ''
