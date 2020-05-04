@@ -55,7 +55,7 @@ class GraphLayout(object):
       )
     return dbc.Col([self._target_output(
         tab_inputs['tabname'],
-        tab_inputs['points'],
+        tab_inputs.get('points', 1),
         tab_inputs['toughness'],
         tab_inputs['save'],
         tab_inputs['invuln'],
