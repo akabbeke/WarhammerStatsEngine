@@ -1,26 +1,3 @@
-from collections import defaultdict
-
-import hashlib
-
-import dash
-import dash_daq as daq
-import re
-import requests
-import dash_core_components as dcc
-import dash_html_components as html
-
-from urllib.parse import urlparse, parse_qsl, urlencode
-
-from flask import request
-from dash.dependencies import Input, Output, State
-
-from ..layout import GraphLayout, Layout
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...constants import TAB_COUNT, GA_TRACKING_ID
-from ...stats.pmf import PMF
-
 from .embed_controller import EmbedController
 from .graph_controller import GraphController
 from .inputs_controller import InputsController
