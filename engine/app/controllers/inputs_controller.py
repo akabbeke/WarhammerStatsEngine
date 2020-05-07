@@ -7,7 +7,7 @@ import dash_html_components as html
 from urllib.parse import urlparse, parse_qsl, urlencode
 
 from flask import request
-from dash import callback_context
+from dash import callback_context, no_update
 from dash.dependencies import Input, Output, State
 
 from ..layout import GraphLayout, Layout
@@ -90,6 +90,8 @@ class InputsController(object):
         return [8,3,7,7,12]
       elif 'knight' in trigger:
         return [8,3,5,7,24]
+      else:  # FIXME(kiciek): only triggered prop_id is '.'
+        return no_update
 
 
   def _tabname_callback(self, tab_id):
