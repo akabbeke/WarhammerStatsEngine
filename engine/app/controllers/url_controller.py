@@ -1,5 +1,5 @@
 from ..layout import GraphLayout, Layout
-
+from dash import no_update
 from .util import CallbackMapper, track_event, recurse_default
 
 class URLController(object):
@@ -13,8 +13,11 @@ class URLController(object):
     mapper = CallbackMapper(outputs={'page_content': 'children'}, inputs={'url': 'pathname'})
     @self.app.callback(mapper.outputs, mapper.inputs,mapper.states)
     def _(pathname):
+      # FIXME(kiciek): why on startup pathname = None ?
       result_dict = {}
-      if pathname == '/':
+      if pathname is None:
+        return no_update
+      elif pathname == '/':
         result_dict['page_content'] = self.layout_generator.base_layout()
       elif pathname == '/static':
         result_dict['page_content'] = self.layout_generator.static_layout()
