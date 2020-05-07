@@ -73,7 +73,7 @@ class AttackSegment(object):
     self.attack = attack
     self._thresh_mod = None
 
-  def calc_dist(self):
+  def calc_dist(self, *args, **kwargs):
     pass
 
   @property

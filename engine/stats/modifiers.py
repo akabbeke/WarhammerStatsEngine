@@ -7,8 +7,6 @@ class Modifier(object):
   e.g. full re-roll > re-roll failed > re-roll 1s
   """
   priority = 0
-  def __init__(self, *args, **kwargs):
-    pass
 
   def modify_dice(self, col, thresh=None,  mod_thresh=None):
     return col
