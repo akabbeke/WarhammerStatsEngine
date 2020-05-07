@@ -1,22 +1,6 @@
-from collections import defaultdict
+from dash import callback_context, no_update
+from dash.dependencies import Input, Output
 
-import re
-import dash_core_components as dcc
-import dash_html_components as html
-
-from urllib.parse import urlparse, parse_qsl, urlencode
-
-from flask import request
-from dash import callback_context
-from dash.dependencies import Input, Output, State
-
-from ..layout import GraphLayout, Layout
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...stats.pmf import PMF
-
-from .util import CallbackMapper, track_event, recurse_default
 
 class InputsController(object):
   def __init__(self, app, tab_count, weapon_count):
@@ -90,6 +74,8 @@ class InputsController(object):
         return [8,3,7,7,12]
       elif 'knight' in trigger:
         return [8,3,5,7,24]
+      else:  # FIXME(kiciek): only triggered prop_id is '.'
+        return no_update
 
 
   def _tabname_callback(self, tab_id):

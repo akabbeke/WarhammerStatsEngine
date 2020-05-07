@@ -1,25 +1,13 @@
-from collections import defaultdict
-
-import hashlib
-
-import dash
-import dash_daq as daq
 import re
+from collections import defaultdict
+from urllib.parse import urlparse, parse_qsl
+
 import requests
-import dash_core_components as dcc
-import dash_html_components as html
-
-from urllib.parse import urlparse, parse_qsl, urlencode
-
-from flask import request
 from dash.dependencies import Input, Output, State
+from flask import request
 
-from ..layout import GraphLayout, Layout
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...constants import TAB_COUNT, WEAPON_COUNT, GA_TRACKING_ID
-from ...stats.pmf import PMF
+from ..util import URLMinify
+from ...constants import TAB_COUNT, WEAPON_COUNT
 
 
 def recurse_default():
@@ -147,7 +135,6 @@ class CallbackMap(object):
 
   def update_from_url(self):
     url_args = self._parse_url_params()
-    self.tab_inputs
     tab_fields, global_fields = self._parse_static_graph_args(url_args)
     self._tab_inputs.update(tab_fields)
     self._global_inputs.update(global_fields)

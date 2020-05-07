@@ -1,21 +1,12 @@
-from collections import defaultdict
-
 import re
-import dash_core_components as dcc
-import dash_html_components as html
-
-from urllib.parse import urlparse, parse_qsl, urlencode
-
-from flask import request
-from dash.dependencies import Input, Output, State
-
-from ..layout import GraphLayout, Layout
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...stats.pmf import PMF
+from collections import defaultdict
+from urllib.parse import urlparse, parse_qsl
 
 from .util import CallbackMapper, track_event, recurse_default
+from ..layout import GraphLayout
+from ..util import ComputeController, URLMinify
+from ...stats.pmf import PMF
+
 
 class EmbedController(object):
   def __init__(self, app, tab_count, weapon_count):
