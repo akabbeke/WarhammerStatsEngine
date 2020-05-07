@@ -1,10 +1,5 @@
 from urllib.parse import urlencode
 
-from ..util import URLMinify, InputGenerator
-
-from .util import CallbackMapper
-from urllib.parse import urlencode
-
 from .util import CallbackMapper
 from ..util import URLMinify, InputGenerator
 
