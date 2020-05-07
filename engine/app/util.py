@@ -1,13 +1,14 @@
 import re
+
 from ..stats.attack import AttackSequence
-from ..stats.pmf import PMF, PMFCollection
-from ..stats.weapons import Weapon
-from ..stats.units import Unit
 from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
-  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
+  Melta, AddNToThreshold, AddNToVolume, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
   ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, ShieldDrone, NormalDrone, \
+  ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, ShieldDrone, NormalDrone, \
   Overheat
+from ..stats.pmf import PMF, PMFCollection
+from ..stats.units import Unit
+from ..stats.weapons import Weapon
 
 
 class ComputeController(object):

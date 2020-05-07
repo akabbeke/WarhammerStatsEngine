@@ -1,21 +1,13 @@
-from collections import defaultdict
+from urllib.parse import urlencode
 
-import re
-import dash_core_components as dcc
-import dash_html_components as html
+from ..util import URLMinify, InputGenerator
 
-from urllib.parse import urlparse, parse_qsl, urlencode
+from .util import CallbackMapper
+from urllib.parse import urlencode
 
-from flask import request
-from dash.dependencies import Input, Output, State
+from .util import CallbackMapper
+from ..util import URLMinify, InputGenerator
 
-from ..layout import GraphLayout, Layout
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...stats.pmf import PMF
-
-from .util import CallbackMapper, track_event, recurse_default
 
 class LinkController(object):
   def __init__(self, app, tab_count, weapon_count):

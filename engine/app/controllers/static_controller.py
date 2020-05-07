@@ -1,27 +1,10 @@
-from collections import defaultdict
-
-import re
 import math
 
-import dash_core_components as dcc
-import dash_html_components as html
-
-from urllib.parse import urlparse, parse_qsl, urlencode
-
-from flask import request
-from dash.dependencies import Input, Output, State
-
-from ..layout import GraphLayout, Layout
-
-from ...constants import TAB_COLOURS, DEFAULT_GRAPH_PLOTS
-
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...stats.pmf import PMF
-
-from .util import CallbackMapper, track_event, recurse_default, mapped_callback
 from .graph_controller import GraphController
+from .util import track_event, mapped_callback
+from ..util import URLMinify
+from ...constants import DEFAULT_GRAPH_PLOTS
+
 
 class StaticController(GraphController):
   def __init__(self, *args, **kwargs):

@@ -1,8 +1,7 @@
-import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import dash_core_components as dcc
 
 from ...constants import TAB_COLOURS
-
 
 FOOTER_CONTENT = '''
 This is still very much a work in progress, and there are probably still some bugs.

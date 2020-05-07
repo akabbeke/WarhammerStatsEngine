@@ -1,16 +1,13 @@
-from collections import defaultdict
 import re
+from collections import defaultdict
+from urllib.parse import urlparse, parse_qsl
+
 import requests
-
-from urllib.parse import urlparse, parse_qsl, urlencode
-
-from flask import request
 from dash.dependencies import Input, Output, State
+from flask import request
 
-
-from ..util import ComputeController, URLMinify, InputGenerator
-
-from ...constants import TAB_COUNT, WEAPON_COUNT, GA_TRACKING_ID
+from ..util import URLMinify
+from ...constants import TAB_COUNT, WEAPON_COUNT
 
 
 def recurse_default():

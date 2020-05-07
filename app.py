@@ -1,9 +1,8 @@
 import dash
-
 import dash_bootstrap_components as dbc
 
-from engine.app.layout import Layout
 from engine.app.controllers import CallbackController
+from engine.app.layout import Layout
 from engine.constants import TAB_COUNT, WEAPON_COUNT
 
 external_stylesheets = [

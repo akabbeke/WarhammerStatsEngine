@@ -1,5 +1,3 @@
-from .pmf import  PMF
-
 class Weapon(object):
   """
   Used to keep track of the params of the weapon

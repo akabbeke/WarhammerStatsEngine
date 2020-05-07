@@ -1,9 +1,8 @@
 
-import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import dash_core_components as dcc
 
-from ...constants import TAB_COUNT, GA_TRACKING_ID, TAB_COLOURS, DEFAULT_GRAPH_PLOTS
-
+from ...constants import DEFAULT_GRAPH_PLOTS
 
 app_color = {"graph_bg": "#082255", "graph_line": "#a3a7b0"}
 

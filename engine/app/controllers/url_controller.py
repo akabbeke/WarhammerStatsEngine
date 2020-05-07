@@ -1,6 +1,8 @@
-from ..layout import GraphLayout, Layout
 from dash import no_update
-from .util import CallbackMapper, track_event, recurse_default
+
+from .util import CallbackMapper
+from ..layout import Layout
+
 
 class URLController(object):
   def __init__(self, app, tab_count, weapon_count):
