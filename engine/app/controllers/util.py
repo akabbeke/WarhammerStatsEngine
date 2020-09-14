@@ -19,7 +19,7 @@ from ..layout import GraphLayout, Layout
 from ..util import ComputeController, URLMinify, InputGenerator
 
 from ...constants import TAB_COUNT, WEAPON_COUNT, GA_TRACKING_ID
-from ...stats.pmf import PMF
+from warhammer_stats.pmf import PMF
 
 
 def recurse_default():

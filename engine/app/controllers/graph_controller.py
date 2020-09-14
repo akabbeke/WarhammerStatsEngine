@@ -18,7 +18,7 @@ from ..layout import GraphLayout, Layout
 
 from ..util import ComputeController, URLMinify, InputGenerator
 
-from ...stats.pmf import PMF
+from warhammer_stats.pmf import PMF
 
 from .util import CallbackMapper, mapped_callback, track_event, recurse_default, chunks
 
@@ -168,8 +168,8 @@ class GraphController(object):
     return output
 
   def get_damage_plot(self, tab_data, tab_results, colour):
-    damage_pmfs = [x.damage_with_mortals for x in tab_results]
-    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    damage_pmfs = [x.total_wounds_dist for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail(thresh=10**(-4)).values
     pts = int(tab_data.get('points', 1))
     if len(damage_values) > 1:
       return {
@@ -183,8 +183,8 @@ class GraphController(object):
       return {}
 
   def get_drone_plot(self, tab_data, tab_results, colour):
-    damage_pmfs = [x.drone_wound for x in tab_results]
-    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    damage_pmfs = [x.saviour_protocol_results.drone_wound_dist for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail(thresh=10**(-4)).values
     pts = int(tab_data.get('points', 1))
     if len(damage_values) > 1:
       return {
@@ -198,8 +198,8 @@ class GraphController(object):
       return {}
 
   def get_self_damage_plot(self, tab_data, tab_results, colour):
-    damage_pmfs = [x.self_wound for x in tab_results]
-    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    damage_pmfs = [x.to_hit_results.self_inflicted_dist for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail(thresh=10**(-4)).values
     pts = int(tab_data.get('points', 1))
     if len(damage_values) > 1:
       return {
@@ -226,8 +226,8 @@ class GraphController(object):
         results = self.compute_controller.compute(**tab_inputs, **weapon_inputs)
         tab_results.append(results)
         weapon_metadata[weapon_id] = {
-          'mean': results.damage_with_mortals.mean(),
-          'std': results.damage_with_mortals.std(),
+          'mean': results.total_wounds_dist.mean(),
+          'std': results.total_wounds_dist.std(),
         }
       else:
         weapon_metadata[weapon_id] = {
@@ -235,7 +235,7 @@ class GraphController(object):
           'std': -1,
         }
 
-    tab_pmf = PMF.convolve_many([x.damage_with_mortals for x in tab_results])
+    tab_pmf = PMF.convolve_many([x.total_wounds_dist for x in tab_results])
     colour = TAB_COLOURS[tab_id]
 
     return {

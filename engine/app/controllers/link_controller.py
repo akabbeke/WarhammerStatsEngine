@@ -13,7 +13,7 @@ from ..layout import GraphLayout, Layout
 
 from ..util import ComputeController, URLMinify, InputGenerator
 
-from ...stats.pmf import PMF
+from warhammer_stats.pmf import PMF
 
 from .util import CallbackMapper, track_event, recurse_default
 

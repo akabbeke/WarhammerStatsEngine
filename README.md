@@ -9,6 +9,7 @@ Clone the repo
 
 Next install the required packages with pipenv
 >$ cd WarhammerStatsEngine
+
 >$ pipenv install
 
 Run the app locally with

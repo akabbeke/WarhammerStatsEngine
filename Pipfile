@@ -17,6 +17,7 @@ gunicorn = "*"
 dash-daq = "*"
 dash-bootstrap-components = "*"
 requests = "*"
+warhammer-stats = "*"
 
 [requires]
 python_version = "3.7"

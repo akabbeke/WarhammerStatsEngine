@@ -13,7 +13,7 @@ from ..layout import GraphLayout, Layout
 
 from ..util import ComputeController, URLMinify, InputGenerator
 
-from ...stats.pmf import PMF
+from warhammer_stats.pmf import PMF
 
 from .util import CallbackMapper, track_event, recurse_default
 
@@ -84,8 +84,8 @@ class EmbedController(object):
     return tab_results
 
   def get_damage_plot(self, tab_data, tab_results):
-    damage_pmfs = [x.damage_with_mortals for x in tab_results]
-    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    damage_pmfs = [x.total_wounds_dist for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail(thresh=10**(-4)).values
 
     if len(damage_values) > 1:
       return {
@@ -97,8 +97,8 @@ class EmbedController(object):
       return {}
 
   def get_drone_plot(self, tab_data, tab_results):
-    damage_pmfs = [x.drone_wound for x in tab_results]
-    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail().values
+    damage_pmfs = [x.saviour_protocol_results.drone_wound_dist for x in tab_results]
+    damage_values = PMF.convolve_many(damage_pmfs).cumulative().trim_tail(thresh=10**(-4)).values
 
     if len(damage_values) > 1:
       return {

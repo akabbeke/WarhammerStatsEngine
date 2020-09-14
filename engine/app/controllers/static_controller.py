@@ -18,7 +18,7 @@ from ...constants import TAB_COLOURS, DEFAULT_GRAPH_PLOTS
 
 from ..util import ComputeController, URLMinify, InputGenerator
 
-from ...stats.pmf import PMF
+from warhammer_stats.pmf import PMF
 
 from .util import CallbackMapper, track_event, recurse_default, mapped_callback
 from .graph_controller import GraphController

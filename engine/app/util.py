@@ -1,110 +1,25 @@
 import re
-from ..stats.attack import AttackSequence
-from ..stats.pmf import PMF, PMFCollection
-from ..stats.weapons import Weapon
-from ..stats.units import Unit
-from ..stats.modifiers import ModifierCollection, ReRollOnes, ReRollFailed, ReRollAll, ReRollLessThanExpectedValue, \
-  Melta, AddNToThreshold, AddNToVolume, SetThresholdToN, IgnoreAP, IgnoreInvuln, ModExtraHit, ExtraHit, ModExtraAttack, \
-  ExtraShot, HalfDamage, AddNToSave, AddNToInvuln, GenerateMortalWound, ModGenerateMortalWound, MinimumValue, Haywire, \
-  ReRollOneDice, ModReRollOneDice, ReRollOneDiceVolume, AddD6, AddD3, ModExtraWound, ExtraWound, ShieldDrone, NormalDrone, \
-  Overheat
+from warhammer_stats.attack import Attack
+from warhammer_stats.pmf import PMF, PMFCollection
+from warhammer_stats.weapon import Weapon
+from warhammer_stats.target import Target
+from warhammer_stats.modifiers import ModifierCollection
 
 
-class ComputeController(object):
+class ModifierController:
+  @property
+  def mod_dict(self):
+    return {}
+
+class ComputeController:
   def parse_mods(self, raw_mods):
     if not raw_mods:
       return []
     mods = []
-    for mod in raw_mods:
-      match = re.match(r'(?P<mod_type>[a-zA-Z]+)_?(?P<mod_data>.+)?', mod)
-      if not match:
-        continue
-      mod_type = match.groupdict().get('mod_type')
-      mod_data = match.groupdict().get('mod_data')
-
-      if mod_type == 'reroll':
-        if mod_data == 'allvol':
-          mods.append(ReRollLessThanExpectedValue())
-        elif mod_data == 'one_dicevol':
-          mods.append(ReRollOneDiceVolume())
-        elif mod_data == 'ones':
-          mods.append(ReRollOnes())
-        elif mod_data == 'melta':
-          mods.append(Melta())
-        elif mod_data == 'all':
-          mods.append(ReRollAll())
-        elif mod_data == 'failed':
-          mods.append(ReRollFailed())
-        elif mod_data == 'one_dice':
-          mods.append(ModReRollOneDice())
-      elif mod_type == 'add':
-        mods.append(AddNToThreshold(int(mod_data)))
-      elif mod_type == 'sub':
-        mods.append(AddNToThreshold(-1*int(mod_data)))
-      elif mod_type == 'addon':
-        match = re.match(r'(?P<value>\d+)_(?P<addon>[a-zA-Z]+)_(?P<thresh>\d+)(?P<modable>_mod)?', mod_data.lower())
-        if not match:
-          continue
-        value = match.groupdict().get('value')
-        addon = match.groupdict().get('addon')
-        thresh = match.groupdict().get('thresh')
-        modable = match.groupdict().get('modable')
-        if modable:
-          if addon == 'mw':
-            mods.append(ModGenerateMortalWound(int(thresh), int(value)))
-          elif addon == 'hits':
-            mods.append(ModExtraHit(int(thresh), int(value)))
-          elif addon == 'shots':
-            mods.append(ModExtraAttack(int(thresh), int(value)))
-          elif addon == 'wounds':
-            mods.append(ModExtraWound(int(thresh), int(value)))
-        else:
-          if addon == 'mw':
-            mods.append(GenerateMortalWound(int(thresh), int(value)))
-          elif addon == 'hits':
-            mods.append(ExtraHit(int(thresh), int(value)))
-          elif addon == 'shots':
-            mods.append(ExtraShot(int(thresh), int(value)))
-          elif addon == 'wounds':
-            mods.append(ExtraWound(int(thresh), int(value)))
-      elif mod_type == 'haywire':
-        mods.append(Haywire(5, 1))
-      elif mod_type == 'ignoreap':
-        mods.append(IgnoreAP(int(mod_data)))
-      elif mod_type == 'ignoreinv':
-        mods.append(IgnoreInvuln())
-      elif mod_type == 'saveadd':
-        mods.append(AddNToSave(int(mod_data)))
-      elif mod_type == 'savesub':
-        mods.append(AddNToSave(-1*int(mod_data)))
-      elif mod_type == 'fnpadd':
-        mods.append(AddNToSave(int(mod_data)))
-      elif mod_type == 'fnpsub':
-        mods.append(AddNToSave(-1*int(mod_data)))
-      elif mod_type == 'invadd':
-        mods.append(AddNToInvuln(int(mod_data)))
-      elif mod_type == 'invsub':
-        mods.append(AddNToInvuln(-1*int(mod_data)))
-      elif mod_type == 'halfdam':
-        mods.append(HalfDamage())
-      elif mod_type == 'minval':
-        mods.append(MinimumValue(int(mod_data)))
-      elif mod_type == 'addvol':
-        if mod_data == 'd6':
-          mods.append(AddD6())
-        elif mod_data == 'd3':
-          mods.append(AddD3())
-        else:
-          mods.append(AddNToVolume(int(mod_data)))
-      elif mod_type == 'subvol':
-        mods.append(AddNToVolume(-1*int(mod_data)))
-      elif mod_type == 'shielddrone':
-        mods.append(ShieldDrone())
-      elif mod_type == 'normaldrone':
-        mods.append(NormalDrone())
-      elif mod_type == 'overheat':
-        mods.append(Overheat())
-    return mods
+    mod_dict = ModifierController().mod_dict
+    for mod_id in raw_mods:
+      mods.append(mod_dict.get(mod_id))
+    return [mod for mod in mods if mod is not None]
 
   def compute(self, *args, **kwargs):
     ws = kwargs.get('ws')
@@ -124,30 +39,33 @@ class ComputeController(object):
     fnpmods = kwargs.get('fnpmods')
     damagemods = kwargs.get('damagemods')
 
-    modifiers = ModifierCollection()
-    modifiers.add_mods('shots', self.parse_mods(shotmods))
-    modifiers.add_mods('hit', self.parse_mods(hitmods))
-    modifiers.add_mods('wound', self.parse_mods(woundmods))
-    modifiers.add_mods('pen', self.parse_mods(savemods))
-    modifiers.add_mods('fnp', self.parse_mods(fnpmods))
-    modifiers.add_mods('damage', self.parse_mods(damagemods))
+    modifiers = ModifierCollection(
+      shot_mods=self.parse_mods(shotmods),
+      hit_mods=self.parse_mods(hitmods),
+      wound_mods=self.parse_mods(woundmods),
+      pen_mods=self.parse_mods(savemods),
+      fnp_mods=self.parse_mods(fnpmods),
+      damage_mods=self.parse_mods(damagemods),
+    )
 
-    target = Unit(
-      ws=int(ws or 1),
-      bs=int(ws or 1),
+    target = Target(
       toughness=int(toughness or 1),
       save=int(save or 7),
-      invul=int(invuln or 7),
+      invuln=int(invuln or 7),
       fnp=int(fnp or 7),
       wounds=int(wounds or 1),
     )
+
     weapon = Weapon(
+      bs=int(ws or 7),
       shots=self.parse_rsn(shots or 1),
       strength=int(strength or 1),
       ap=int(ap or 0),
       damage=self.parse_rsn(damage or 1),
+      modifiers=modifiers,
     )
-    attack_sequence = AttackSequence(weapon, target, target, modifiers)
+
+    attack_sequence = Attack(weapon=weapon, target=target)
     return attack_sequence.run()
 
   def parse_rsn(self, value):

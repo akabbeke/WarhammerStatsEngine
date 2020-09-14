@@ -14,7 +14,7 @@ from ..layout import GraphLayout, Layout
 
 from ..util import ComputeController, URLMinify, InputGenerator
 
-from ...stats.pmf import PMF
+from warhammer_stats.pmf import PMF
 
 from .util import CallbackMapper, track_event, recurse_default
 
@@ -63,9 +63,13 @@ class InputsController(object):
     )
     def _(*args):
       # [toughness, +, ++, +++, wounds]
-      if not callback_context:
+
+
+      if not callback_context or callback_context.triggered[0]['prop_id'] == '.':
         return [3,5,7,7,1]
       trigger = callback_context.triggered[0]['prop_id']
+
+      print(trigger)
       if 'guardsman' in trigger:
         return [3,5,7,7,1]
       elif 'ork_boy' in trigger:
